@@ -7,13 +7,13 @@ import PracticeDetail from '@/components/practice/PracticeDetail'
 type Props = {
   params: Promise<{
     locale: 'ka' | 'en' | 'ru'
-    slug: string
+    practiceSlug: string
   }>
 }
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { locale, slug: encodedSlug } = await params
+  const { locale, practiceSlug: encodedSlug } = await params
   const supabase = await createClient()
 
   // Decode URL-encoded slug
@@ -86,7 +86,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 // Main page component
 export default async function PracticePage({ params }: Props) {
-  const { locale, slug: encodedSlug } = await params
+  const { locale, practiceSlug: encodedSlug } = await params
   const supabase = await createClient()
 
   // Decode URL-encoded slug (for Georgian/Cyrillic characters)
@@ -177,7 +177,7 @@ export default async function PracticePage({ params }: Props) {
   }
 
   // TODO: Fetch related practices (optional - can add later)
-  const relatedPractices: any[] = []
+  const relatedPractices: { id: string; title: string; slug: string; heroImageUrl: string; heroImageAlt: string; readingTime: number }[] = []
 
   return (
     <PracticeDetail
@@ -208,14 +208,14 @@ export async function generateStaticParams() {
   if (!practices) return []
 
   // Flatten and map to params format
-  const params: Array<{ locale: string; slug: string }> = []
+  const params: Array<{ locale: string; practiceSlug: string }> = []
   
-  practices.forEach((practice: any) => {
+  practices.forEach((practice: Record<string, unknown>) => {
     if (practice.practice_translations) {
-      practice.practice_translations.forEach((translation: any) => {
+      (practice.practice_translations as Array<{ language: string; slug: string }>).forEach((translation) => {
         params.push({
           locale: translation.language,
-          slug: translation.slug,
+          practiceSlug: translation.slug,
         })
       })
     }

@@ -1,11 +1,18 @@
 "use client"
 
 import { useState, useMemo, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { useTheme } from '@/contexts/ThemeContext'
 import { ArrowLeft, Languages, Clock, Loader2, ChevronDown } from 'lucide-react'
-import RichTextEditor from '@/components/common/RichTextEditor'
 import { createClient } from '@/lib/supabase/client'
-import { IoSaveOutline } from 'react-icons/io5'
+
+// Lazy load RichTextEditor for better performance
+const RichTextEditor = dynamic(() => import('@/components/common/RichTextEditor'), {
+  ssr: false,
+  loading: () => <div className="h-64 flex items-center justify-center border rounded-lg">
+    <Loader2 className="animate-spin" size={32} />
+  </div>
+})
 
 type Language = 'ka' | 'en' | 'ru'
 
@@ -409,18 +416,30 @@ export default function ServiceAdd({ onBack, editData }: ServiceAddProps) {
       // Insert translations (all 3 languages)
       console.log('🌐 Creating translations...')
       const toInsert = (Object.keys(translations) as Language[])
-        .map((lang) => ({
-          service_id: serviceId,
-          language: lang,
-          title: translations[lang].title,
-          slug: translations[lang].slug,
-          description: translations[lang].description,
-          image_alt: translations[lang].imageAlt,
-          meta_title: translations[lang].metaTitle || translations[lang].title,
-          meta_description: translations[lang].metaDescription || translations[lang].description.replace(/<[^>]*>/g, '').substring(0, 160),
-          og_title: translations[lang].ogTitle || translations[lang].metaTitle || translations[lang].title,
-          og_description: translations[lang].ogDescription || translations[lang].metaDescription || translations[lang].description.replace(/<[^>]*>/g, '').substring(0, 160),
-        }))
+        .map((lang) => {
+          // Calculate word count and reading time for each language
+          const desc = translations[lang].description || ''
+          const plain = desc.replace(/<[^>]*>/g, ' ')
+          const words = plain.trim().split(/\s+/).filter(Boolean)
+          const wordCount = words.length
+          const wpm = lang === 'ka' ? 180 : lang === 'en' ? 200 : 190
+          const readingTime = Math.ceil(wordCount / wpm)
+
+          return {
+            service_id: serviceId,
+            language: lang,
+            title: translations[lang].title,
+            slug: translations[lang].slug,
+            description: translations[lang].description,
+            image_alt: translations[lang].imageAlt,
+            meta_title: translations[lang].metaTitle || translations[lang].title,
+            meta_description: translations[lang].metaDescription || translations[lang].description.replace(/<[^>]*>/g, '').substring(0, 160),
+            og_title: translations[lang].ogTitle || translations[lang].metaTitle || translations[lang].title,
+            og_description: translations[lang].ogDescription || translations[lang].metaDescription || translations[lang].description.replace(/<[^>]*>/g, '').substring(0, 160),
+            word_count: wordCount,
+            reading_time: readingTime,
+          }
+        })
 
       const { error: insertError } = await supabase
         .from('service_translations')

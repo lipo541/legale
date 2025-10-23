@@ -1,10 +1,18 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { useTheme } from '@/contexts/ThemeContext'
 import { ArrowLeft, Languages, Clock, Loader2 } from 'lucide-react'
-import RichTextEditor from '@/components/common/RichTextEditor'
 import { createClient } from '@/lib/supabase/client'
+
+// Lazy load RichTextEditor for better performance
+const RichTextEditor = dynamic(() => import('@/components/common/RichTextEditor'), {
+  ssr: false,
+  loading: () => <div className="h-64 flex items-center justify-center border rounded-lg">
+    <Loader2 className="animate-spin" size={32} />
+  </div>
+})
 
 type Language = 'ka' | 'en' | 'ru'
 

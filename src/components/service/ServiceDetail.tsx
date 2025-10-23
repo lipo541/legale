@@ -4,20 +4,22 @@ import { useState, useEffect } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { IoTimeOutline, IoCalendarOutline, IoShareSocialOutline, IoArrowBack, IoEyeOutline, IoDocumentTextOutline, IoChevronForward, IoBriefcaseOutline } from 'react-icons/io5'
 import { createClient } from '@/lib/supabase/client'
 
-interface Service {
+interface ServiceItem {
   id: string
   title: string
   slug: string
 }
 
-interface PracticeDetailProps {
-  practice: {
+interface ServiceDetailProps {
+  service: {
     id: string
-    heroImageUrl: string
-    pageHeroImageUrl: string
+    practiceId: string
+    imageUrl: string
+    ogImageUrl: string | null
     status: string
     createdAt: string
     updatedAt: string
@@ -26,45 +28,40 @@ interface PracticeDetailProps {
     title: string
     slug: string
     description: string // HTML content
-    heroImageAlt: string
-    pageHeroImageAlt: string
+    imageAlt: string
     wordCount: number
     readingTime: number
     metaTitle: string | null
     metaDescription: string | null
-    focusKeyword: string | null
     ogTitle: string | null
     ogDescription: string | null
-    ogImageUrl: string | null
   }
-  locale: 'ka' | 'en' | 'ru'
-  relatedPractices?: Array<{
+  practice: {
     id: string
     title: string
     slug: string
-    heroImageUrl: string
-    heroImageAlt: string
-    readingTime: number
-  }>
+  }
+  locale: 'ka' | 'en' | 'ru'
 }
 
-export default function PracticeDetail({ 
-  practice, 
+export default function ServiceDetail({ 
+  service, 
   translation, 
-  locale,
-  relatedPractices = []
-}: PracticeDetailProps) {
+  practice,
+  locale
+}: ServiceDetailProps) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
   const supabase = createClient()
+  const router = useRouter()
 
-  // State for services
-  const [services, setServices] = useState<Service[]>([])
+  // State for services list
+  const [services, setServices] = useState<ServiceItem[]>([])
   const [servicesLoading, setServicesLoading] = useState(true)
   const [formattedCreatedAt, setFormattedCreatedAt] = useState<string>('')
   const [formattedUpdatedAt, setFormattedUpdatedAt] = useState<string>('')
 
-  // Fetch services for this practice
+  // Fetch all services for this practice
   useEffect(() => {
     const fetchServices = async () => {
       setServicesLoading(true)
@@ -74,7 +71,7 @@ export default function PracticeDetail({
         const { data: servicesData, error: servicesError } = await supabase
           .from('services')
           .select('id')
-          .eq('practice_id', practice.id)
+          .eq('practice_id', service.practiceId)
           .eq('status', 'published')
 
         if (servicesError) {
@@ -102,17 +99,17 @@ export default function PracticeDetail({
         }
 
         // Combine services with their translations
-        const servicesWithTranslations: Service[] = servicesData
-          .map(service => {
-            const translation = translationsData?.find(t => t.service_id === service.id)
-            if (!translation) return null
+        const servicesWithTranslations: ServiceItem[] = servicesData
+          .map(s => {
+            const trans = translationsData?.find(t => t.service_id === s.id)
+            if (!trans) return null
             return {
-              id: service.id,
-              title: translation.title,
-              slug: translation.slug
+              id: s.id,
+              title: trans.title,
+              slug: trans.slug
             }
           })
-          .filter((s): s is Service => s !== null)
+          .filter((s): s is ServiceItem => s !== null)
 
         setServices(servicesWithTranslations)
       } catch (error) {
@@ -123,7 +120,7 @@ export default function PracticeDetail({
     }
 
     fetchServices()
-  }, [practice.id, locale, supabase])
+  }, [service.practiceId, locale, supabase])
 
   // Format dates on client side to avoid hydration mismatch
   useEffect(() => {
@@ -144,9 +141,9 @@ export default function PracticeDetail({
       return date.toLocaleDateString(localeMap[locale], options)
     }
 
-    setFormattedCreatedAt(formatDate(practice.createdAt))
-    setFormattedUpdatedAt(formatDate(practice.updatedAt))
-  }, [practice.createdAt, practice.updatedAt, locale])
+    setFormattedCreatedAt(formatDate(service.createdAt))
+    setFormattedUpdatedAt(formatDate(service.updatedAt))
+  }, [service.createdAt, service.updatedAt, locale])
 
   // Share functionality
   const handleShare = async () => {
@@ -178,7 +175,7 @@ export default function PracticeDetail({
     searchServices: locale === 'ka' ? 'სერვისების ძებნა...' : locale === 'en' ? 'Search services...' : 'Поиск услуг...',
     noServices: locale === 'ka' ? 'სერვისები არ მოიძებნა' : locale === 'en' ? 'No services found' : 'Услуги не найдены',
     loading: locale === 'ka' ? 'იტვირთება...' : locale === 'en' ? 'Loading...' : 'Загрузка...',
-    back: locale === 'ka' ? 'უკან' : locale === 'en' ? 'Back' : 'Назад',
+    backToPractice: locale === 'ka' ? 'უკან პრაქტიკაზე' : locale === 'en' ? 'Back to Practice' : 'Назад к практике',
     share: locale === 'ka' ? 'გაზიარება' : locale === 'en' ? 'Share' : 'Поделиться',
     readingTime: locale === 'ka' ? 'წაკითხვის დრო' : locale === 'en' ? 'Reading Time' : 'Время чтения',
     minutes: locale === 'ka' ? 'წთ' : locale === 'en' ? 'min' : 'мин',
@@ -194,7 +191,7 @@ export default function PracticeDetail({
         {/* Back Link - Above grid */}
         <div className="mb-6">
           <Link
-            href={`/${locale}/practices`}
+            href={`/${locale}/practices/${practice.slug}`}
             className={`inline-flex items-center gap-1.5 text-sm transition-colors ${
               isDark 
                 ? 'text-white/60 hover:text-white' 
@@ -202,13 +199,13 @@ export default function PracticeDetail({
             }`}
           >
             <IoArrowBack className="h-3.5 w-3.5" />
-            <span>{text.back}</span>
+            <span>{text.backToPractice}: {practice.title}</span>
           </Link>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           
-          {/* LEFT SIDEBAR - Services (Static) */}
+          {/* LEFT SIDEBAR - Services */}
           <aside className="lg:col-span-4 xl:col-span-3">
             <div className={`sticky top-20 rounded-2xl p-6 border ${
               isDark 
@@ -268,31 +265,45 @@ export default function PracticeDetail({
                     </p>
                   </div>
                 ) : (
-                  services.map((service) => (
-                    <Link
-                      key={service.id}
-                      href={`/${locale}/practices/${translation.slug}/${service.slug}`}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-sm transition-all group ${
-                        isDark 
-                          ? 'hover:bg-white/5 text-white/80 hover:text-white' 
-                          : 'hover:bg-black/5 text-gray-700 hover:text-black'
-                      }`}
-                    >
-                      <IoDocumentTextOutline className={`h-4 w-4 flex-shrink-0 ${
-                        isDark ? 'text-white/60 group-hover:text-white' : 'text-gray-400 group-hover:text-black'
-                      }`} />
-                      <span className="flex-1 truncate">{service.title}</span>
-                      <IoChevronForward className={`h-4 w-4 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity ${
-                        isDark ? 'text-white' : 'text-black'
-                      }`} />
-                    </Link>
-                  ))
+                  services.map((s) => {
+                    const isActive = s.slug === translation.slug
+                    return (
+                      <Link
+                        key={s.id}
+                        href={`/${locale}/practices/${practice.slug}/${s.slug}`}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-sm transition-all group ${
+                          isActive
+                            ? isDark
+                              ? 'bg-white/10 text-white'
+                              : 'bg-black/10 text-black'
+                            : isDark 
+                            ? 'hover:bg-white/5 text-white/80 hover:text-white' 
+                            : 'hover:bg-black/5 text-gray-700 hover:text-black'
+                        }`}
+                      >
+                        <IoDocumentTextOutline className={`h-4 w-4 flex-shrink-0 ${
+                          isActive
+                            ? isDark ? 'text-white' : 'text-black'
+                            : isDark ? 'text-white/60 group-hover:text-white' : 'text-gray-400 group-hover:text-black'
+                        }`} />
+                        <span className="flex-1 truncate">{s.title}</span>
+                        {isActive && (
+                          <div className={`h-1.5 w-1.5 rounded-full ${isDark ? 'bg-white' : 'bg-black'}`} />
+                        )}
+                        {!isActive && (
+                          <IoChevronForward className={`h-4 w-4 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity ${
+                            isDark ? 'text-white' : 'text-black'
+                          }`} />
+                        )}
+                      </Link>
+                    )
+                  })
                 )}
               </div>
             </div>
           </aside>
 
-          {/* RIGHT CONTENT - Practice Details (Dynamic) */}
+          {/* RIGHT CONTENT - Service Details */}
           <main className="lg:col-span-8 xl:col-span-9">
             {/* Title Card */}
             <div className={`rounded-2xl p-4 md:p-6 mb-8 border ${
@@ -368,14 +379,14 @@ export default function PracticeDetail({
               </div>
             </div>
 
-            {/* Hero Image */}
+            {/* Service Image */}
             <div className={`relative rounded-2xl overflow-hidden mb-8 ${
               isDark ? 'border border-white/10' : 'border border-gray-200'
             }`}>
               <div className="relative w-full h-[300px] md:h-[400px] lg:h-[500px]">
                 <Image
-                  src={practice.pageHeroImageUrl}
-                  alt={translation.pageHeroImageAlt}
+                  src={service.imageUrl}
+                  alt={translation.imageAlt}
                   fill
                   priority
                   className="object-cover"
