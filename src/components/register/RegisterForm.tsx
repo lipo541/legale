@@ -110,8 +110,8 @@ export default function RegisterForm() {
         // 3. Redirect to login page
         router.push(`/${currentLocale}/login?registered=true`)
       }
-    } catch (err: any) {
-      setError(err.message || 'რეგისტრაცია ვერ მოხერხდა')
+    } catch (err) {
+      setError((err as Error).message || 'რეგისტრაცია ვერ მოხერხდა')
     } finally {
       setLoading(false)
     }

@@ -131,7 +131,7 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
     }
   }
 
-  const ToolbarButton = ({ onClick, active, children, title }: any) => (
+  const ToolbarButton = ({ onClick, active, children, title }: { onClick: () => void; active?: boolean; children: React.ReactNode; title: string }) => (
     <button
       onClick={onClick}
       type="button"

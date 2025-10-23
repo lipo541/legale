@@ -83,8 +83,8 @@ export default function LoginForm() {
           router.push(`/${currentLocale}`)
         }
       }
-    } catch (err: any) {
-      setError(err.message || 'შესვლა ვერ მოხერხდა')
+    } catch (err) {
+      setError((err as Error).message || 'შესვლა ვერ მოხერხდა')
     } finally {
       setLoading(false)
     }
