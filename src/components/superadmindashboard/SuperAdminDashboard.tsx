@@ -15,10 +15,17 @@ import {
   FileStack,
   Settings,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ShieldAlert
 } from 'lucide-react'
 import PracticesPage from './practices/PracticesPage'
 import ServicesPage from './services/ServicesPage'
+import RequestsPage from './requests/RequestsPage'
+import UsersPage from './users/UsersPage'
+import SpecialistsPage from './specialists/SpecialistsPage'
+import CompaniesPage from './companies/CompaniesPage'
+import AuthorsPage from './authors/AuthorsPage'
+import ModeratorsPage from './moderators/ModeratorsPage'
 
 export default function SuperAdminDashboard() {
   const { theme } = useTheme()
@@ -30,9 +37,12 @@ export default function SuperAdminDashboard() {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'practices', label: 'Practices', icon: Briefcase },
     { id: 'services', label: 'Services', icon: Wrench },
+    { id: 'users', label: 'Users', icon: Users },
     { id: 'specialists', label: 'Specialists', icon: Users },
     { id: 'companies', label: 'Companies', icon: Building2 },
-    { id: 'requests', label: 'Requests', icon: ClipboardList },
+    { id: 'authors', label: 'Authors', icon: FileText },
+    { id: 'moderators', label: 'Moderators', icon: ShieldAlert },
+    { id: 'requests', label: 'All Requests', icon: ClipboardList },
     { id: 'posts', label: 'Posts', icon: FileText },
     { id: 'categories', label: 'Categories', icon: Grid },
     { id: 'slider', label: 'Slider', icon: Presentation },
@@ -57,42 +67,18 @@ export default function SuperAdminDashboard() {
         return <PracticesPage />
       case 'services':
         return <ServicesPage />
+      case 'users':
+        return <UsersPage />
       case 'specialists':
-        return (
-          <div>
-            <h1 className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
-              Specialists
-            </h1>
-            <p className={`mt-2 text-lg ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-              სპეციალისტების მართვა
-            </p>
-            {/* TODO: Specialists მართვა */}
-          </div>
-        )
+        return <SpecialistsPage />
       case 'companies':
-        return (
-          <div>
-            <h1 className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
-              Companies
-            </h1>
-            <p className={`mt-2 text-lg ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-              კომპანიების მართვა
-            </p>
-            {/* TODO: Companies მართვა */}
-          </div>
-        )
+        return <CompaniesPage />
+      case 'authors':
+        return <AuthorsPage />
+      case 'moderators':
+        return <ModeratorsPage />
       case 'requests':
-        return (
-          <div>
-            <h1 className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
-              Requests
-            </h1>
-            <p className={`mt-2 text-lg ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-              მომხმარებელთა მოთხოვნები
-            </p>
-            {/* TODO: Requests მართვა */}
-          </div>
-        )
+        return <RequestsPage />
       case 'posts':
         return (
           <div>

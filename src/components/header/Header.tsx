@@ -19,6 +19,7 @@ export default function Header() {
 
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
   const [userRole, setUserRole] = useState<string | null>(null)
+  const [hasPendingRequest, setHasPendingRequest] = useState(false)
   const [loading, setLoading] = useState(true)
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen)
@@ -42,6 +43,16 @@ export default function Header() {
           .single()
         
         setUserRole(profile?.role || null)
+
+        // Check for pending access request
+        const { data: pendingRequest } = await supabase
+          .from('access_requests')
+          .select('status')
+          .eq('user_id', user.id)
+          .eq('status', 'PENDING')
+          .single()
+        
+        setHasPendingRequest(!!pendingRequest)
       }
       
       setLoading(false)
@@ -54,6 +65,7 @@ export default function Header() {
       setUser(session?.user || null)
       if (!session?.user) {
         setUserRole(null)
+        setHasPendingRequest(false)
       }
     })
 
@@ -115,7 +127,7 @@ export default function Header() {
                 {user ? (
                   <>
                     {/* Dashboard Button (only for SUPER_ADMIN and ADMIN) */}
-                    {(userRole === 'SUPER_ADMIN' || userRole === 'ADMIN') && (
+                    {(userRole === 'SUPER_ADMIN' || userRole === 'ADMIN') ? (
                       <Link 
                         href={`/${currentLocale}/admin`}
                         style={{
@@ -140,32 +152,32 @@ export default function Header() {
                         <LayoutDashboard className="w-4 h-4" />
                         Dashboard
                       </Link>
+                    ) : (
+                      /* Profile Button (for regular users) */
+                      <Link
+                        href={`/${currentLocale}/complete-profile`}
+                        style={{
+                          backgroundColor: isDark ? '#000000' : '#FFFFFF',
+                          borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+                          color: isDark ? '#FFFFFF' : '#000000',
+                          borderWidth: '1px',
+                          borderStyle: 'solid'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = isDark ? '#FFFFFF' : '#000000'
+                          e.currentTarget.style.color = isDark ? '#000000' : '#FFFFFF'
+                          e.currentTarget.style.borderColor = isDark ? '#FFFFFF' : '#000000'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = isDark ? '#000000' : '#FFFFFF'
+                          e.currentTarget.style.color = isDark ? '#FFFFFF' : '#000000'
+                          e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                      >
+                        {hasPendingRequest ? 'Pending' : 'პროფილი'}
+                      </Link>
                     )}
-                    
-                    {/* Logout Button */}
-                    <Link
-                      href={`/${currentLocale}/complete-profile`}
-                      style={{
-                        backgroundColor: isDark ? '#000000' : '#FFFFFF',
-                        borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
-                        color: isDark ? '#FFFFFF' : '#000000',
-                        borderWidth: '1px',
-                        borderStyle: 'solid'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = isDark ? '#FFFFFF' : '#000000'
-                        e.currentTarget.style.color = isDark ? '#000000' : '#FFFFFF'
-                        e.currentTarget.style.borderColor = isDark ? '#FFFFFF' : '#000000'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = isDark ? '#000000' : '#FFFFFF'
-                        e.currentTarget.style.color = isDark ? '#FFFFFF' : '#000000'
-                        e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'
-                      }}
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
-                    >
-                      პროფილი
-                    </Link>
                     <button 
                       onClick={handleLogout}
                       style={{
@@ -290,8 +302,8 @@ export default function Header() {
                   <div className={`flex flex-col space-y-2 pt-4 border-t transition-colors duration-300 ${isDark ? 'border-white/10' : 'border-black/10'}`}>
                     {user ? (
                       <>
-                        {/* Dashboard Button for Mobile */}
-                        {(userRole === 'SUPER_ADMIN' || userRole === 'ADMIN') && (
+                        {/* Dashboard Button for Mobile (only for SUPER_ADMIN and ADMIN) */}
+                        {(userRole === 'SUPER_ADMIN' || userRole === 'ADMIN') ? (
                           <Link
                             href={`/${currentLocale}/admin`}
                             onClick={toggleMenu}
@@ -306,6 +318,22 @@ export default function Header() {
                           >
                             <LayoutDashboard className="w-4 h-4" />
                             Dashboard
+                          </Link>
+                        ) : (
+                          /* Profile Button for Mobile (for regular users) */
+                          <Link
+                            href={`/${currentLocale}/complete-profile`}
+                            onClick={toggleMenu}
+                            style={{
+                              backgroundColor: isDark ? '#000000' : '#FFFFFF',
+                              borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+                              color: isDark ? '#FFFFFF' : '#000000',
+                              borderWidth: '1px',
+                              borderStyle: 'solid'
+                            }}
+                            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                          >
+                            {hasPendingRequest ? 'Pending' : 'პროფილი'}
                           </Link>
                         )}
                         
