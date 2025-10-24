@@ -126,10 +126,10 @@ export default function Header() {
               <div className="hidden md:flex items-center gap-3 ml-2">
                 {user ? (
                   <>
-                    {/* Dashboard Button (only for SUPER_ADMIN and ADMIN) */}
-                    {(userRole === 'SUPER_ADMIN' || userRole === 'ADMIN') ? (
+                    {/* Dashboard Button (for SUPER_ADMIN, ADMIN, and COMPANY) */}
+                    {(userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' || userRole === 'COMPANY') ? (
                       <Link 
-                        href={`/${currentLocale}/admin`}
+                        href={userRole === 'COMPANY' ? `/${currentLocale}/company-dashboard` : `/${currentLocale}/admin`}
                         style={{
                           backgroundColor: isDark ? '#000000' : '#FFFFFF',
                           borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
@@ -302,10 +302,10 @@ export default function Header() {
                   <div className={`flex flex-col space-y-2 pt-4 border-t transition-colors duration-300 ${isDark ? 'border-white/10' : 'border-black/10'}`}>
                     {user ? (
                       <>
-                        {/* Dashboard Button for Mobile (only for SUPER_ADMIN and ADMIN) */}
-                        {(userRole === 'SUPER_ADMIN' || userRole === 'ADMIN') ? (
+                        {/* Dashboard Button for Mobile (for SUPER_ADMIN, ADMIN, and COMPANY) */}
+                        {(userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' || userRole === 'COMPANY') ? (
                           <Link
-                            href={`/${currentLocale}/admin`}
+                            href={userRole === 'COMPANY' ? `/${currentLocale}/company-dashboard` : `/${currentLocale}/admin`}
                             onClick={toggleMenu}
                             style={{
                               backgroundColor: isDark ? '#000000' : '#FFFFFF',
