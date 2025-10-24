@@ -143,6 +143,29 @@ export default function Header() {
                     )}
                     
                     {/* Logout Button */}
+                    <Link
+                      href={`/${currentLocale}/complete-profile`}
+                      style={{
+                        backgroundColor: isDark ? '#000000' : '#FFFFFF',
+                        borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+                        color: isDark ? '#FFFFFF' : '#000000',
+                        borderWidth: '1px',
+                        borderStyle: 'solid'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = isDark ? '#FFFFFF' : '#000000'
+                        e.currentTarget.style.color = isDark ? '#000000' : '#FFFFFF'
+                        e.currentTarget.style.borderColor = isDark ? '#FFFFFF' : '#000000'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = isDark ? '#000000' : '#FFFFFF'
+                        e.currentTarget.style.color = isDark ? '#FFFFFF' : '#000000'
+                        e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      პროფილი
+                    </Link>
                     <button 
                       onClick={handleLogout}
                       style={{

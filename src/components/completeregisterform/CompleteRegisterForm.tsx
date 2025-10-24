@@ -1,0 +1,299 @@
+"use client";
+import { createClient } from "@/lib/supabase/client";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { useState } from "react";
+import { useTheme } from "@/contexts/ThemeContext";
+import { User, Phone, FileText } from "lucide-react";
+
+const FormSchema = z.object({
+  full_name: z.string().min(1, "Full name is required"),
+  company_slug: z.string().optional(),
+  phone_number: z.string().min(1, "Phone number is required"),
+  about: z.string().min(1, "Please tell us about yourself"),
+});
+
+export default function CompleteRegisterForm() {
+  const [requestType, setRequestType] = useState<"specialist" | "company">("specialist");
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  
+  const form = useForm<z.infer<typeof FormSchema>>({
+    resolver: zodResolver(FormSchema),
+    defaultValues: {
+      full_name: "",
+      company_slug: "",
+      phone_number: "",
+      about: "",
+    },
+  });
+
+  const onSubmit = async (data: z.infer<typeof FormSchema>) => {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          full_name: data.full_name,
+          phone_number: data.phone_number,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (error) {
+        console.error("Error updating profile:", error);
+      } else {
+        // Profile updated successfully
+        window.location.href = "/";
+      }
+    }
+  };
+
+  return (
+    <div className="relative isolate flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md space-y-6">
+        <div className="text-center">
+          <span className={`text-xs font-semibold uppercase tracking-[0.3em] transition-colors duration-300 ${isDark ? 'text-white' : 'text-black'}`}>
+            LegalGE
+          </span>
+        </div>
+
+        <div className={`rounded-3xl border p-8 transition-all duration-300 sm:p-10 ${isDark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
+          <div className="space-y-2 text-center">
+            <h1 className={`text-[30px] font-semibold transition-all duration-300 ${isDark ? 'text-white' : 'text-black'}`}>
+              Complete Your Profile
+            </h1>
+            <p className={`text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+              Fill out the form below to request specialist or company access
+            </p>
+          </div>
+
+          <form onSubmit={form.handleSubmit(onSubmit)} className="mt-8 space-y-6">
+            {/* Request Type */}
+            <div className="space-y-3">
+              <label className={`block text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+                Request Type
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setRequestType("specialist")}
+                  className={`flex items-center gap-3 p-4 rounded-xl border transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${
+                    requestType === "specialist"
+                      ? isDark 
+                        ? "bg-white/5 border-white/20" 
+                        : "bg-black/5 border-black/20"
+                      : isDark
+                        ? "bg-transparent border-white/10 hover:border-white/20"
+                        : "bg-transparent border-black/10 hover:border-black/20"
+                  }`}
+                >
+                  <div className={`flex items-center justify-center w-10 h-10 rounded-full ${isDark ? 'bg-white' : 'bg-black'}`}>
+                    <svg className={`w-5 h-5 ${isDark ? 'text-black' : 'text-white'}`} fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                  </div>
+                  <div className="text-left">
+                    <div className={`text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>Solo Specialist</div>
+                    <div className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>Individual legal practitioner</div>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRequestType("company")}
+                  className={`flex items-center gap-3 p-4 rounded-xl border transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${
+                    requestType === "company"
+                      ? isDark 
+                        ? "bg-white/5 border-white/20" 
+                        : "bg-black/5 border-black/20"
+                      : isDark
+                        ? "bg-transparent border-white/10 hover:border-white/20"
+                        : "bg-transparent border-black/10 hover:border-black/20"
+                  }`}
+                >
+                  <div className={`flex items-center justify-center w-10 h-10 rounded-full ${isDark ? 'bg-white' : 'bg-black'}`}>
+                    <svg className={`w-5 h-5 ${isDark ? 'text-black' : 'text-white'}`} fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/>
+                    </svg>
+                  </div>
+                  <div className="text-left">
+                    <div className={`text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>Company</div>
+                    <div className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>Legal firm or company</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Join Existing Company - Only for Company */}
+            {requestType === "company" && (
+              <div className="space-y-2">
+                <label htmlFor="existing_company" className={`block text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+                  Join Existing Company (Optional)
+                </label>
+                <select
+                  id="existing_company"
+                  className={`w-full rounded-xl border px-4 py-3 text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 ${isDark ? 'border-white/10 bg-black text-white focus:border-white/30 focus:ring-white/20' : 'border-black/10 bg-white text-black focus:border-black/30 focus:ring-black/20'}`}
+                >
+                  <option value="">Select a company (optional)</option>
+                </select>
+                <p className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                  Leave blank if you want to be a solo practitioner
+                </p>
+              </div>
+            )}
+
+            {/* Full Name / Company Name */}
+            <div className="space-y-2">
+              <label htmlFor="full_name" className={`block text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+                {requestType === "company" ? "Company Name" : "Full Name"} *
+              </label>
+              <div className="relative">
+                <User className={`absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 ${isDark ? 'text-white/40' : 'text-black/40'}`} aria-hidden="true" />
+                <input
+                  id="full_name"
+                  {...form.register("full_name")}
+                  placeholder={requestType === "company" ? "Your legal company name" : "Enter your full name"}
+                  className={`w-full rounded-xl border px-12 py-3 text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 ${
+                    form.formState.errors.full_name 
+                      ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
+                      : isDark
+                        ? 'border-white/10 bg-black text-white placeholder:text-white/40 focus:border-white/30 focus:ring-white/20'
+                        : 'border-black/10 bg-white text-black placeholder:text-black/40 focus:border-black/30 focus:ring-black/20'
+                  }`}
+                />
+              </div>
+              {form.formState.errors.full_name && (
+                <p className="text-xs text-red-500">{form.formState.errors.full_name.message}</p>
+              )}
+            </div>
+
+            {/* Preferred Company Slug - Only for Company */}
+            {requestType === "company" && (
+              <div className="space-y-2">
+                <label htmlFor="company_slug" className={`block text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+                  Preferred Company Slug *
+                </label>
+                <div className="relative">
+                  <input
+                    id="company_slug"
+                    {...form.register("company_slug")}
+                    placeholder="company-name"
+                    className={`w-full rounded-xl border px-4 py-3 pr-20 text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 ${
+                      form.formState.errors.company_slug 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
+                        : isDark
+                          ? 'border-white/10 bg-black text-white placeholder:text-white/40 focus:border-white/30 focus:ring-white/20'
+                          : 'border-black/10 bg-white text-black placeholder:text-black/40 focus:border-black/30 focus:ring-black/20'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium px-3 py-1.5 rounded-lg border transition-all duration-300 ${isDark ? 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10' : 'bg-black/5 border-black/10 text-black/60 hover:bg-black/10'}`}
+                  >
+                    Auto
+                  </button>
+                </div>
+                <p className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                  This will be your profile URL, e.g., /companies/company-name. Superadmin may adjust later.
+                </p>
+                {form.formState.errors.company_slug && (
+                  <p className="text-xs text-red-500">{form.formState.errors.company_slug.message}</p>
+                )}
+              </div>
+            )}
+
+            {/* Phone Number */}
+            <div className="space-y-2">
+              <label htmlFor="phone_number" className={`block text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+                Phone Number *
+              </label>
+              <div className="relative">
+                <Phone className={`absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 ${isDark ? 'text-white/40' : 'text-black/40'}`} aria-hidden="true" />
+                <input
+                  id="phone_number"
+                  {...form.register("phone_number")}
+                  placeholder="+995 XXX XXX XXX"
+                  className={`w-full rounded-xl border px-12 py-3 text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 ${
+                    form.formState.errors.phone_number 
+                      ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
+                      : isDark
+                        ? 'border-white/10 bg-black text-white placeholder:text-white/40 focus:border-white/30 focus:ring-white/20'
+                        : 'border-black/10 bg-white text-black placeholder:text-black/40 focus:border-black/30 focus:ring-black/20'
+                  }`}
+                />
+              </div>
+              {form.formState.errors.phone_number && (
+                <p className="text-xs text-red-500">{form.formState.errors.phone_number.message}</p>
+              )}
+            </div>
+
+            {/* Tell us about yourself */}
+            <div className="space-y-2">
+              <label htmlFor="about" className={`block text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+                Tell us about yourself *
+              </label>
+              <div className="relative">
+                <FileText className={`absolute left-4 top-4 h-5 w-5 ${isDark ? 'text-white/40' : 'text-black/40'}`} aria-hidden="true" />
+                <textarea
+                  id="about"
+                  {...form.register("about")}
+                  placeholder="Please describe your legal background, experience, and why you'd like to join our platform..."
+                  rows={5}
+                  className={`w-full rounded-xl border px-12 py-3 text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 resize-none ${
+                    form.formState.errors.about 
+                      ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
+                      : isDark
+                        ? 'border-white/10 bg-black text-white placeholder:text-white/40 focus:border-white/30 focus:ring-white/20'
+                        : 'border-black/10 bg-white text-black placeholder:text-black/40 focus:border-black/30 focus:ring-black/20'
+                  }`}
+                />
+              </div>
+              {form.formState.errors.about && (
+                <p className="text-xs text-red-500">{form.formState.errors.about.message}</p>
+              )}
+            </div>
+            
+            {/* Submit Button */}
+            <button 
+              type="submit" 
+              className={`group flex w-full items-center justify-center gap-2 rounded-xl border px-5 py-3 text-sm font-semibold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-1 ${isDark ? 'border-white bg-white text-black hover:bg-black hover:text-white focus:ring-white' : 'border-black bg-black text-white hover:bg-white hover:text-black focus:ring-black'}`}
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+              </svg>
+              Submit Request
+            </button>
+          </form>
+
+          {/* What happens next */}
+          <div className={`mt-8 rounded-2xl border p-6 ${isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/5'}`}>
+            <h3 className={`text-sm font-semibold mb-3 ${isDark ? 'text-white' : 'text-black'}`}>What happens next?</h3>
+            <ul className={`space-y-2 text-xs ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+              <li className="flex items-start gap-2">
+                <span className={isDark ? 'text-white/40' : 'text-black/40'}>•</span>
+                <span>We'll review your application within 2-3 business days</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className={isDark ? 'text-white/40' : 'text-black/40'}>•</span>
+                <span>If approved, you'll receive access to your personalized CMS</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className={isDark ? 'text-white/40' : 'text-black/40'}>•</span>
+                <span>You'll be able to manage your profile and publish content</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className={isDark ? 'text-white/40' : 'text-black/40'}>•</span>
+                <span>We'll contact you via email with the decision</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
