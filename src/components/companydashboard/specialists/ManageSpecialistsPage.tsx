@@ -38,9 +38,12 @@ export default function ManageSpecialistsPage() {
       
       // Get current user's company slug
       const { data: { user } } = await supabase.auth.getUser()
-      console.log('Current User ID:', user?.id)
+      console.log('🔍 Current User ID:', user?.id)
       
-      if (!user) return
+      if (!user) {
+        console.log('❌ No user found')
+        return
+      }
 
       // Fetch specialists where company_id matches current user's ID
       const { data, error } = await supabase
@@ -50,11 +53,17 @@ export default function ManageSpecialistsPage() {
         .eq('role', 'SPECIALIST')
         .order('created_at', { ascending: false })
 
-      console.log('🔍 Query Results:', { 
+      console.log('🔍 Fetching specialists for company:', user.id)
+      console.log('📊 Query Results:', { 
         data, 
         error, 
         count: data?.length || 0,
-        searching_for_company_id: user.id
+        specialists: data?.map(s => ({
+          id: s.id,
+          name: s.full_name,
+          company_id: s.company_id,
+          role: s.role
+        }))
       })
 
       if (error) {
@@ -65,7 +74,7 @@ export default function ManageSpecialistsPage() {
           ...s,
           is_blocked: s.is_blocked || false
         }))
-        console.log('✅ Setting specialists:', specialistsWithBlock)
+        console.log('✅ Setting specialists:', specialistsWithBlock.length, 'specialists')
         setSpecialists(specialistsWithBlock)
       }
     } catch (error) {

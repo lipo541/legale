@@ -83,7 +83,7 @@ export default function SpecialistRequestsPage({ onRequestUpdate }: { onRequestU
     // First, get the request details
     const { data: request } = await supabase
       .from('access_requests')
-      .select('user_id, company_id, company_slug')
+      .select('user_id, company_id')
       .eq('id', requestId)
       .single()
 
@@ -91,6 +91,13 @@ export default function SpecialistRequestsPage({ onRequestUpdate }: { onRequestU
       alert('მოთხოვნა ვერ მოიძებნა')
       return
     }
+
+    console.log('🔍 Approving request:', {
+      requestId,
+      user_id: request.user_id,
+      company_id: request.company_id,
+      current_company_id: companyId
+    })
 
     // Update access request status
     const { error: requestError } = await supabase
@@ -109,14 +116,20 @@ export default function SpecialistRequestsPage({ onRequestUpdate }: { onRequestU
     }
 
     // Update user profile with SPECIALIST role and company_id
+    // company_id should be set to the company that approved the request
     const { error: profileError } = await supabase
       .from('profiles')
       .update({
         role: 'SPECIALIST',
-        company_id: request.company_id,
-        company_slug: request.company_slug // Keep slug for URL purposes
+        company_id: request.company_id // This is already the correct company ID from access_requests
       })
       .eq('id', request.user_id)
+
+    console.log('✅ Profile update:', {
+      user_id: request.user_id,
+      setting_company_id: request.company_id,
+      error: profileError
+    })
 
     if (profileError) {
       console.error('Error updating profile:', profileError)

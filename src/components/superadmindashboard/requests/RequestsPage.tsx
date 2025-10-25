@@ -27,6 +27,7 @@ interface AccessRequest {
   request_type: 'SPECIALIST' | 'COMPANY'
   full_name: string
   company_slug: string | null
+  company_id: string | null
   phone_number: string
   about: string
   status: 'PENDING' | 'APPROVED' | 'REJECTED'
@@ -108,6 +109,19 @@ export default function RequestsPage() {
         return
       }
 
+      // First, get the complete request data including company_id
+      const { data: fullRequest, error: fetchError } = await supabase
+        .from('access_requests')
+        .select('*')
+        .eq('id', request.id)
+        .single()
+
+      if (fetchError || !fullRequest) {
+        console.error('Error fetching full request:', fetchError)
+        alert('შეცდომა მოთხოვნის წაკითხვისას')
+        return
+      }
+
       // Update user role in profiles
       const newRole = request.request_type === 'SPECIALIST' ? 'SPECIALIST' : 'COMPANY'
       
@@ -116,6 +130,7 @@ export default function RequestsPage() {
         full_name: string
         updated_at: string
         company_slug?: string
+        company_id?: string | null
       } = {
         role: newRole,
         full_name: request.full_name,
@@ -125,6 +140,17 @@ export default function RequestsPage() {
       // If it's a company request and has a slug, copy it to profile
       if (request.request_type === 'COMPANY' && request.company_slug) {
         updateData.company_slug = request.company_slug
+      }
+
+      // ✅ DUAL APPROVAL: If specialist is joining a company, add company_id to profile
+      // This links the specialist to the company so they appear in company's specialists list
+      if (request.request_type === 'SPECIALIST' && fullRequest.company_id) {
+        updateData.company_id = fullRequest.company_id
+        // Also copy company_slug from the request for URL purposes
+        if (fullRequest.company_slug) {
+          updateData.company_slug = fullRequest.company_slug
+        }
+        console.log(`✅ Linking specialist ${request.user_id} to company ${fullRequest.company_id}`)
       }
 
       const { error: profileError } = await supabase
@@ -482,7 +508,27 @@ export default function RequestsPage() {
                               {getRequestTypeBadge(request.request_type)}
                             </div>
 
-                            {request.company_slug && (
+                            {/* Show company info for specialist joining existing company */}
+                            {request.request_type === 'SPECIALIST' && request.company_id && (
+                              <div className="sm:col-span-2">
+                                <label className={`mb-2 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                  <Building2 className="h-4 w-4" />
+                                  უერთდება კომპანიას
+                                </label>
+                                <div className={`rounded-lg border p-3 ${isDark ? 'border-blue-500/20 bg-blue-500/10' : 'border-blue-500/20 bg-blue-500/5'}`}>
+                                  <p className={`font-medium ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                                    {request.full_name}
+                                  </p>
+                                  {request.company_slug && (
+                                    <p className={`mt-1 font-mono text-xs ${isDark ? 'text-blue-400/60' : 'text-blue-600/60'}`}>
+                                      @{request.company_slug}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {request.company_slug && request.request_type === 'COMPANY' && (
                               <div className="sm:col-span-2">
                                 <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                                   კომპანიის Slug
