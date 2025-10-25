@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { useTheme } from '@/contexts/ThemeContext';
 import { createClient } from '@/lib/supabase/client';
 import { Building2, Loader2 } from 'lucide-react';
@@ -26,6 +27,8 @@ export default function CompaniesPage() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const supabase = createClient();
+  const pathname = usePathname();
+  const locale = pathname?.split('/')[1] || 'ka';
 
   const [companies, setCompanies] = useState<Company[]>([]);
   const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
@@ -72,20 +75,21 @@ export default function CompaniesPage() {
         setCompanies(companiesData || []);
         setFilteredCompanies(companiesData || []);
 
-        // Extract unique cities from address field
-        const uniqueCities = Array.from(
-          new Set(
-            companiesData
-              ?.map((c) => {
-                if (!c.address) return null;
-                // Get last part after comma (city name)
-                const parts = c.address.split(',');
-                return parts[parts.length - 1]?.trim();
-              })
-              .filter(Boolean) as string[]
-          )
-        ).sort();
-        setCities(uniqueCities);
+        // Fetch cities from cities table with locale-specific names
+        const { data: citiesData, error: citiesError } = await supabase
+          .from('cities')
+          .select('id, name_ka, name_en, name_ru')
+          .order(locale === 'en' ? 'name_en' : locale === 'ru' ? 'name_ru' : 'name_ka');
+
+        if (citiesError) {
+          console.error('Error fetching cities:', citiesError.message);
+        } else {
+          // Remove duplicates and filter out empty values
+          const cityNames = [...new Set(citiesData?.map(c => 
+            locale === 'en' ? c.name_en : locale === 'ru' ? c.name_ru : c.name_ka
+          ).filter(Boolean) || [])];
+          setCities(cityNames);
+        }
 
         // Fetch ALL specialists count (company + independent)
         const { count: specialistsCount, error: specialistsError } = await supabase
@@ -121,35 +125,61 @@ export default function CompaniesPage() {
     };
 
     fetchData();
-  }, [supabase]);
+  }, [supabase, locale]);
 
   // Apply filters
   useEffect(() => {
-    let filtered = companies;
+    const applyFilters = async () => {
+      let filtered = companies;
 
-    // Search filter
-    if (searchTerm.trim()) {
-      filtered = filtered.filter((company) =>
-        company.full_name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
+      // Search filter
+      if (searchTerm.trim()) {
+        filtered = filtered.filter((company) =>
+          company.full_name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
 
-    // Company filter
-    if (selectedCompany) {
-      filtered = filtered.filter((company) => company.id === selectedCompany);
-    }
+      // Company filter
+      if (selectedCompany) {
+        filtered = filtered.filter((company) => company.id === selectedCompany);
+      }
 
-    // City filter
-    if (selectedCity) {
-      filtered = filtered.filter((company) =>
-        company.address?.toLowerCase().includes(selectedCity.toLowerCase())
-      );
-    }
+      // City filter - check against company_cities table
+      if (selectedCity) {
+        try {
+          // Get city ID from cities table (search in all language fields)
+          const { data: cityData } = await supabase
+            .from('cities')
+            .select('id')
+            .or(`name_ka.eq.${selectedCity},name_en.eq.${selectedCity},name_ru.eq.${selectedCity}`)
+            .single();
 
-    // TODO: Specialization filter (need to join with services/specialists)
+          if (cityData) {
+            // Get company IDs that have this city
+            const { data: companyCities } = await supabase
+              .from('company_cities')
+              .select('company_id')
+              .eq('city_id', cityData.id);
 
-    setFilteredCompanies(filtered);
-  }, [searchTerm, selectedCompany, selectedSpecialization, selectedCity, companies]);
+            const companyIdsWithCity = companyCities?.map(cc => cc.company_id) || [];
+            
+            // Filter companies by those IDs
+            filtered = filtered.filter((company) => 
+              companyIdsWithCity.includes(company.id)
+            );
+          }
+        } catch (error) {
+          console.error('Error filtering by city:', error);
+        }
+      }
+
+      // TODO: Specialization filter (need to join with services/specialists)
+
+      setFilteredCompanies(filtered);
+    };
+
+    applyFilters();
+  }, [searchTerm, selectedCompany, selectedSpecialization, selectedCity, companies, supabase]);
 
   const handleClearFilters = () => {
     setSelectedCompany(null);

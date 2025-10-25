@@ -37,7 +37,7 @@ export default function CompanyCard({
       }`}
     >
       {/* Logo Section */}
-      <div className={`flex h-24 items-center justify-center border-b p-3 ${isDark ? 'border-white/10' : 'border-black/10'}`}>
+      <div className={`flex flex-col items-center justify-center border-b p-2.5 ${isDark ? 'border-white/10' : 'border-black/10'}`}>
         {logo_url ? (
           <div className="relative h-16 w-16 overflow-hidden rounded-full bg-white">
             <Image
@@ -60,41 +60,43 @@ export default function CompanyCard({
             />
           </div>
         )}
-      </div>
-
-      {/* Content Section */}
-      <div className="p-3">
-        {/* Company Name */}
+        
+        {/* Company Name - moved here */}
         <h3
-          className={`mb-2 text-base font-bold line-clamp-1 transition-colors ${
+          className={`mt-2 text-base font-bold line-clamp-1 text-center transition-colors ${
             isDark ? 'text-white group-hover:text-blue-400' : 'text-black group-hover:text-blue-600'
           }`}
         >
           {full_name}
         </h3>
+      </div>
 
+      {/* Content Section */}
+      <div className="flex flex-col p-3 h-[200px]">
         {/* Summary */}
-        {summary && (
-          <p
-            className={`mb-3 line-clamp-2 text-xs leading-relaxed ${
-              isDark ? 'text-white/70' : 'text-black/70'
-            }`}
-          >
-            {summary}
-          </p>
-        )}
+        <div className="mb-2">
+          {summary && (
+            <p
+              className={`line-clamp-2 text-xs leading-relaxed ${
+                isDark ? 'text-white/70' : 'text-black/70'
+              }`}
+            >
+              {summary}
+            </p>
+          )}
+        </div>
 
-        {/* Info Items */}
-        <div className="space-y-1.5 mb-3">
+        {/* Info Items - flex-grow to push button down */}
+        <div className="space-y-1.5 mb-2 flex-grow">
           {address && (
-            <div className="flex items-start gap-1.5">
+            <div className="flex items-start gap-2">
               <MapPin
                 className={`flex-shrink-0 ${isDark ? 'text-white/40' : 'text-black/40'}`}
-                size={11}
+                size={14}
                 strokeWidth={1.5}
               />
               <span
-                className={`text-[10px] leading-tight line-clamp-2 ${
+                className={`text-xs leading-tight line-clamp-2 ${
                   isDark ? 'text-white/50' : 'text-black/50'
                 }`}
               >
@@ -104,14 +106,14 @@ export default function CompanyCard({
           )}
 
           {phone_number && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <Phone
                 className={`flex-shrink-0 ${isDark ? 'text-white/40' : 'text-black/40'}`}
-                size={11}
+                size={14}
                 strokeWidth={1.5}
               />
               <span
-                className={`text-[10px] ${
+                className={`text-xs ${
                   isDark ? 'text-white/50' : 'text-black/50'
                 }`}
               >
@@ -121,14 +123,14 @@ export default function CompanyCard({
           )}
 
           {website && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <Globe
                 className={`flex-shrink-0 ${isDark ? 'text-white/40' : 'text-black/40'}`}
-                size={11}
+                size={14}
                 strokeWidth={1.5}
               />
               <span
-                className={`text-[10px] ${
+                className={`text-xs ${
                   isDark ? 'text-white/50' : 'text-black/50'
                 }`}
               >
@@ -138,7 +140,7 @@ export default function CompanyCard({
           )}
         </div>
 
-        {/* View Button */}
+        {/* View Button - stays at bottom */}
         <div
           className={`flex items-center justify-center rounded py-2 text-xs font-medium transition-all ${
             isDark

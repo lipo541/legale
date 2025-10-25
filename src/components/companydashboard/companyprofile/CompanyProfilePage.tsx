@@ -16,6 +16,9 @@ const MapPicker = dynamic<{
   isDark?: boolean
 }>(() => import('@/components/companydashboard/companyprofile/MapPicker'), { ssr: false })
 
+// Dynamically import city picker component
+const CityPicker = dynamic(() => import('@/components/companydashboard/companyprofile/CityPicker'), { ssr: false })
+
 interface CompanyProfileData {
   id: string
   email: string | null
@@ -45,16 +48,22 @@ export default function CompanyProfilePage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [editing, setEditing] = useState(false)
+  const [editingSection, setEditingSection] = useState<string | null>(null)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [showMapPicker, setShowMapPicker] = useState(false)
+  const [showCityPicker, setShowCityPicker] = useState(false)
+  const [showLogoPreview, setShowLogoPreview] = useState(false)
   const [markerPosition, setMarkerPosition] = useState<{ lat: number; lng: number } | null>(null)
   const [profile, setProfile] = useState<CompanyProfileData | null>(null)
+  const [selectedCities, setSelectedCities] = useState<Array<{ id: string; name_ka: string; name_en: string }>>([])
+  const [selectedCityIds, setSelectedCityIds] = useState<string[]>([])
   const [editForm, setEditForm] = useState({
     full_name: '', email: '', phone_number: '', company_overview: '',
     summary: '', mission_statement: '', vision_values: '', history: '',
     how_we_work: '', website: '', address: '', map_link: '',
     facebook_link: '', instagram_link: '', linkedin_link: '', twitter_link: '', logo_url: ''
   })
+  const [tempSectionData, setTempSectionData] = useState<Record<string, string>>({})
 
   const supabase = createClient()
 
@@ -184,6 +193,9 @@ export default function CompanyProfilePage() {
           logo_url: data.logo_url || ''
         })
       }
+
+      // Fetch company cities
+      await fetchCompanyCities(user.id)
     } catch (error) {
       console.error('Fetch error:', error)
     } finally {
@@ -191,9 +203,112 @@ export default function CompanyProfilePage() {
     }
   }
 
+  const fetchCompanyCities = async (companyId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('company_cities')
+        .select('city_id, cities(id, name_ka, name_en, name_ru)')
+        .eq('company_id', companyId)
+
+      if (error) {
+        console.error('Error fetching company cities:', error)
+      } else {
+        interface CompanyCityItem {
+          cities: Array<{ id: string; name_ka: string; name_en: string; name_ru: string }>;
+        }
+        const cities = data?.flatMap((item: CompanyCityItem) => item.cities.map(city => ({
+          id: city.id,
+          name_ka: city.name_ka,
+          name_en: city.name_en,
+          name_ru: city.name_ru
+        }))) || []
+        setSelectedCities(cities)
+        setSelectedCityIds(cities.map(c => c.id))
+      }
+    } catch (error) {
+      console.error('Fetch cities error:', error)
+    }
+  }
+
+  const handleSaveCities = async (cityIds: string[]) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Delete all existing cities for this company
+      await supabase
+        .from('company_cities')
+        .delete()
+        .eq('company_id', user.id)
+
+      // Insert new cities
+      if (cityIds.length > 0) {
+        const insertData = cityIds.map(cityId => ({
+          company_id: user.id,
+          city_id: cityId
+        }))
+
+        const { error } = await supabase
+          .from('company_cities')
+          .insert(insertData)
+
+        if (error) {
+          console.error('Error saving cities:', error)
+          alert('ქალაქების შენახვისას მოხდა შეცდომა')
+          return
+        }
+      }
+
+      // Refresh cities list
+      await fetchCompanyCities(user.id)
+      alert('ქალაქები წარმატებით შეინახა!')
+    } catch (error) {
+      console.error('Save cities error:', error)
+      alert('ქალაქების შენახვისას მოხდა შეცდომა')
+    }
+  }
+
   useEffect(() => { fetchProfile() }, [])
 
   const handleEdit = () => setEditing(true)
+  
+  const handleEditSection = (section: string) => {
+    setEditingSection(section)
+    setTempSectionData({})
+  }
+  
+  const handleCancelSection = () => {
+    setEditingSection(null)
+    setTempSectionData({})
+  }
+  
+  const handleSaveSection = async (section: string, fields: string[]) => {
+    if (!profile) return
+    setSaving(true)
+    try {
+      const updateData: Record<string, string | number | boolean | null> = { updated_at: new Date().toISOString() }
+      
+      fields.forEach(field => {
+        updateData[field] = tempSectionData[field] !== undefined ? tempSectionData[field] : editForm[field as keyof typeof editForm]
+      })
+
+      const { error } = await supabase.from('profiles').update(updateData).eq('id', profile.id)
+
+      if (error) {
+        alert('შეცდომა განახლებისას: ' + error.message)
+      } else {
+        await fetchProfile()
+        setEditingSection(null)
+        setTempSectionData({})
+        alert('სექცია წარმატებით განახლდა!')
+      }
+    } catch (err) {
+      alert('შეცდომა შენახვისას')
+    } finally {
+      setSaving(false)
+    }
+  }
+  
   const handleCancel = () => {
     setEditing(false)
     if (profile) {
@@ -253,70 +368,466 @@ export default function CompanyProfilePage() {
         <div className="mb-8 pb-8 border-b border-white/10">
           <h2 className={`text-2xl font-bold mb-6 ${isDark ? 'text-white' : 'text-black'}`}>Company Logo</h2>
           <div className="flex items-center gap-6">
-            <div className={`flex h-24 w-24 items-center justify-center rounded-full ${isDark ? 'bg-white/10' : 'bg-black/10'}`}>
-              {(editForm.logo_url || profile.logo_url) ? <img src={editForm.logo_url || profile.logo_url || ''} alt={profile.full_name || 'Company'} className="h-full w-full rounded-full object-cover" /> : <Building2 className={`h-12 w-12 ${isDark ? 'text-white/60' : 'text-black/60'}`} />}
+            <div 
+              onClick={() => (editForm.logo_url || profile.logo_url) && setShowLogoPreview(true)}
+              className={`flex h-24 w-24 items-center justify-center rounded-full ${
+                isDark ? 'bg-white/10' : 'bg-black/10'
+              } ${(editForm.logo_url || profile.logo_url) ? 'cursor-pointer hover:ring-2 hover:ring-white/20 transition-all' : ''}`}
+            >
+              {(editForm.logo_url || profile.logo_url) ? (
+                <img 
+                  src={editForm.logo_url || profile.logo_url || ''} 
+                  alt={profile.full_name || 'Company'} 
+                  className="h-full w-full rounded-full object-cover" 
+                />
+              ) : (
+                <Building2 className={`h-12 w-12 ${isDark ? 'text-white/60' : 'text-black/60'}`} />
+              )}
             </div>
             <div className="flex-1">
-              {editing ? (
-                <div className="space-y-3">
-                  <label htmlFor="logo-upload" className={`flex items-center justify-center gap-2 rounded-xl border-2 border-dashed px-6 py-3 font-semibold transition-all duration-300 cursor-pointer hover:scale-[1.02] ${uploadingLogo ? 'opacity-50 cursor-not-allowed' : ''} ${isDark ? 'border-white/20 bg-white/5 text-white hover:bg-white/10' : 'border-black/20 bg-black/5 text-black hover:bg-black/10'}`}>
-                    {uploadingLogo ? (
-                      <>
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                        <span>ატვირთვა...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="h-5 w-5" />
-                        <span>{profile.logo_url ? 'ლოგოს შეცვლა' : 'ლოგოს ატვირთვა'}</span>
-                      </>
-                    )}
-                  </label>
-                  <input
-                    id="logo-upload"
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/svg+xml"
-                    onChange={handleLogoUpload}
-                    disabled={uploadingLogo}
-                    className="hidden"
-                  />
-                  <p className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-                    მხარდაჭერილი ფორმატები: JPEG, PNG, WebP, SVG (მაქს. 5MB)
-                  </p>
-                </div>
-              ) : (
-                <p className={`text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-                  {profile.logo_url || 'ლოგო არ არის ატვირთული'}
+              <div className="space-y-3">
+                <label 
+                  htmlFor="logo-upload" 
+                  className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all cursor-pointer hover:scale-[1.02] ${
+                    uploadingLogo ? 'opacity-50 cursor-not-allowed' : ''
+                  } ${
+                    isDark 
+                      ? 'bg-white/10 text-white hover:bg-white/20' 
+                      : 'bg-black/10 text-black hover:bg-black/20'
+                  }`}
+                >
+                  {uploadingLogo ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>ატვირთვა...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4" />
+                      <span>{profile.logo_url ? 'ლოგოს შეცვლა' : 'ლოგოს ატვირთვა'}</span>
+                    </>
+                  )}
+                </label>
+                <input
+                  id="logo-upload"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                  onChange={handleLogoUpload}
+                  disabled={uploadingLogo}
+                  className="hidden"
+                />
+                <p className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                  მხარდაჭერილი ფორმატები: JPEG, PNG, WebP, SVG (მაქს. 5MB)
                 </p>
-              )}
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="mb-8 pb-8 border-b border-white/10"><h2 className={`text-2xl font-bold mb-6 ${isDark ? 'text-white' : 'text-black'}`}>ძირითადი ინფორმაცია</h2><div className="grid gap-6 md:grid-cols-2"><div><label className={`mb-3 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}><Building2 className="h-4 w-4" />კომპანიის სახელი *</label>{editing ? <input type="text" value={editForm.full_name} onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })} placeholder="Georgian Group" className={`w-full rounded-lg border px-4 py-3 transition-colors ${isDark ? 'border-white/10 bg-white/5 text-white focus:border-white/20' : 'border-black/10 bg-black/5 text-black focus:border-black/20'}`} /> : <p className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>{profile.full_name || 'N/A'}</p>}</div><div className="md:col-span-2"><label className={`mb-3 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}><Building2 className="h-4 w-4" />კომპანიის მიმოხილვა (ქართული ენაზე)</label>{editing ? <textarea value={editForm.company_overview} onChange={(e) => handleTextareaChange('company_overview', e.target.value, e)} placeholder="Share the full story of the company..." rows={4} className={`w-full rounded-lg border px-4 py-3 transition-colors resize-none overflow-hidden ${isDark ? 'border-white/10 bg-white/5 text-white focus:border-white/20' : 'border-black/10 bg-black/5 text-black focus:border-black/20'}`} /> : <p className={`text-base ${isDark ? 'text-white/80' : 'text-black/80'}`}>{profile.company_overview || 'N/A'}</p>}</div></div></div>
-
-        <div className="mb-8 pb-8 border-b border-white/10"><h2 className={`text-2xl font-bold mb-6 ${isDark ? 'text-white' : 'text-black'}`}>Summary</h2><div><label className={`mb-3 text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>Brief introduction shown on public profile</label>{editing ? <textarea value={editForm.summary} onChange={(e) => handleTextareaChange('summary', e.target.value, e)} placeholder="Brief introduction shown on public profile" rows={3} className={`w-full rounded-lg border px-4 py-3 transition-colors resize-none overflow-hidden ${isDark ? 'border-white/10 bg-white/5 text-white focus:border-white/20' : 'border-black/10 bg-black/5 text-black focus:border-black/20'}`} /> : <p className={`text-base ${isDark ? 'text-white/80' : 'text-black/80'}`}>{profile.summary || 'N/A'}</p>}</div></div>
-
-        <div className="mb-8 pb-8 border-b border-white/10"><h2 className={`text-2xl font-bold mb-6 ${isDark ? 'text-white' : 'text-black'}`}>Mission Statement</h2><div><label className={`mb-3 text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>Why your company exists and the impact you aim to make</label>{editing ? <textarea value={editForm.mission_statement} onChange={(e) => handleTextareaChange('mission_statement', e.target.value, e)} placeholder="Why your company exists and the impact you aim to make" rows={3} className={`w-full rounded-lg border px-4 py-3 transition-colors resize-none overflow-hidden ${isDark ? 'border-white/10 bg-white/5 text-white focus:border-white/20' : 'border-black/10 bg-black/5 text-black focus:border-black/20'}`} /> : <p className={`text-base ${isDark ? 'text-white/80' : 'text-black/80'}`}>{profile.mission_statement || 'N/A'}</p>}</div></div>
-
-        <div className="mb-8 pb-8 border-b border-white/10"><h2 className={`text-2xl font-bold mb-6 ${isDark ? 'text-white' : 'text-black'}`}>Vision / Values</h2><div><label className={`mb-3 text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>What future you work toward and the values that guide you</label>{editing ? <textarea value={editForm.vision_values} onChange={(e) => handleTextareaChange('vision_values', e.target.value, e)} placeholder="What future you work toward and the values that guide you" rows={3} className={`w-full rounded-lg border px-4 py-3 transition-colors resize-none overflow-hidden ${isDark ? 'border-white/10 bg-white/5 text-white focus:border-white/20' : 'border-black/10 bg-black/5 text-black focus:border-black/20'}`} /> : <p className={`text-base ${isDark ? 'text-white/80' : 'text-black/80'}`}>{profile.vision_values || 'N/A'}</p>}</div></div>
-
-        <div className="mb-8 pb-8 border-b border-white/10"><h2 className={`text-2xl font-bold mb-6 ${isDark ? 'text-white' : 'text-black'}`}>History / Founding Story</h2><div><label className={`mb-3 text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>Share origin details, milestones, or founding story</label>{editing ? <textarea value={editForm.history} onChange={(e) => handleTextareaChange('history', e.target.value, e)} placeholder="Share origin details, milestones, or founding story" rows={3} className={`w-full rounded-lg border px-4 py-3 transition-colors resize-none overflow-hidden ${isDark ? 'border-white/10 bg-white/5 text-white focus:border-white/20' : 'border-black/10 bg-black/5 text-black focus:border-black/20'}`} /> : <p className={`text-base ${isDark ? 'text-white/80' : 'text-black/80'}`}>{profile.history || 'N/A'}</p>}</div></div>
-
-        <div className="mb-8 pb-8 border-b border-white/10"><h2 className={`text-2xl font-bold mb-6 ${isDark ? 'text-white' : 'text-black'}`}>How We Work</h2><div><label className={`mb-3 text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>Encourage visitors to reach out, ask questions, or request services</label>{editing ? <textarea value={editForm.how_we_work} onChange={(e) => handleTextareaChange('how_we_work', e.target.value, e)} placeholder="Encourage visitors to reach out, ask questions, or request services" rows={3} className={`w-full rounded-lg border px-4 py-3 transition-colors resize-none overflow-hidden ${isDark ? 'border-white/10 bg-white/5 text-white focus:border-white/20' : 'border-black/10 bg-black/5 text-black focus:border-black/20'}`} /> : <p className={`text-base ${isDark ? 'text-white/80' : 'text-black/80'}`}>{profile.how_we_work || 'N/A'}</p>}</div></div>
+        <div className="mb-8 pb-8 border-b border-white/10">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>ძირითადი ინფორმაცია</h2>
+            {!editing && editingSection !== 'basic' && (
+              <button
+                onClick={() => handleEditSection('basic')}
+                className={`rounded-lg p-2 transition-all hover:scale-110 ${
+                  isDark ? 'hover:bg-white/10' : 'hover:bg-black/5'
+                }`}
+              >
+                <Edit className={`h-4 w-4 ${isDark ? 'text-white/60' : 'text-black/60'}`} />
+              </button>
+            )}
+          </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div>
+              <label className={`mb-3 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                <Building2 className="h-4 w-4" />კომპანიის სახელი *
+              </label>
+              {(editing || editingSection === 'basic') ? (
+                <input
+                  type="text"
+                  value={editingSection === 'basic' ? (tempSectionData.full_name !== undefined ? tempSectionData.full_name : editForm.full_name) : editForm.full_name}
+                  onChange={(e) => editingSection === 'basic' ? setTempSectionData({ ...tempSectionData, full_name: e.target.value }) : setEditForm({ ...editForm, full_name: e.target.value })}
+                  placeholder="Georgian Group"
+                  className={`w-full rounded-lg border px-4 py-3 transition-colors ${isDark ? 'border-white/10 bg-white/5 text-white focus:border-white/20' : 'border-black/10 bg-black/5 text-black focus:border-black/20'}`}
+                />
+              ) : (
+                <p className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
+                  {profile.full_name || 'N/A'}
+                </p>
+              )}
+            </div>
+            <div className="md:col-span-2">
+              <label className={`mb-3 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                <Building2 className="h-4 w-4" />კომპანიის მიმოხილვა (ქართული ენაზე)
+              </label>
+              {(editing || editingSection === 'basic') ? (
+                <textarea
+                  value={editingSection === 'basic' ? (tempSectionData.company_overview !== undefined ? tempSectionData.company_overview : editForm.company_overview) : editForm.company_overview}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    if (editingSection === 'basic') {
+                      setTempSectionData({ ...tempSectionData, company_overview: value })
+                    } else {
+                      handleTextareaChange('company_overview', value, e)
+                    }
+                  }}
+                  placeholder="Share the full story of the company..."
+                  rows={4}
+                  className={`w-full rounded-lg border px-4 py-3 transition-colors resize-none overflow-hidden ${isDark ? 'border-white/10 bg-white/5 text-white focus:border-white/20' : 'border-black/10 bg-black/5 text-black focus:border-black/20'}`}
+                />
+              ) : (
+                <p className={`text-base ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+                  {profile.company_overview || 'N/A'}
+                </p>
+              )}
+            </div>
+          </div>
+          {editingSection === 'basic' && (
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => handleSaveSection('basic', ['full_name', 'company_overview'])}
+                disabled={saving}
+                className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-emerald-600 disabled:opacity-50"
+              >
+                {saving ? 'შენახვა...' : 'შენახვა'}
+              </button>
+              <button
+                onClick={handleCancelSection}
+                className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                  isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-black/10 text-black hover:bg-black/20'
+                }`}
+              >
+                გაუქმება
+              </button>
+            </div>
+          )}
+        </div>
 
         <div className="mb-8 pb-8 border-b border-white/10">
-          <h2 className={`text-2xl font-bold mb-6 ${isDark ? 'text-white' : 'text-black'}`}>Contact Information</h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>Summary</h2>
+            {!editing && editingSection !== 'summary' && (
+              <button
+                onClick={() => handleEditSection('summary')}
+                className={`rounded-lg p-2 transition-all hover:scale-110 ${
+                  isDark ? 'hover:bg-white/10' : 'hover:bg-black/5'
+                }`}
+              >
+                <Edit className={`h-4 w-4 ${isDark ? 'text-white/60' : 'text-black/60'}`} />
+              </button>
+            )}
+          </div>
+          <div>
+            <label className={`mb-3 text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+              Brief introduction shown on public profile
+            </label>
+            {(editing || editingSection === 'summary') ? (
+              <textarea
+                value={editingSection === 'summary' ? (tempSectionData.summary !== undefined ? tempSectionData.summary : editForm.summary) : editForm.summary}
+                onChange={(e) => {
+                  const value = e.target.value
+                  if (editingSection === 'summary') {
+                    setTempSectionData({ ...tempSectionData, summary: value })
+                  } else {
+                    handleTextareaChange('summary', value, e)
+                  }
+                }}
+                placeholder="Brief introduction shown on public profile"
+                rows={3}
+                className={`w-full rounded-lg border px-4 py-3 transition-colors resize-none overflow-hidden ${isDark ? 'border-white/10 bg-white/5 text-white focus:border-white/20' : 'border-black/10 bg-black/5 text-black focus:border-black/20'}`}
+              />
+            ) : (
+              <p className={`text-base ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+                {profile.summary || 'N/A'}
+              </p>
+            )}
+          </div>
+          {editingSection === 'summary' && (
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => handleSaveSection('summary', ['summary'])}
+                disabled={saving}
+                className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-emerald-600 disabled:opacity-50"
+              >
+                {saving ? 'შენახვა...' : 'შენახვა'}
+              </button>
+              <button
+                onClick={handleCancelSection}
+                className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                  isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-black/10 text-black hover:bg-black/20'
+                }`}
+              >
+                გაუქმება
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="mb-8 pb-8 border-b border-white/10">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>Mission Statement</h2>
+            {!editing && editingSection !== 'mission' && (
+              <button
+                onClick={() => handleEditSection('mission')}
+                className={`rounded-lg p-2 transition-all hover:scale-110 ${
+                  isDark ? 'hover:bg-white/10' : 'hover:bg-black/5'
+                }`}
+              >
+                <Edit className={`h-4 w-4 ${isDark ? 'text-white/60' : 'text-black/60'}`} />
+              </button>
+            )}
+          </div>
+          <div>
+            <label className={`mb-3 text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+              Why your company exists and the impact you aim to make
+            </label>
+            {(editing || editingSection === 'mission') ? (
+              <textarea
+                value={editingSection === 'mission' ? (tempSectionData.mission_statement !== undefined ? tempSectionData.mission_statement : editForm.mission_statement) : editForm.mission_statement}
+                onChange={(e) => {
+                  const value = e.target.value
+                  if (editingSection === 'mission') {
+                    setTempSectionData({ ...tempSectionData, mission_statement: value })
+                  } else {
+                    handleTextareaChange('mission_statement', value, e)
+                  }
+                }}
+                placeholder="Why your company exists and the impact you aim to make"
+                rows={3}
+                className={`w-full rounded-lg border px-4 py-3 transition-colors resize-none overflow-hidden ${isDark ? 'border-white/10 bg-white/5 text-white focus:border-white/20' : 'border-black/10 bg-black/5 text-black focus:border-black/20'}`}
+              />
+            ) : (
+              <p className={`text-base ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+                {profile.mission_statement || 'N/A'}
+              </p>
+            )}
+          </div>
+          {editingSection === 'mission' && (
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => handleSaveSection('mission', ['mission_statement'])}
+                disabled={saving}
+                className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-emerald-600 disabled:opacity-50"
+              >
+                {saving ? 'შენახვა...' : 'შენახვა'}
+              </button>
+              <button
+                onClick={handleCancelSection}
+                className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                  isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-black/10 text-black hover:bg-black/20'
+                }`}
+              >
+                გაუქმება
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="mb-8 pb-8 border-b border-white/10">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>Vision / Values</h2>
+            {!editing && editingSection !== 'vision' && (
+              <button
+                onClick={() => handleEditSection('vision')}
+                className={`rounded-lg p-2 transition-all hover:scale-110 ${
+                  isDark ? 'hover:bg-white/10' : 'hover:bg-black/5'
+                }`}
+              >
+                <Edit className={`h-4 w-4 ${isDark ? 'text-white/60' : 'text-black/60'}`} />
+              </button>
+            )}
+          </div>
+          <div>
+            <label className={`mb-3 text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+              What future you work toward and the values that guide you
+            </label>
+            {(editing || editingSection === 'vision') ? (
+              <textarea
+                value={editingSection === 'vision' ? (tempSectionData.vision_values !== undefined ? tempSectionData.vision_values : editForm.vision_values) : editForm.vision_values}
+                onChange={(e) => {
+                  const value = e.target.value
+                  if (editingSection === 'vision') {
+                    setTempSectionData({ ...tempSectionData, vision_values: value })
+                  } else {
+                    handleTextareaChange('vision_values', value, e)
+                  }
+                }}
+                placeholder="What future you work toward and the values that guide you"
+                rows={3}
+                className={`w-full rounded-lg border px-4 py-3 transition-colors resize-none overflow-hidden ${isDark ? 'border-white/10 bg-white/5 text-white focus:border-white/20' : 'border-black/10 bg-black/5 text-black focus:border-black/20'}`}
+              />
+            ) : (
+              <p className={`text-base ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+                {profile.vision_values || 'N/A'}
+              </p>
+            )}
+          </div>
+          {editingSection === 'vision' && (
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => handleSaveSection('vision', ['vision_values'])}
+                disabled={saving}
+                className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-emerald-600 disabled:opacity-50"
+              >
+                {saving ? 'შენახვა...' : 'შენახვა'}
+              </button>
+              <button
+                onClick={handleCancelSection}
+                className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                  isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-black/10 text-black hover:bg-black/20'
+                }`}
+              >
+                გაუქმება
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="mb-8 pb-8 border-b border-white/10">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>History / Founding Story</h2>
+            {!editing && editingSection !== 'history' && (
+              <button
+                onClick={() => handleEditSection('history')}
+                className={`rounded-lg p-2 transition-all hover:scale-110 ${
+                  isDark ? 'hover:bg-white/10' : 'hover:bg-black/5'
+                }`}
+              >
+                <Edit className={`h-4 w-4 ${isDark ? 'text-white/60' : 'text-black/60'}`} />
+              </button>
+            )}
+          </div>
+          <div>
+            <label className={`mb-3 text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+              Share origin details, milestones, or founding story
+            </label>
+            {(editing || editingSection === 'history') ? (
+              <textarea
+                value={editingSection === 'history' ? (tempSectionData.history !== undefined ? tempSectionData.history : editForm.history) : editForm.history}
+                onChange={(e) => {
+                  const value = e.target.value
+                  if (editingSection === 'history') {
+                    setTempSectionData({ ...tempSectionData, history: value })
+                  } else {
+                    handleTextareaChange('history', value, e)
+                  }
+                }}
+                placeholder="Share origin details, milestones, or founding story"
+                rows={3}
+                className={`w-full rounded-lg border px-4 py-3 transition-colors resize-none overflow-hidden ${isDark ? 'border-white/10 bg-white/5 text-white focus:border-white/20' : 'border-black/10 bg-black/5 text-black focus:border-black/20'}`}
+              />
+            ) : (
+              <p className={`text-base ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+                {profile.history || 'N/A'}
+              </p>
+            )}
+          </div>
+          {editingSection === 'history' && (
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => handleSaveSection('history', ['history'])}
+                disabled={saving}
+                className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-emerald-600 disabled:opacity-50"
+              >
+                {saving ? 'შენახვა...' : 'შენახვა'}
+              </button>
+              <button
+                onClick={handleCancelSection}
+                className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                  isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-black/10 text-black hover:bg-black/20'
+                }`}
+              >
+                გაუქმება
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="mb-8 pb-8 border-b border-white/10">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>How We Work</h2>
+            {!editing && editingSection !== 'work' && (
+              <button
+                onClick={() => handleEditSection('work')}
+                className={`rounded-lg p-2 transition-all hover:scale-110 ${
+                  isDark ? 'hover:bg-white/10' : 'hover:bg-black/5'
+                }`}
+              >
+                <Edit className={`h-4 w-4 ${isDark ? 'text-white/60' : 'text-black/60'}`} />
+              </button>
+            )}
+          </div>
+          <div>
+            <label className={`mb-3 text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+              Encourage visitors to reach out, ask questions, or request services
+            </label>
+            {(editing || editingSection === 'work') ? (
+              <textarea
+                value={editingSection === 'work' ? (tempSectionData.how_we_work !== undefined ? tempSectionData.how_we_work : editForm.how_we_work) : editForm.how_we_work}
+                onChange={(e) => {
+                  const value = e.target.value
+                  if (editingSection === 'work') {
+                    setTempSectionData({ ...tempSectionData, how_we_work: value })
+                  } else {
+                    handleTextareaChange('how_we_work', value, e)
+                  }
+                }}
+                placeholder="Encourage visitors to reach out, ask questions, or request services"
+                rows={3}
+                className={`w-full rounded-lg border px-4 py-3 transition-colors resize-none overflow-hidden ${isDark ? 'border-white/10 bg-white/5 text-white focus:border-white/20' : 'border-black/10 bg-black/5 text-black focus:border-black/20'}`}
+              />
+            ) : (
+              <p className={`text-base ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+                {profile.how_we_work || 'N/A'}
+              </p>
+            )}
+          </div>
+          {editingSection === 'work' && (
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => handleSaveSection('work', ['how_we_work'])}
+                disabled={saving}
+                className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-emerald-600 disabled:opacity-50"
+              >
+                {saving ? 'შენახვა...' : 'შენახვა'}
+              </button>
+              <button
+                onClick={handleCancelSection}
+                className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                  isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-black/10 text-black hover:bg-black/20'
+                }`}
+              >
+                გაუქმება
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="mb-8 pb-8 border-b border-white/10">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>Contact Information</h2>
+            {!editing && editingSection !== 'contact' && (
+              <button
+                onClick={() => handleEditSection('contact')}
+                className={`rounded-lg p-2 transition-all hover:scale-110 ${
+                  isDark ? 'hover:bg-white/10' : 'hover:bg-black/5'
+                }`}
+              >
+                <Edit className={`h-4 w-4 ${isDark ? 'text-white/60' : 'text-black/60'}`} />
+              </button>
+            )}
+          </div>
           <div className="grid gap-6 md:grid-cols-2">
             <div>
               <label className={`mb-3 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                 <Globe className="h-4 w-4" />Website
               </label>
-              {editing ? (
+              {(editing || editingSection === 'contact') ? (
                 <input 
                   type="url" 
-                  value={editForm.website} 
-                  onChange={(e) => setEditForm({ ...editForm, website: e.target.value })} 
+                  value={editingSection === 'contact' ? (tempSectionData.website !== undefined ? tempSectionData.website : editForm.website) : editForm.website}
+                  onChange={(e) => editingSection === 'contact' ? setTempSectionData({ ...tempSectionData, website: e.target.value }) : setEditForm({ ...editForm, website: e.target.value })}
                   placeholder="https://example.com" 
                   className={`w-full rounded-lg border px-4 py-3 transition-colors ${isDark ? 'border-white/10 bg-white/5 text-white focus:border-white/20' : 'border-black/10 bg-black/5 text-black focus:border-black/20'}`} 
                 />
@@ -330,11 +841,11 @@ export default function CompanyProfilePage() {
               <label className={`mb-3 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                 <Mail className="h-4 w-4" />Email
               </label>
-              {editing ? (
+              {(editing || editingSection === 'contact') ? (
                 <input 
                   type="email" 
-                  value={editForm.email} 
-                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} 
+                  value={editingSection === 'contact' ? (tempSectionData.email !== undefined ? tempSectionData.email : editForm.email) : editForm.email}
+                  onChange={(e) => editingSection === 'contact' ? setTempSectionData({ ...tempSectionData, email: e.target.value }) : setEditForm({ ...editForm, email: e.target.value })}
                   placeholder="contact@company.com" 
                   className={`w-full rounded-lg border px-4 py-3 transition-colors ${isDark ? 'border-white/10 bg-white/5 text-white focus:border-white/20' : 'border-black/10 bg-black/5 text-black focus:border-black/20'}`} 
                 />
@@ -348,11 +859,11 @@ export default function CompanyProfilePage() {
               <label className={`mb-3 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                 <Phone className="h-4 w-4" />Phone Number
               </label>
-              {editing ? (
+              {(editing || editingSection === 'contact') ? (
                 <input 
                   type="tel" 
-                  value={editForm.phone_number} 
-                  onChange={(e) => setEditForm({ ...editForm, phone_number: e.target.value })} 
+                  value={editingSection === 'contact' ? (tempSectionData.phone_number !== undefined ? tempSectionData.phone_number : editForm.phone_number) : editForm.phone_number}
+                  onChange={(e) => editingSection === 'contact' ? setTempSectionData({ ...tempSectionData, phone_number: e.target.value }) : setEditForm({ ...editForm, phone_number: e.target.value })}
                   placeholder="+995 551 911 951" 
                   className={`w-full rounded-lg border px-4 py-3 transition-colors ${isDark ? 'border-white/10 bg-white/5 text-white focus:border-white/20' : 'border-black/10 bg-black/5 text-black focus:border-black/20'}`} 
                 />
@@ -373,11 +884,11 @@ export default function CompanyProfilePage() {
               <label className={`mb-3 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                 <MapPin className="h-4 w-4" />Address
               </label>
-              {editing ? (
+              {(editing || editingSection === 'contact') ? (
                 <input 
                   type="text" 
-                  value={editForm.address} 
-                  onChange={(e) => setEditForm({ ...editForm, address: e.target.value })} 
+                  value={editingSection === 'contact' ? (tempSectionData.address !== undefined ? tempSectionData.address : editForm.address) : editForm.address}
+                  onChange={(e) => editingSection === 'contact' ? setTempSectionData({ ...tempSectionData, address: e.target.value }) : setEditForm({ ...editForm, address: e.target.value })}
                   placeholder="Georgia, Tbilisi, Agmashenebeli str." 
                   className={`w-full rounded-lg border px-4 py-3 transition-colors ${isDark ? 'border-white/10 bg-white/5 text-white focus:border-white/20' : 'border-black/10 bg-black/5 text-black focus:border-black/20'}`} 
                 />
@@ -391,7 +902,7 @@ export default function CompanyProfilePage() {
               <label className={`mb-3 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                 <MapPin className="h-4 w-4" />Map Link
               </label>
-              {editing ? (
+              {(editing || editingSection === 'contact') ? (
                 <div className="space-y-3">
                   <button
                     type="button"
@@ -426,18 +937,77 @@ export default function CompanyProfilePage() {
           </div>
         </div>
 
+        <div className="mb-8 pb-8 border-b border-white/10">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>ქალაქები</h2>
+          </div>
+          <div>
+            <label className={`mb-3 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+              <MapPin className="h-4 w-4" />ქალაქები სადაც თქვენი კომპანია მუშაობს
+            </label>
+            
+            {/* City Selection Button */}
+            <button
+              onClick={() => setShowCityPicker(true)}
+              className={`mb-4 flex items-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium transition-all hover:scale-[1.02] ${
+                isDark 
+                  ? 'border-white/10 bg-white/5 text-white hover:bg-white/10' 
+                  : 'border-black/10 bg-black/5 text-black hover:bg-black/10'
+              }`}
+            >
+              <MapPin className="h-4 w-4" />
+              {selectedCities.length > 0 ? 'ქალაქების რედაქტირება' : 'აირჩიეთ ქალაქები'}
+            </button>
+
+            {/* Selected Cities Display */}
+            {selectedCities.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {selectedCities.map((city) => (
+                  <div
+                    key={city.id}
+                    className={`flex items-center gap-2 rounded-lg border px-3 py-2 ${
+                      isDark
+                        ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                        : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600'
+                    }`}
+                  >
+                    <MapPin className="h-3 w-3" />
+                    <span className="text-sm font-medium">{city.name_ka}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className={`text-sm ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                ქალაქები არ არის არჩეული
+              </p>
+            )}
+          </div>
+        </div>
+
         <div>
-          <h2 className={`text-2xl font-bold mb-6 ${isDark ? 'text-white' : 'text-black'}`}>Social Links</h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>Social Links</h2>
+            {!editing && editingSection !== 'social' && (
+              <button
+                onClick={() => handleEditSection('social')}
+                className={`rounded-lg p-2 transition-all hover:scale-110 ${
+                  isDark ? 'hover:bg-white/10' : 'hover:bg-black/5'
+                }`}
+              >
+                <Edit className={`h-4 w-4 ${isDark ? 'text-white/60' : 'text-black/60'}`} />
+              </button>
+            )}
+          </div>
           <div className="grid gap-6 md:grid-cols-2">
             <div>
               <label className={`mb-3 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                 <Facebook className="h-4 w-4" />Facebook
               </label>
-              {editing ? (
+              {(editing || editingSection === 'social') ? (
                 <input 
                   type="url" 
-                  value={editForm.facebook_link} 
-                  onChange={(e) => setEditForm({ ...editForm, facebook_link: e.target.value })} 
+                  value={editingSection === 'social' ? (tempSectionData.facebook_link !== undefined ? tempSectionData.facebook_link : editForm.facebook_link) : editForm.facebook_link}
+                  onChange={(e) => editingSection === 'social' ? setTempSectionData({ ...tempSectionData, facebook_link: e.target.value }) : setEditForm({ ...editForm, facebook_link: e.target.value })}
                   placeholder="https://facebook.com/your-company" 
                   className={`w-full rounded-lg border px-4 py-3 transition-colors ${isDark ? 'border-white/10 bg-white/5 text-white focus:border-white/20' : 'border-black/10 bg-black/5 text-black focus:border-black/20'}`} 
                 />
@@ -451,11 +1021,11 @@ export default function CompanyProfilePage() {
               <label className={`mb-3 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                 <Instagram className="h-4 w-4" />Instagram
               </label>
-              {editing ? (
+              {(editing || editingSection === 'social') ? (
                 <input 
                   type="url" 
-                  value={editForm.instagram_link} 
-                  onChange={(e) => setEditForm({ ...editForm, instagram_link: e.target.value })} 
+                  value={editingSection === 'social' ? (tempSectionData.instagram_link !== undefined ? tempSectionData.instagram_link : editForm.instagram_link) : editForm.instagram_link}
+                  onChange={(e) => editingSection === 'social' ? setTempSectionData({ ...tempSectionData, instagram_link: e.target.value }) : setEditForm({ ...editForm, instagram_link: e.target.value })}
                   placeholder="https://instagram.com/your-company" 
                   className={`w-full rounded-lg border px-4 py-3 transition-colors ${isDark ? 'border-white/10 bg-white/5 text-white focus:border-white/20' : 'border-black/10 bg-black/5 text-black focus:border-black/20'}`} 
                 />
@@ -469,11 +1039,11 @@ export default function CompanyProfilePage() {
               <label className={`mb-3 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                 <Linkedin className="h-4 w-4" />LinkedIn
               </label>
-              {editing ? (
+              {(editing || editingSection === 'social') ? (
                 <input 
                   type="url" 
-                  value={editForm.linkedin_link} 
-                  onChange={(e) => setEditForm({ ...editForm, linkedin_link: e.target.value })} 
+                  value={editingSection === 'social' ? (tempSectionData.linkedin_link !== undefined ? tempSectionData.linkedin_link : editForm.linkedin_link) : editForm.linkedin_link}
+                  onChange={(e) => editingSection === 'social' ? setTempSectionData({ ...tempSectionData, linkedin_link: e.target.value }) : setEditForm({ ...editForm, linkedin_link: e.target.value })}
                   placeholder="https://linkedin.com/company/your-company" 
                   className={`w-full rounded-lg border px-4 py-3 transition-colors ${isDark ? 'border-white/10 bg-white/5 text-white focus:border-white/20' : 'border-black/10 bg-black/5 text-black focus:border-black/20'}`} 
                 />
@@ -487,11 +1057,11 @@ export default function CompanyProfilePage() {
               <label className={`mb-3 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                 <Twitter className="h-4 w-4" />Twitter
               </label>
-              {editing ? (
+              {(editing || editingSection === 'social') ? (
                 <input 
                   type="url" 
-                  value={editForm.twitter_link} 
-                  onChange={(e) => setEditForm({ ...editForm, twitter_link: e.target.value })} 
+                  value={editingSection === 'social' ? (tempSectionData.twitter_link !== undefined ? tempSectionData.twitter_link : editForm.twitter_link) : editForm.twitter_link}
+                  onChange={(e) => editingSection === 'social' ? setTempSectionData({ ...tempSectionData, twitter_link: e.target.value }) : setEditForm({ ...editForm, twitter_link: e.target.value })}
                   placeholder="https://twitter.com/your-company" 
                   className={`w-full rounded-lg border px-4 py-3 transition-colors ${isDark ? 'border-white/10 bg-white/5 text-white focus:border-white/20' : 'border-black/10 bg-black/5 text-black focus:border-black/20'}`} 
                 />
@@ -502,6 +1072,25 @@ export default function CompanyProfilePage() {
               )}
             </div>
           </div>
+          {editingSection === 'social' && (
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => handleSaveSection('social', ['facebook_link', 'instagram_link', 'linkedin_link', 'twitter_link'])}
+                disabled={saving}
+                className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-emerald-600 disabled:opacity-50"
+              >
+                {saving ? 'შენახვა...' : 'შენახვა'}
+              </button>
+              <button
+                onClick={handleCancelSection}
+                className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                  isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-black/10 text-black hover:bg-black/20'
+                }`}
+              >
+                გაუქმება
+              </button>
+            </div>
+          )}
         </div>
 
         {editing && <div className="mt-8 flex gap-4 border-t pt-6 border-white/10"><button onClick={handleSave} disabled={saving} className={`flex-1 rounded-xl px-6 py-3 font-semibold text-white transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 ${isDark ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}>{saving ? <span className="flex items-center justify-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />შენახვა...</span> : <span className="flex items-center justify-center gap-2"><Save className="h-4 w-4" />Update Company</span>}</button><button onClick={handleCancel} className={`flex-1 rounded-xl px-6 py-3 font-semibold transition-all duration-300 hover:scale-[1.02] ${isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-black/10 text-black hover:bg-black/20'}`}><span className="flex items-center justify-center gap-2"><X className="h-4 w-4" />გაუქმება</span></button></div>}
@@ -555,6 +1144,34 @@ export default function CompanyProfilePage() {
             <p className={`mt-3 text-xs ${isDark ? 'text-white/60' : 'text-black/60'}`}>
               💡 დააჭირეთ რუკაზე რომ მონიშნოთ მდებარეობა. პინს შეგიძლიათ გადაიტანოთ სასურველ ადგილას.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* City Picker Modal */}
+      {showCityPicker && (
+        <CityPicker
+          onClose={() => setShowCityPicker(false)}
+          onSave={handleSaveCities}
+          selectedCityIds={selectedCityIds}
+        />
+      )}
+
+      {/* Logo Preview Modal */}
+      {showLogoPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" onClick={() => setShowLogoPreview(false)}>
+          <div className="relative" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setShowLogoPreview(false)}
+              className="absolute -top-4 -right-4 z-10 rounded-full bg-black/50 p-2 text-white transition-all hover:bg-black/70 hover:scale-110"
+            >
+              <X className="h-6 w-6" strokeWidth={2} />
+            </button>
+            <img
+              src={editForm.logo_url || profile.logo_url || ''}
+              alt={profile.full_name || 'Company Logo'}
+              className="max-h-[90vh] max-w-full rounded-2xl object-contain shadow-2xl"
+            />
           </div>
         </div>
       )}
