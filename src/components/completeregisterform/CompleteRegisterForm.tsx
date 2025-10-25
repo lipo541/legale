@@ -350,19 +350,19 @@ export default function CompleteRegisterForm() {
             <ul className={`space-y-2 text-xs ${isDark ? 'text-white/60' : 'text-black/60'}`}>
               <li className="flex items-start gap-2">
                 <span className={isDark ? 'text-white/40' : 'text-black/40'}>•</span>
-                <span>We'll review your application within 2-3 business days</span>
+                <span>We&apos;ll review your application within 2-3 business days</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className={isDark ? 'text-white/40' : 'text-black/40'}>•</span>
-                <span>If approved, you'll receive access to your personalized CMS</span>
+                <span>If approved, you&apos;ll receive access to your personalized CMS</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className={isDark ? 'text-white/40' : 'text-black/40'}>•</span>
-                <span>You'll be able to manage your profile and publish content</span>
+                <span>You&apos;ll be able to manage your profile and publish content</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className={isDark ? 'text-white/40' : 'text-black/40'}>•</span>
-                <span>We'll contact you via email with the decision</span>
+                <span>We&apos;ll contact you via email with the decision</span>
               </li>
             </ul>
           </div>

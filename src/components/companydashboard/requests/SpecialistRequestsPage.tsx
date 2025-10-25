@@ -63,7 +63,12 @@ export default function SpecialistRequestsPage({ onRequestUpdate }: { onRequestU
       if (error) {
         console.error('Error fetching requests:', error)
       } else {
-        setRequests(data as any || [])
+        // Transform the data to extract single profile object from array
+        const transformedData = (data || []).map(item => ({
+          ...item,
+          profiles: Array.isArray(item.profiles) ? item.profiles[0] : item.profiles
+        }))
+        setRequests(transformedData)
       }
     } catch (error) {
       console.error('Error:', error)

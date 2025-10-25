@@ -111,7 +111,12 @@ export default function RequestsPage() {
       // Update user role in profiles
       const newRole = request.request_type === 'SPECIALIST' ? 'SPECIALIST' : 'COMPANY'
       
-      const updateData: any = {
+      const updateData: {
+        role: string
+        full_name: string
+        updated_at: string
+        company_slug?: string
+      } = {
         role: newRole,
         full_name: request.full_name,
         updated_at: new Date().toISOString()
@@ -307,7 +312,7 @@ export default function RequestsPage() {
         <div className={`rounded-xl border ${isDark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
+            onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED')}
             className={`w-full rounded-xl bg-transparent py-3 px-4 outline-none transition-colors ${
               isDark ? 'text-white' : 'text-black'
             }`}
