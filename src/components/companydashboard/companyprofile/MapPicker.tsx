@@ -8,6 +8,7 @@ import { OpenStreetMapProvider } from 'leaflet-geosearch'
 import { Search, MapPin, Loader2 } from 'lucide-react'
 
 // Fix default marker icon issue in Next.js
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 delete (L.Icon.Default.prototype as any)._getIconUrl
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
