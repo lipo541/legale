@@ -12,7 +12,19 @@ import {
   Calendar,
   Loader2,
   Shield,
-  X
+  X,
+  Phone,
+  Globe,
+  MapPin,
+  Facebook,
+  Instagram,
+  Linkedin,
+  Twitter,
+  FileText,
+  Target,
+  Lightbulb,
+  History,
+  Users
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -23,8 +35,27 @@ interface CompanyProfile {
   role: 'COMPANY'
   avatar_url: string | null
   company_slug: string | null
+  phone_number: string | null
   created_at: string
   updated_at: string
+  // Company Overview
+  company_overview: string | null
+  summary: string | null
+  mission_statement: string | null
+  vision_values: string | null
+  history: string | null
+  how_we_work: string | null
+  // Contact
+  website: string | null
+  address: string | null
+  map_link: string | null
+  // Social Links
+  facebook_link: string | null
+  instagram_link: string | null
+  linkedin_link: string | null
+  twitter_link: string | null
+  // Logo
+  logo_url: string | null
 }
 
 export default function CompaniesPage() {
@@ -38,7 +69,21 @@ export default function CompaniesPage() {
   const [editForm, setEditForm] = useState({
     full_name: '',
     email: '',
-    company_slug: ''
+    phone_number: '',
+    company_slug: '',
+    company_overview: '',
+    summary: '',
+    mission_statement: '',
+    vision_values: '',
+    history: '',
+    how_we_work: '',
+    website: '',
+    address: '',
+    map_link: '',
+    facebook_link: '',
+    instagram_link: '',
+    linkedin_link: '',
+    twitter_link: ''
   })
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -85,7 +130,21 @@ export default function CompaniesPage() {
     setEditForm({
       full_name: company.full_name || '',
       email: company.email || '',
-      company_slug: company.company_slug || ''
+      phone_number: company.phone_number || '',
+      company_slug: company.company_slug || '',
+      company_overview: company.company_overview || '',
+      summary: company.summary || '',
+      mission_statement: company.mission_statement || '',
+      vision_values: company.vision_values || '',
+      history: company.history || '',
+      how_we_work: company.how_we_work || '',
+      website: company.website || '',
+      address: company.address || '',
+      map_link: company.map_link || '',
+      facebook_link: company.facebook_link || '',
+      instagram_link: company.instagram_link || '',
+      linkedin_link: company.linkedin_link || '',
+      twitter_link: company.twitter_link || ''
     })
   }
 
@@ -100,7 +159,21 @@ export default function CompaniesPage() {
         .update({
           full_name: editForm.full_name,
           email: editForm.email,
+          phone_number: editForm.phone_number,
           company_slug: editForm.company_slug,
+          company_overview: editForm.company_overview,
+          summary: editForm.summary,
+          mission_statement: editForm.mission_statement,
+          vision_values: editForm.vision_values,
+          history: editForm.history,
+          how_we_work: editForm.how_we_work,
+          website: editForm.website,
+          address: editForm.address,
+          map_link: editForm.map_link,
+          facebook_link: editForm.facebook_link,
+          instagram_link: editForm.instagram_link,
+          linkedin_link: editForm.linkedin_link,
+          twitter_link: editForm.twitter_link,
           updated_at: new Date().toISOString()
         })
         .eq('id', editingCompany.id)
@@ -112,6 +185,7 @@ export default function CompaniesPage() {
         await fetchCompanies()
         setEditingCompany(null)
         setExpandedId(null)
+        alert('წარმატებით განახლდა! ✅')
       }
     } catch (err) {
       console.error('Catch error:', err)
@@ -295,6 +369,7 @@ export default function CompaniesPage() {
                               </div>
 
                               <div className="grid gap-4 sm:grid-cols-2">
+                                {/* Basic Info */}
                                 <div>
                                   <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                                     კომპანიის სახელი
@@ -327,7 +402,24 @@ export default function CompaniesPage() {
                                   />
                                 </div>
 
-                                <div className="sm:col-span-2">
+                                <div>
+                                  <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                    ტელეფონი
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={editForm.phone_number}
+                                    onChange={(e) => setEditForm({ ...editForm, phone_number: e.target.value })}
+                                    placeholder="+995 XXX XXX XXX"
+                                    className={`w-full rounded-lg border px-4 py-2 transition-colors ${
+                                      isDark
+                                        ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
+                                        : 'border-black/10 bg-black/5 text-black focus:border-black/20'
+                                    }`}
+                                  />
+                                </div>
+
+                                <div>
                                   <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                                     Slug (URL სახელი)
                                   </label>
@@ -343,11 +435,248 @@ export default function CompaniesPage() {
                                     }`}
                                   />
                                   <p className={`mt-1 text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-                                    URL-სთვის გამოიყენება: /practices/{editForm.company_slug || 'slug'}
+                                    URL: /practices/{editForm.company_slug || 'slug'}
                                   </p>
                                 </div>
 
+                                {/* Company Overview */}
+                                <div className="sm:col-span-2 mt-4">
+                                  <h4 className={`mb-3 text-sm font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+                                    კომპანიის შესახებ
+                                  </h4>
+                                </div>
+
                                 <div className="sm:col-span-2">
+                                  <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                    მოკლე აღწერა
+                                  </label>
+                                  <textarea
+                                    value={editForm.summary}
+                                    onChange={(e) => setEditForm({ ...editForm, summary: e.target.value })}
+                                    rows={2}
+                                    className={`w-full rounded-lg border px-4 py-2 transition-colors ${
+                                      isDark
+                                        ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
+                                        : 'border-black/10 bg-black/5 text-black focus:border-black/20'
+                                    }`}
+                                  />
+                                </div>
+
+                                <div className="sm:col-span-2">
+                                  <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                    დეტალური აღწერა
+                                  </label>
+                                  <textarea
+                                    value={editForm.company_overview}
+                                    onChange={(e) => setEditForm({ ...editForm, company_overview: e.target.value })}
+                                    rows={4}
+                                    className={`w-full rounded-lg border px-4 py-2 transition-colors ${
+                                      isDark
+                                        ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
+                                        : 'border-black/10 bg-black/5 text-black focus:border-black/20'
+                                    }`}
+                                  />
+                                </div>
+
+                                <div className="sm:col-span-2">
+                                  <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                    მისია
+                                  </label>
+                                  <textarea
+                                    value={editForm.mission_statement}
+                                    onChange={(e) => setEditForm({ ...editForm, mission_statement: e.target.value })}
+                                    rows={3}
+                                    className={`w-full rounded-lg border px-4 py-2 transition-colors ${
+                                      isDark
+                                        ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
+                                        : 'border-black/10 bg-black/5 text-black focus:border-black/20'
+                                    }`}
+                                  />
+                                </div>
+
+                                <div className="sm:col-span-2">
+                                  <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                    ხედვა და ღირებულებები
+                                  </label>
+                                  <textarea
+                                    value={editForm.vision_values}
+                                    onChange={(e) => setEditForm({ ...editForm, vision_values: e.target.value })}
+                                    rows={3}
+                                    className={`w-full rounded-lg border px-4 py-2 transition-colors ${
+                                      isDark
+                                        ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
+                                        : 'border-black/10 bg-black/5 text-black focus:border-black/20'
+                                    }`}
+                                  />
+                                </div>
+
+                                <div className="sm:col-span-2">
+                                  <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                    ისტორია
+                                  </label>
+                                  <textarea
+                                    value={editForm.history}
+                                    onChange={(e) => setEditForm({ ...editForm, history: e.target.value })}
+                                    rows={3}
+                                    className={`w-full rounded-lg border px-4 py-2 transition-colors ${
+                                      isDark
+                                        ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
+                                        : 'border-black/10 bg-black/5 text-black focus:border-black/20'
+                                    }`}
+                                  />
+                                </div>
+
+                                <div className="sm:col-span-2">
+                                  <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                    როგორ ვმუშაობთ
+                                  </label>
+                                  <textarea
+                                    value={editForm.how_we_work}
+                                    onChange={(e) => setEditForm({ ...editForm, how_we_work: e.target.value })}
+                                    rows={3}
+                                    className={`w-full rounded-lg border px-4 py-2 transition-colors ${
+                                      isDark
+                                        ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
+                                        : 'border-black/10 bg-black/5 text-black focus:border-black/20'
+                                    }`}
+                                  />
+                                </div>
+
+                                {/* Contact Information */}
+                                <div className="sm:col-span-2 mt-4">
+                                  <h4 className={`mb-3 text-sm font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+                                    საკონტაქტო ინფორმაცია
+                                  </h4>
+                                </div>
+
+                                <div>
+                                  <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                    ვებსაიტი
+                                  </label>
+                                  <input
+                                    type="url"
+                                    value={editForm.website}
+                                    onChange={(e) => setEditForm({ ...editForm, website: e.target.value })}
+                                    placeholder="https://example.com"
+                                    className={`w-full rounded-lg border px-4 py-2 transition-colors ${
+                                      isDark
+                                        ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
+                                        : 'border-black/10 bg-black/5 text-black focus:border-black/20'
+                                    }`}
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                    მისამართი
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={editForm.address}
+                                    onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                                    placeholder="თბილისი, საქართველო"
+                                    className={`w-full rounded-lg border px-4 py-2 transition-colors ${
+                                      isDark
+                                        ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
+                                        : 'border-black/10 bg-black/5 text-black focus:border-black/20'
+                                    }`}
+                                  />
+                                </div>
+
+                                <div className="sm:col-span-2">
+                                  <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                    რუკის ლინკი
+                                  </label>
+                                  <input
+                                    type="url"
+                                    value={editForm.map_link}
+                                    onChange={(e) => setEditForm({ ...editForm, map_link: e.target.value })}
+                                    placeholder="https://maps.google.com/..."
+                                    className={`w-full rounded-lg border px-4 py-2 transition-colors ${
+                                      isDark
+                                        ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
+                                        : 'border-black/10 bg-black/5 text-black focus:border-black/20'
+                                    }`}
+                                  />
+                                </div>
+
+                                {/* Social Links */}
+                                <div className="sm:col-span-2 mt-4">
+                                  <h4 className={`mb-3 text-sm font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+                                    სოციალური ქსელები
+                                  </h4>
+                                </div>
+
+                                <div>
+                                  <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                    Facebook
+                                  </label>
+                                  <input
+                                    type="url"
+                                    value={editForm.facebook_link}
+                                    onChange={(e) => setEditForm({ ...editForm, facebook_link: e.target.value })}
+                                    placeholder="https://facebook.com/..."
+                                    className={`w-full rounded-lg border px-4 py-2 transition-colors ${
+                                      isDark
+                                        ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
+                                        : 'border-black/10 bg-black/5 text-black focus:border-black/20'
+                                    }`}
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                    Instagram
+                                  </label>
+                                  <input
+                                    type="url"
+                                    value={editForm.instagram_link}
+                                    onChange={(e) => setEditForm({ ...editForm, instagram_link: e.target.value })}
+                                    placeholder="https://instagram.com/..."
+                                    className={`w-full rounded-lg border px-4 py-2 transition-colors ${
+                                      isDark
+                                        ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
+                                        : 'border-black/10 bg-black/5 text-black focus:border-black/20'
+                                    }`}
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                    LinkedIn
+                                  </label>
+                                  <input
+                                    type="url"
+                                    value={editForm.linkedin_link}
+                                    onChange={(e) => setEditForm({ ...editForm, linkedin_link: e.target.value })}
+                                    placeholder="https://linkedin.com/company/..."
+                                    className={`w-full rounded-lg border px-4 py-2 transition-colors ${
+                                      isDark
+                                        ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
+                                        : 'border-black/10 bg-black/5 text-black focus:border-black/20'
+                                    }`}
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                    Twitter
+                                  </label>
+                                  <input
+                                    type="url"
+                                    value={editForm.twitter_link}
+                                    onChange={(e) => setEditForm({ ...editForm, twitter_link: e.target.value })}
+                                    placeholder="https://twitter.com/..."
+                                    className={`w-full rounded-lg border px-4 py-2 transition-colors ${
+                                      isDark
+                                        ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
+                                        : 'border-black/10 bg-black/5 text-black focus:border-black/20'
+                                    }`}
+                                  />
+                                </div>
+
+                                {/* Company ID */}
+                                <div className="sm:col-span-2 mt-4">
                                   <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                                     Company ID
                                   </label>
@@ -415,24 +744,26 @@ export default function CompaniesPage() {
                               </div>
 
                               <div className="grid gap-6 sm:grid-cols-2">
+                                {/* Logo */}
                                 <div className="sm:col-span-2">
                                   <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                                     ლოგო
                                   </label>
                                   <div className="flex items-center gap-4">
                                     <div className={`flex h-16 w-16 items-center justify-center rounded-full ${isDark ? 'bg-white/10' : 'bg-black/10'}`}>
-                                      {company.avatar_url ? (
-                                        <img src={company.avatar_url} alt={company.full_name || 'Company'} className="h-full w-full rounded-full object-cover" />
+                                      {company.logo_url ? (
+                                        <img src={company.logo_url} alt={company.full_name || 'Company'} className="h-full w-full rounded-full object-cover" />
                                       ) : (
                                         <Building2 className={`h-8 w-8 ${isDark ? 'text-white/60' : 'text-black/60'}`} />
                                       )}
                                     </div>
                                     <p className={`text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-                                      {company.avatar_url || 'ლოგო არ არის'}
+                                      {company.logo_url ? 'ლოგო ატვირთულია' : 'ლოგო არ არის'}
                                     </p>
                                   </div>
                                 </div>
 
+                                {/* Basic Info */}
                                 <div>
                                   <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                                     კომპანიის სახელი
@@ -453,6 +784,16 @@ export default function CompaniesPage() {
                                 </div>
 
                                 <div>
+                                  <label className={`mb-2 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                    <Phone className="h-4 w-4" />
+                                    ტელეფონი
+                                  </label>
+                                  <p className={`font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+                                    {company.phone_number || 'N/A'}
+                                  </p>
+                                </div>
+
+                                <div>
                                   <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                                     Slug (URL სახელი)
                                   </label>
@@ -466,42 +807,228 @@ export default function CompaniesPage() {
                                   )}
                                 </div>
 
-                                <div>
-                                  <label className={`mb-2 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-                                    <Shield className="h-4 w-4" />
-                                    როლი
-                                  </label>
-                                  <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ${isDark ? 'bg-green-500/20 text-green-400' : 'bg-green-500/10 text-green-600'}`}>
-                                    კომპანია
-                                  </span>
+                                {/* Company Overview Section */}
+                                <div className="sm:col-span-2 mt-4">
+                                  <h4 className={`mb-4 text-sm font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+                                    კომპანიის შესახებ
+                                  </h4>
+                                  <div className="grid gap-4">
+                                    <div>
+                                      <label className={`mb-2 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                        <FileText className="h-4 w-4" />
+                                        მოკლე აღწერა
+                                      </label>
+                                      <p className={`text-sm ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+                                        {company.summary || 'N/A'}
+                                      </p>
+                                    </div>
+
+                                    <div>
+                                      <label className={`mb-2 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                        <Building2 className="h-4 w-4" />
+                                        დეტალური აღწერა
+                                      </label>
+                                      <p className={`text-sm whitespace-pre-wrap ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+                                        {company.company_overview || 'N/A'}
+                                      </p>
+                                    </div>
+
+                                    <div>
+                                      <label className={`mb-2 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                        <Target className="h-4 w-4" />
+                                        მისია
+                                      </label>
+                                      <p className={`text-sm whitespace-pre-wrap ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+                                        {company.mission_statement || 'N/A'}
+                                      </p>
+                                    </div>
+
+                                    <div>
+                                      <label className={`mb-2 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                        <Lightbulb className="h-4 w-4" />
+                                        ხედვა და ღირებულებები
+                                      </label>
+                                      <p className={`text-sm whitespace-pre-wrap ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+                                        {company.vision_values || 'N/A'}
+                                      </p>
+                                    </div>
+
+                                    <div>
+                                      <label className={`mb-2 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                        <History className="h-4 w-4" />
+                                        ისტორია
+                                      </label>
+                                      <p className={`text-sm whitespace-pre-wrap ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+                                        {company.history || 'N/A'}
+                                      </p>
+                                    </div>
+
+                                    <div>
+                                      <label className={`mb-2 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                        <Users className="h-4 w-4" />
+                                        როგორ ვმუშაობთ
+                                      </label>
+                                      <p className={`text-sm whitespace-pre-wrap ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+                                        {company.how_we_work || 'N/A'}
+                                      </p>
+                                    </div>
+                                  </div>
                                 </div>
 
-                                <div>
-                                  <label className={`mb-2 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-                                    <Calendar className="h-4 w-4" />
-                                    რეგისტრაცია
-                                  </label>
-                                  <p className={`font-medium ${isDark ? 'text-white' : 'text-black'}`}>
-                                    {new Date(company.created_at).toLocaleString('ka-GE')}
-                                  </p>
+                                {/* Contact Information */}
+                                <div className="sm:col-span-2 mt-4">
+                                  <h4 className={`mb-4 text-sm font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+                                    საკონტაქტო ინფორმაცია
+                                  </h4>
+                                  <div className="grid gap-4 sm:grid-cols-2">
+                                    <div>
+                                      <label className={`mb-2 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                        <Globe className="h-4 w-4" />
+                                        ვებსაიტი
+                                      </label>
+                                      <p className={`font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+                                        {company.website ? (
+                                          <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                                            {company.website}
+                                          </a>
+                                        ) : 'N/A'}
+                                      </p>
+                                    </div>
+
+                                    <div>
+                                      <label className={`mb-2 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                        <MapPin className="h-4 w-4" />
+                                        მისამართი
+                                      </label>
+                                      <p className={`font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+                                        {company.address || 'N/A'}
+                                      </p>
+                                    </div>
+
+                                    <div className="sm:col-span-2">
+                                      <label className={`mb-2 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                        <MapPin className="h-4 w-4" />
+                                        რუკაზე
+                                      </label>
+                                      <p className={`font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+                                        {company.map_link ? (
+                                          <a href={company.map_link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                                            ნახეთ რუკაზე →
+                                          </a>
+                                        ) : 'N/A'}
+                                      </p>
+                                    </div>
+                                  </div>
                                 </div>
 
-                                <div>
-                                  <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-                                    ბოლო განახლება
-                                  </label>
-                                  <p className={`font-medium ${isDark ? 'text-white' : 'text-black'}`}>
-                                    {new Date(company.updated_at).toLocaleString('ka-GE')}
-                                  </p>
+                                {/* Social Links */}
+                                <div className="sm:col-span-2 mt-4">
+                                  <h4 className={`mb-4 text-sm font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+                                    სოციალური ქსელები
+                                  </h4>
+                                  <div className="grid gap-4 sm:grid-cols-2">
+                                    <div>
+                                      <label className={`mb-2 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                        <Facebook className="h-4 w-4" />
+                                        Facebook
+                                      </label>
+                                      {company.facebook_link ? (
+                                        <a href={company.facebook_link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-sm">
+                                          {company.facebook_link}
+                                        </a>
+                                      ) : (
+                                        <p className={`text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>N/A</p>
+                                      )}
+                                    </div>
+
+                                    <div>
+                                      <label className={`mb-2 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                        <Instagram className="h-4 w-4" />
+                                        Instagram
+                                      </label>
+                                      {company.instagram_link ? (
+                                        <a href={company.instagram_link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-sm">
+                                          {company.instagram_link}
+                                        </a>
+                                      ) : (
+                                        <p className={`text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>N/A</p>
+                                      )}
+                                    </div>
+
+                                    <div>
+                                      <label className={`mb-2 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                        <Linkedin className="h-4 w-4" />
+                                        LinkedIn
+                                      </label>
+                                      {company.linkedin_link ? (
+                                        <a href={company.linkedin_link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-sm">
+                                          {company.linkedin_link}
+                                        </a>
+                                      ) : (
+                                        <p className={`text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>N/A</p>
+                                      )}
+                                    </div>
+
+                                    <div>
+                                      <label className={`mb-2 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                        <Twitter className="h-4 w-4" />
+                                        Twitter
+                                      </label>
+                                      {company.twitter_link ? (
+                                        <a href={company.twitter_link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-sm">
+                                          {company.twitter_link}
+                                        </a>
+                                      ) : (
+                                        <p className={`text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>N/A</p>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
 
-                                <div>
-                                  <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-                                    Company ID
-                                  </label>
-                                  <p className={`font-mono text-xs ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-                                    {company.id}
-                                  </p>
+                                {/* System Info */}
+                                <div className="sm:col-span-2 mt-4 pt-4 border-t border-white/10">
+                                  <h4 className={`mb-4 text-sm font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+                                    სისტემური ინფორმაცია
+                                  </h4>
+                                  <div className="grid gap-4 sm:grid-cols-2">
+                                    <div>
+                                      <label className={`mb-2 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                        <Shield className="h-4 w-4" />
+                                        როლი
+                                      </label>
+                                      <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ${isDark ? 'bg-green-500/20 text-green-400' : 'bg-green-500/10 text-green-600'}`}>
+                                        კომპანია
+                                      </span>
+                                    </div>
+
+                                    <div>
+                                      <label className={`mb-2 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                        <Calendar className="h-4 w-4" />
+                                        რეგისტრაცია
+                                      </label>
+                                      <p className={`font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+                                        {new Date(company.created_at).toLocaleString('ka-GE')}
+                                      </p>
+                                    </div>
+
+                                    <div>
+                                      <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                        ბოლო განახლება
+                                      </label>
+                                      <p className={`font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+                                        {new Date(company.updated_at).toLocaleString('ka-GE')}
+                                      </p>
+                                    </div>
+
+                                    <div>
+                                      <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                        Company ID
+                                      </label>
+                                      <p className={`font-mono text-xs ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                        {company.id}
+                                      </p>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             </div>
