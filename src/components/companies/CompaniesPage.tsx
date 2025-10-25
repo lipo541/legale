@@ -158,14 +158,128 @@ export default function CompaniesPage() {
 
   // Apply filters
   useEffect(() => {
+    console.log('🔄 useEffect triggered! searchTerm:', searchTerm, 'companies:', companies.length);
+    
     const applyFilters = async () => {
+      console.log('🏁 applyFilters started');
       let filtered = companies;
 
-      // Search filter
+      // Enhanced search filter - search across multiple fields and languages
       if (searchTerm.trim()) {
-        filtered = filtered.filter((company) =>
-          company.full_name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+        const searchLower = searchTerm.toLowerCase();
+        
+        console.log('🔍 Searching for:', searchTerm, 'lowercase:', searchLower);
+        
+        // Get all company IDs that match search criteria
+        const matchingCompanyIds = new Set<string>();
+
+        // Search in company name
+        companies.forEach(company => {
+          if (company.full_name.toLowerCase().includes(searchLower)) {
+            matchingCompanyIds.add(company.id);
+            console.log('✅ Found in company name:', company.full_name);
+          }
+        });
+
+        try {
+          // Search in cities (all languages)
+          const { data: allCities } = await supabase
+            .from('cities')
+            .select('id, name_ka, name_en, name_ru');
+
+          const cityMatches = allCities?.filter(city => 
+            city.name_ka.toLowerCase().includes(searchLower) ||
+            city.name_en.toLowerCase().includes(searchLower) ||
+            city.name_ru.toLowerCase().includes(searchLower)
+          ) || [];
+
+          console.log('🏙️ City matches:', cityMatches);
+
+          if (cityMatches.length > 0) {
+            const cityIds = cityMatches.map(c => c.id);
+            const { data: companyCities } = await supabase
+              .from('company_cities')
+              .select('company_id')
+              .in('city_id', cityIds);
+            
+            console.log('🏢 Companies with matching cities:', companyCities);
+            companyCities?.forEach(cc => matchingCompanyIds.add(cc.company_id));
+          }
+
+          // Search in specializations (all languages)
+          const { data: allSpecs } = await supabase
+            .from('specializations')
+            .select('id, name_ka, name_en, name_ru');
+
+          const specializationMatches = allSpecs?.filter(spec =>
+            spec.name_ka.toLowerCase().includes(searchLower) ||
+            spec.name_en.toLowerCase().includes(searchLower) ||
+            spec.name_ru.toLowerCase().includes(searchLower)
+          ) || [];
+
+          console.log('📚 Specialization matches:', specializationMatches);
+
+          if (specializationMatches.length > 0) {
+            const specIds = specializationMatches.map(s => s.id);
+            const { data: companySpecs, error: companySpecError } = await supabase
+              .from('company_specializations')
+              .select('company_id')
+              .in('specialization_id', specIds);
+            
+            if (companySpecError) {
+              console.error('❌ Company specialization search error:', companySpecError);
+            } else {
+              console.log('🏢 Companies with matching specializations:', companySpecs);
+            }
+            
+            companySpecs?.forEach(cs => matchingCompanyIds.add(cs.company_id));
+          }
+
+          // Search in specialists (full_name)
+          const { data: allSpecialists } = await supabase
+            .from('profiles')
+            .select('company_id, full_name')
+            .eq('role', 'SPECIALIST')
+            .not('company_id', 'is', null);
+
+          const specialistMatches = allSpecialists?.filter(s =>
+            s.full_name.toLowerCase().includes(searchLower)
+          ) || [];
+
+          console.log('👤 Specialist matches:', specialistMatches);
+
+          specialistMatches.forEach(s => {
+            if (s.company_id) matchingCompanyIds.add(s.company_id);
+          });
+
+          // Search in services (all language fields)
+          const { data: allServices } = await supabase
+            .from('services')
+            .select('company_id, title_ka, title_en, title_ru')
+            .not('company_id', 'is', null);
+
+          const serviceMatches = allServices?.filter(service =>
+            (service.title_ka && service.title_ka.toLowerCase().includes(searchLower)) ||
+            (service.title_en && service.title_en.toLowerCase().includes(searchLower)) ||
+            (service.title_ru && service.title_ru.toLowerCase().includes(searchLower))
+          ) || [];
+
+          console.log('📋 Service matches:', serviceMatches);
+
+          serviceMatches.forEach(s => {
+            if (s.company_id) matchingCompanyIds.add(s.company_id);
+          });
+
+        } catch (error) {
+          console.error('❌ Error in search:', error);
+        }
+
+        console.log('🎯 Total matching company IDs:', Array.from(matchingCompanyIds));
+        
+        // Filter companies by matching IDs
+        filtered = filtered.filter((company) => matchingCompanyIds.has(company.id));
+        
+        console.log('✅ Filtered companies:', filtered.length);
       }
 
       // Company filter
@@ -323,7 +437,7 @@ export default function CompaniesPage() {
               strokeWidth={1}
             />
             <p className={`text-sm ${isDark ? 'text-white/50' : 'text-black/50'}`}>
-              {searchTerm || selectedCompany || selectedCity
+              {searchTerm || selectedCompany || selectedCity || selectedSpecialization
                 ? 'კომპანია ვერ მოიძებნა'
                 : 'ჯერ არ არის დარეგისტრირებული კომპანიები'}
             </p>
