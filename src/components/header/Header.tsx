@@ -45,12 +45,16 @@ export default function Header() {
         setUserRole(profile?.role || null)
 
         // Check for pending access request
-        const { data: pendingRequest } = await supabase
+        const { data: pendingRequest, error: requestError } = await supabase
           .from('access_requests')
-          .select('status')
+          .select('id, status, company_id')
           .eq('user_id', user.id)
           .eq('status', 'PENDING')
-          .single()
+          .maybeSingle()
+        
+        if (requestError) {
+          console.error('Error checking pending request:', requestError)
+        }
         
         setHasPendingRequest(!!pendingRequest)
       }

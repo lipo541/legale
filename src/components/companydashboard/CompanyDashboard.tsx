@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
+import { createClient } from '@/lib/supabase/client'
 import { 
   LayoutDashboard,
   Building2,
@@ -23,12 +24,31 @@ export default function CompanyDashboard() {
   const isDark = theme === 'dark'
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [activeTab, setActiveTab] = useState('dashboard')
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0)
+
+  useEffect(() => {
+    fetchPendingRequestsCount()
+  }, [])
+
+  const fetchPendingRequestsCount = async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { count } = await supabase
+      .from('access_requests')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', user.id)
+      .eq('status', 'PENDING')
+
+    setPendingRequestsCount(count || 0)
+  }
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'company-profile', label: 'Company Profile', icon: Building2 },
     { id: 'manage-specialists', label: 'Manage Specialists', icon: Users },
-    { id: 'specialist-requests', label: 'Specialist Requests', icon: ClipboardList },
+    { id: 'specialist-requests', label: 'Specialist Requests', icon: ClipboardList, badge: pendingRequestsCount },
     { id: 'bio-approval', label: 'Bio Approval', icon: CheckCircle },
     { id: 'posts', label: 'Posts', icon: FileText },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
@@ -54,7 +74,7 @@ export default function CompanyDashboard() {
       case 'manage-specialists':
         return <ManageSpecialistsPage />
       case 'specialist-requests':
-        return <SpecialistRequestsPage />
+        return <SpecialistRequestsPage onRequestUpdate={fetchPendingRequestsCount} />
       case 'bio-approval':
         return (
           <div>
@@ -157,7 +177,20 @@ export default function CompanyDashboard() {
                 }`}
               >
                 <Icon className="h-5 w-5 flex-shrink-0" />
-                {!isCollapsed && <span className="font-medium">{item.label}</span>}
+                {!isCollapsed && (
+                  <span className="flex-1 text-left font-medium">{item.label}</span>
+                )}
+                {!isCollapsed && item.badge !== undefined && item.badge > 0 && (
+                  <span className={`flex h-6 min-w-[24px] items-center justify-center rounded-full px-2 text-xs font-bold ${
+                    isActive
+                      ? 'bg-emerald-500 text-white'
+                      : isDark
+                      ? 'bg-red-500/20 text-red-400'
+                      : 'bg-red-500/20 text-red-600'
+                  }`}>
+                    {item.badge}
+                  </span>
+                )}
               </button>
             )
           })}
