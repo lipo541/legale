@@ -46,12 +46,7 @@ export default function CompaniesPage() {
   const [totalServices, setTotalServices] = useState(0);
 
   // Filter data
-  const [specializations] = useState([
-    { id: '1', name: 'სამოქალაქო სამართალი' },
-    { id: '2', name: 'სისხლის სამართალი' },
-    { id: '3', name: 'საგადასახადო სამართალი' },
-    { id: '4', name: 'კორპორატიული სამართალი' },
-  ]);
+  const [specializations, setSpecializations] = useState<Array<{ id: string; name: string }>>([]);
 
   const [cities, setCities] = useState<string[]>([]);
 
@@ -75,20 +70,54 @@ export default function CompaniesPage() {
         setCompanies(companiesData || []);
         setFilteredCompanies(companiesData || []);
 
-        // Fetch cities from cities table with locale-specific names
-        const { data: citiesData, error: citiesError } = await supabase
-          .from('cities')
-          .select('id, name_ka, name_en, name_ru')
-          .order(locale === 'en' ? 'name_en' : locale === 'ru' ? 'name_ru' : 'name_ka');
+        // Fetch only cities that are actually assigned to companies
+        const { data: companyCitiesData, error: companyCitiesError } = await supabase
+          .from('company_cities')
+          .select('cities(id, name_ka, name_en, name_ru)');
 
-        if (citiesError) {
-          console.error('Error fetching cities:', citiesError.message);
+        if (companyCitiesError) {
+          console.error('Error fetching company cities:', companyCitiesError.message);
         } else {
-          // Remove duplicates and filter out empty values
-          const cityNames = [...new Set(citiesData?.map(c => 
-            locale === 'en' ? c.name_en : locale === 'ru' ? c.name_ru : c.name_ka
-          ).filter(Boolean) || [])];
-          setCities(cityNames);
+          // Extract unique cities
+          const uniqueCities = new Map();
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          companyCitiesData?.forEach((item: any) => {
+            if (item.cities) {
+              const cityName = locale === 'en' ? item.cities.name_en : locale === 'ru' ? item.cities.name_ru : item.cities.name_ka;
+              if (cityName && !uniqueCities.has(cityName)) {
+                uniqueCities.set(cityName, item.cities);
+              }
+            }
+          });
+          
+          // Sort cities by name
+          const sortedCities = Array.from(uniqueCities.keys()).sort();
+          setCities(sortedCities);
+        }
+
+        // Fetch specializations that are actually assigned to companies
+        const { data: companySpecializationsData, error: companySpecializationsError } = await supabase
+          .from('company_specializations')
+          .select('specializations(id, name_ka, name_en, name_ru)');
+
+        if (companySpecializationsError) {
+          console.error('Error fetching company specializations:', companySpecializationsError.message);
+        } else {
+          // Extract unique specializations
+          const uniqueSpecializations = new Map();
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          companySpecializationsData?.forEach((item: any) => {
+            if (item.specializations) {
+              const specName = locale === 'en' ? item.specializations.name_en : locale === 'ru' ? item.specializations.name_ru : item.specializations.name_ka;
+              if (specName && !uniqueSpecializations.has(item.specializations.id)) {
+                uniqueSpecializations.set(item.specializations.id, { id: item.specializations.id, name: specName });
+              }
+            }
+          });
+          
+          // Sort specializations by name
+          const sortedSpecializations = Array.from(uniqueSpecializations.values()).sort((a, b) => a.name.localeCompare(b.name));
+          setSpecializations(sortedSpecializations);
         }
 
         // Fetch ALL specialists count (company + independent)
@@ -173,7 +202,25 @@ export default function CompaniesPage() {
         }
       }
 
-      // TODO: Specialization filter (need to join with services/specialists)
+      // Specialization filter - check against company_specializations table
+      if (selectedSpecialization) {
+        try {
+          // Get company IDs that have this specialization
+          const { data: companySpecializations } = await supabase
+            .from('company_specializations')
+            .select('company_id')
+            .eq('specialization_id', selectedSpecialization);
+
+          const companyIdsWithSpecialization = companySpecializations?.map(cs => cs.company_id) || [];
+          
+          // Filter companies by those IDs
+          filtered = filtered.filter((company) => 
+            companyIdsWithSpecialization.includes(company.id)
+          );
+        } catch (error) {
+          console.error('Error filtering by specialization:', error);
+        }
+      }
 
       setFilteredCompanies(filtered);
     };

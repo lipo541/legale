@@ -19,6 +19,9 @@ const MapPicker = dynamic<{
 // Dynamically import city picker component
 const CityPicker = dynamic(() => import('@/components/companydashboard/companyprofile/CityPicker'), { ssr: false })
 
+// Dynamically import specialization picker component
+const SpecializationPicker = dynamic(() => import('@/components/companydashboard/companyprofile/SpecializationPicker'), { ssr: false })
+
 interface CompanyProfileData {
   id: string
   email: string | null
@@ -57,6 +60,7 @@ export default function CompanyProfilePage() {
   const [profile, setProfile] = useState<CompanyProfileData | null>(null)
   const [selectedCities, setSelectedCities] = useState<Array<{ id: string; name_ka: string; name_en: string }>>([])
   const [selectedCityIds, setSelectedCityIds] = useState<string[]>([])
+  const [selectedSpecializationIds, setSelectedSpecializationIds] = useState<string[]>([])
   const [editForm, setEditForm] = useState({
     full_name: '', email: '', phone_number: '', company_overview: '',
     summary: '', mission_statement: '', vision_values: '', history: '',
@@ -128,7 +132,7 @@ export default function CompanyProfilePage() {
       }
 
       // Upload new logo
-      const { data, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('company-logos')
         .upload(fileName, file, {
           cacheControl: '3600',
@@ -196,6 +200,9 @@ export default function CompanyProfilePage() {
 
       // Fetch company cities
       await fetchCompanyCities(user.id)
+      
+      // Fetch company specializations
+      await fetchCompanySpecializations(user.id)
     } catch (error) {
       console.error('Fetch error:', error)
     } finally {
@@ -213,20 +220,41 @@ export default function CompanyProfilePage() {
       if (error) {
         console.error('Error fetching company cities:', error)
       } else {
-        interface CompanyCityItem {
-          cities: Array<{ id: string; name_ka: string; name_en: string; name_ru: string }>;
-        }
-        const cities = data?.flatMap((item: CompanyCityItem) => item.cities.map(city => ({
-          id: city.id,
-          name_ka: city.name_ka,
-          name_en: city.name_en,
-          name_ru: city.name_ru
-        }))) || []
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const cities = data?.map((item: any) => item.cities)
+          .filter(Boolean)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .map((city: any) => ({
+            id: city.id,
+            name_ka: city.name_ka,
+            name_en: city.name_en,
+            name_ru: city.name_ru
+          })) || []
         setSelectedCities(cities)
-        setSelectedCityIds(cities.map(c => c.id))
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setSelectedCityIds(cities.map((c: any) => c.id))
       }
     } catch (error) {
       console.error('Fetch cities error:', error)
+    }
+  }
+
+  const fetchCompanySpecializations = async (companyId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('company_specializations')
+        .select('specialization_id')
+        .eq('company_id', companyId)
+
+      if (error) {
+        console.error('Error fetching company specializations:', error)
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const specializationIds = data?.map((item: any) => item.specialization_id) || []
+        setSelectedSpecializationIds(specializationIds)
+      }
+    } catch (error) {
+      console.error('Fetch specializations error:', error)
     }
   }
 
@@ -265,6 +293,44 @@ export default function CompanyProfilePage() {
     } catch (error) {
       console.error('Save cities error:', error)
       alert('ქალაქების შენახვისას მოხდა შეცდომა')
+    }
+  }
+
+  const handleSaveSpecializations = async (specializationIds: string[]) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Delete all existing specializations for this company
+      await supabase
+        .from('company_specializations')
+        .delete()
+        .eq('company_id', user.id)
+
+      // Insert new specializations
+      if (specializationIds.length > 0) {
+        const insertData = specializationIds.map(specializationId => ({
+          company_id: user.id,
+          specialization_id: specializationId
+        }))
+
+        const { error } = await supabase
+          .from('company_specializations')
+          .insert(insertData)
+
+        if (error) {
+          console.error('Error saving specializations:', error)
+          alert('სპეციალიზაციების შენახვისას მოხდა შეცდომა')
+          return
+        }
+      }
+
+      // Refresh specializations list
+      await fetchCompanySpecializations(user.id)
+      alert('სპეციალიზაციები წარმატებით შეინახა!')
+    } catch (error) {
+      console.error('Save specializations error:', error)
+      alert('სპეციალიზაციების შენახვისას მოხდა შეცდომა')
     }
   }
 
@@ -981,6 +1047,23 @@ export default function CompanyProfilePage() {
                 ქალაქები არ არის არჩეული
               </p>
             )}
+          </div>
+        </div>
+
+        <div className="mb-8 pb-8 border-b border-white/10">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>სპეციალიზაციები</h2>
+          </div>
+          <div>
+            <label className={`mb-3 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+              <Building2 className="h-4 w-4" />აირჩიეთ სამართლის დარგები რომლითაც თქვენი კომპანია მუშაობს
+            </label>
+            
+            {/* Specialization Picker */}
+            <SpecializationPicker
+              selectedSpecializationIds={selectedSpecializationIds}
+              onSave={handleSaveSpecializations}
+            />
           </div>
         </div>
 
