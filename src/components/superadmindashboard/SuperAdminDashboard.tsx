@@ -23,6 +23,7 @@ import ServicesPage from './services/ServicesPage'
 import RequestsPage from './requests/RequestsPage'
 import UsersPage from './users/UsersPage'
 import SpecialistsPage from './specialists/SpecialistsPage'
+import SoloSpecialistsPage from './solospecialists/SoloSpecialistsPage'
 import CompaniesPage from './companies/CompaniesPage'
 import AuthorsPage from './authors/AuthorsPage'
 import ModeratorsPage from './moderators/ModeratorsPage'
@@ -39,6 +40,7 @@ export default function SuperAdminDashboard() {
     { id: 'services', label: 'Services', icon: Wrench },
     { id: 'users', label: 'Users', icon: Users },
     { id: 'specialists', label: 'Specialists', icon: Users },
+    { id: 'solospecialists', label: 'Solo Specialists', icon: Users },
     { id: 'companies', label: 'Companies', icon: Building2 },
     { id: 'authors', label: 'Authors', icon: FileText },
     { id: 'moderators', label: 'Moderators', icon: ShieldAlert },
@@ -71,6 +73,8 @@ export default function SuperAdminDashboard() {
         return <UsersPage />
       case 'specialists':
         return <SpecialistsPage />
+      case 'solospecialists':
+        return <SoloSpecialistsPage />
       case 'companies':
         return <CompaniesPage />
       case 'authors':

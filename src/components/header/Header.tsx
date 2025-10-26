@@ -130,10 +130,14 @@ export default function Header() {
               <div className="hidden md:flex items-center gap-3 ml-2">
                 {user ? (
                   <>
-                    {/* Dashboard Button (for SUPER_ADMIN, ADMIN, and COMPANY) */}
-                    {(userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' || userRole === 'COMPANY') ? (
+                    {/* Dashboard Button (for SUPER_ADMIN, ADMIN, COMPANY, SOLO_SPECIALIST, and SPECIALIST) */}
+                    {(userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' || userRole === 'COMPANY' || userRole === 'SOLO_SPECIALIST' || userRole === 'SPECIALIST') ? (
                       <Link 
-                        href={userRole === 'COMPANY' ? `/${currentLocale}/company-dashboard` : `/${currentLocale}/admin`}
+                        href={
+                          userRole === 'COMPANY' ? `/${currentLocale}/company-dashboard` :
+                          userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' ? `/${currentLocale}/admin` :
+                          `/${currentLocale}/solo-specialist-dashboard`
+                        }
                         style={{
                           backgroundColor: isDark ? '#000000' : '#FFFFFF',
                           borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
@@ -306,10 +310,14 @@ export default function Header() {
                   <div className={`flex flex-col space-y-2 pt-4 border-t transition-colors duration-300 ${isDark ? 'border-white/10' : 'border-black/10'}`}>
                     {user ? (
                       <>
-                        {/* Dashboard Button for Mobile (for SUPER_ADMIN, ADMIN, and COMPANY) */}
-                        {(userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' || userRole === 'COMPANY') ? (
+                        {/* Dashboard Button for Mobile (for SUPER_ADMIN, ADMIN, COMPANY, SOLO_SPECIALIST, and SPECIALIST) */}
+                        {(userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' || userRole === 'COMPANY' || userRole === 'SOLO_SPECIALIST' || userRole === 'SPECIALIST') ? (
                           <Link
-                            href={userRole === 'COMPANY' ? `/${currentLocale}/company-dashboard` : `/${currentLocale}/admin`}
+                            href={
+                              userRole === 'COMPANY' ? `/${currentLocale}/company-dashboard` :
+                              userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' ? `/${currentLocale}/admin` :
+                              `/${currentLocale}/solo-specialist-dashboard`
+                            }
                             onClick={toggleMenu}
                             style={{
                               backgroundColor: isDark ? '#000000' : '#FFFFFF',
