@@ -85,6 +85,7 @@ export default function SpecialistsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [uploadingPhotoId, setUploadingPhotoId] = useState<string | null>(null)
   const [blockingId, setBlockingId] = useState<string | null>(null)
+  const [changingVerificationId, setChangingVerificationId] = useState<string | null>(null)
 
   const supabase = createClient()
 
@@ -374,6 +375,90 @@ export default function SpecialistsPage() {
     }
   }
 
+  const handleChangeVerificationStatus = async (specialist: SpecialistProfile, newStatus: 'verified' | 'unverified' | 'pending' | 'rejected') => {
+    const statusLabels = {
+      verified: 'დადასტურებული',
+      unverified: 'არადასტურებული',
+      pending: 'განხილვაში',
+      rejected: 'უარყოფილი'
+    }
+
+    // Different confirmation messages based on transition
+    let confirmMessage = ''
+    if (newStatus === 'verified' && (specialist.verification_status === 'unverified' || specialist.verification_status === 'rejected' || !specialist.verification_status)) {
+      confirmMessage = `დარწმუნებული ხართ რომ გსურთ ${specialist.full_name}-ს ვერიფიკაციის მინიჭება?`
+    } else if (newStatus === 'verified' && specialist.verification_status === 'pending') {
+      confirmMessage = `დარწმუნებული ხართ რომ გსურთ ${specialist.full_name}-ის ვერიფიკაციის მოთხოვნის დადასტურება?`
+    } else if (newStatus === 'rejected') {
+      confirmMessage = `დარწმუნებული ხართ რომ გსურთ ${specialist.full_name}-ის ვერიფიკაციის მოთხოვნის უარყოფა?`
+    } else if (newStatus === 'unverified') {
+      confirmMessage = `დარწმუნებული ხართ რომ გსურთ ${specialist.full_name}-ის ვერიფიკაციის გაუქმება?`
+    } else {
+      confirmMessage = `დარწმუნებული ხართ რომ გსურთ ${specialist.full_name}-ის ვერიფიკაციის სტატუსის შეცვლა "${statusLabels[newStatus]}"-ზე?`
+    }
+
+    if (!confirm(confirmMessage)) {
+      return
+    }
+
+    setChangingVerificationId(specialist.id)
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updateData: Record<string, any> = {
+        verification_status: newStatus,
+        updated_at: new Date().toISOString()
+      }
+
+      // თუ verified იქნება, დაამატე reviewed თარიღი
+      if (newStatus === 'verified') {
+        updateData.verification_reviewed_at = new Date().toISOString()
+      }
+
+      // თუ rejected იქნება, დაამატე reviewed თარიღი
+      if (newStatus === 'rejected') {
+        updateData.verification_reviewed_at = new Date().toISOString()
+        const notes = prompt('მიუთითეთ უარყოფის მიზეზი (არასავალდებულო):')
+        if (notes !== null) {
+          updateData.verification_notes = notes
+        }
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', specialist.id)
+
+      if (error) {
+        console.error('Verification status change error:', error)
+        alert('შეცდომა სტატუსის შეცვლისას')
+      } else {
+        await fetchSpecialists()
+        
+        // Different success messages based on action
+        let successMessage = ''
+        if (newStatus === 'verified' && (specialist.verification_status === 'unverified' || specialist.verification_status === 'rejected' || !specialist.verification_status)) {
+          successMessage = 'ვერიფიკაცია წარმატებით მიენიჭა!'
+        } else if (newStatus === 'verified' && specialist.verification_status === 'pending') {
+          successMessage = 'ვერიფიკაციის მოთხოვნა დადასტურდა!'
+        } else if (newStatus === 'rejected') {
+          successMessage = 'ვერიფიკაციის მოთხოვნა უარყოფილია!'
+        } else if (newStatus === 'unverified') {
+          successMessage = 'ვერიფიკაცია გაუქმდა!'
+        } else {
+          successMessage = `ვერიფიკაციის სტატუსი შეიცვალა: ${statusLabels[newStatus]}!`
+        }
+        
+        alert(successMessage)
+      }
+    } catch (err) {
+      console.error('Verification status change error:', err)
+      alert('შეცდომა სტატუსის შეცვლისას')
+    } finally {
+      setChangingVerificationId(null)
+    }
+  }
+
   const handleDelete = async (id: string) => {
     if (!confirm('დარწმუნებული ხართ რომ გსურთ ამ სპეციალისტის წაშლა?')) {
       return
@@ -512,9 +597,16 @@ export default function SpecialistsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${isDark ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-blue-500/10 text-blue-600 border border-blue-500/20'}`}>
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${
+                        specialist.verification_status === 'verified'
+                          ? isDark ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
+                          : isDark ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-blue-500/10 text-blue-600 border border-blue-500/20'
+                      }`}>
                         <User className="h-3 w-3" />
                         სპეციალისტი
+                        {specialist.verification_status === 'verified' && (
+                          <CheckCircle className="h-3.5 w-3.5" />
+                        )}
                       </span>
                     </td>
                     <td className={`px-6 py-4 text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
@@ -1248,7 +1340,7 @@ export default function SpecialistsPage() {
                                     <CheckCircle className="h-4 w-4" />
                                     ვერიფიკაციის სტატუსი
                                   </label>
-                                  <div className="space-y-2">
+                                  <div className="flex items-center gap-3 flex-wrap">
                                     {specialist.verification_status === 'verified' ? (
                                       <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-500/10 text-emerald-600'}`}>
                                         <CheckCircle className="h-4 w-4" />
@@ -1270,23 +1362,88 @@ export default function SpecialistsPage() {
                                       </span>
                                     )}
                                     
-                                    {specialist.verification_notes && (
-                                      <div className={`mt-2 p-3 rounded-lg ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
-                                        <p className={`text-xs font-medium mb-1 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-                                          შენიშვნები:
-                                        </p>
-                                        <p className={`text-sm ${isDark ? 'text-white/80' : 'text-black/80'}`}>
-                                          {specialist.verification_notes}
-                                        </p>
-                                      </div>
-                                    )}
-                                    
-                                    {specialist.verification_reviewed_at && (
-                                      <p className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-                                        განხილულია: {new Date(specialist.verification_reviewed_at).toLocaleString('ka-GE')}
-                                      </p>
-                                    )}
+                                    {/* Verification Action Buttons */}
+                                    <div className="flex gap-2">
+                                      {/* Case 1: unverified or rejected - show "მინიჭება" */}
+                                      {(specialist.verification_status === 'unverified' || 
+                                        specialist.verification_status === 'rejected' || 
+                                        !specialist.verification_status) && (
+                                        <button
+                                          onClick={() => handleChangeVerificationStatus(specialist, 'verified')}
+                                          disabled={changingVerificationId === specialist.id}
+                                          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-105 disabled:opacity-50 ${
+                                            isDark ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
+                                          }`}
+                                          title="ვერიფიკაციის მინიჭება"
+                                        >
+                                          <CheckCircle className="h-3 w-3" />
+                                          ვერიფიკაციის მინიჭება
+                                        </button>
+                                      )}
+                                      
+                                      {/* Case 2: pending - show both "დადასტურება" and "უარყოფა" */}
+                                      {specialist.verification_status === 'pending' && (
+                                        <>
+                                          <button
+                                            onClick={() => handleChangeVerificationStatus(specialist, 'verified')}
+                                            disabled={changingVerificationId === specialist.id}
+                                            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-105 disabled:opacity-50 ${
+                                              isDark ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
+                                            }`}
+                                            title="დადასტურება"
+                                          >
+                                            <CheckCircle className="h-3 w-3" />
+                                            დადასტურება
+                                          </button>
+                                          <button
+                                            onClick={() => handleChangeVerificationStatus(specialist, 'rejected')}
+                                            disabled={changingVerificationId === specialist.id}
+                                            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-105 disabled:opacity-50 ${
+                                              isDark ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-red-500/10 text-red-600 hover:bg-red-500/20'
+                                            }`}
+                                            title="უარყოფა"
+                                          >
+                                            <XCircle className="h-3 w-3" />
+                                            უარყოფა
+                                          </button>
+                                        </>
+                                      )}
+                                      
+                                      {/* Case 3: verified - show "გაუქმება" */}
+                                      {specialist.verification_status === 'verified' && (
+                                        <button
+                                          onClick={() => handleChangeVerificationStatus(specialist, 'unverified')}
+                                          disabled={changingVerificationId === specialist.id}
+                                          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-105 disabled:opacity-50 ${
+                                            isDark ? 'bg-orange-500/20 text-orange-400 hover:bg-orange-500/30' : 'bg-orange-500/10 text-orange-600 hover:bg-orange-500/20'
+                                          }`}
+                                          title="ვერიფიკაციის გაუქმება"
+                                        >
+                                          <X className="h-3 w-3" />
+                                          ვერიფიკაციის გაუქმება
+                                        </button>
+                                      )}
+                                    </div>
                                   </div>
+                                  
+                                  {/* Verification Notes */}
+                                  {specialist.verification_notes && (
+                                    <div className={`mt-3 p-3 rounded-lg ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
+                                      <p className={`text-xs font-medium mb-1 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                        შენიშვნები:
+                                      </p>
+                                      <p className={`text-sm ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+                                        {specialist.verification_notes}
+                                      </p>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Verification Reviewed At */}
+                                  {specialist.verification_reviewed_at && (
+                                    <p className={`mt-2 text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                                      განხილულია: {new Date(specialist.verification_reviewed_at).toLocaleString('ka-GE')}
+                                    </p>
+                                  )}
                                 </div>
 
                                 <div>

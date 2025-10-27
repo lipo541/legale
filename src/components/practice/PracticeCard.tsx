@@ -34,29 +34,41 @@ export default function PracticeCard() {
     async function fetchPractices() {
       const supabase = createClient()
       
-      const { data, error } = await supabase
-        .from('practices')
-        .select(`
-          id,
-          hero_image_url,
-          practice_translations!inner (
-            title,
-            slug,
-            description,
-            hero_image_alt,
-            word_count,
-            reading_time
-          )
-        `)
-        .eq('status', 'published')
-        .eq('practice_translations.language', locale)
-        .order('created_at', { ascending: false })
+      try {
+        const { data, error } = await supabase
+          .from('practices')
+          .select(`
+            id,
+            hero_image_url,
+            practice_translations!inner (
+              title,
+              slug,
+              description,
+              hero_image_alt,
+              word_count,
+              reading_time
+            )
+          `)
+          .eq('status', 'published')
+          .eq('practice_translations.language', locale)
+          .order('created_at', { ascending: false })
 
-      if (!error && data) {
-        setPractices(data as PracticeData[])
+        if (error) {
+          console.error('Error fetching practices:', error)
+          setPractices([])
+        } else if (data) {
+          // Filter out any practices without translations
+          const validPractices = data.filter(
+            (practice) => practice.practice_translations && practice.practice_translations.length > 0
+          )
+          setPractices(validPractices as PracticeData[])
+        }
+      } catch (err) {
+        console.error('Unexpected error fetching practices:', err)
+        setPractices([])
+      } finally {
+        setLoading(false)
       }
-      
-      setLoading(false)
     }
 
     fetchPractices()

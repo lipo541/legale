@@ -520,10 +520,14 @@ export default function SoloSpecialistsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ${
-                        isDark ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-purple-500/10 text-purple-600 border border-purple-500/20'
+                        specialist.verification_status === 'verified'
+                          ? isDark ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
+                          : isDark ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-purple-500/10 text-purple-600 border border-purple-500/20'
                       }`}>
                         Solo Specialist
-                        {specialist.verification_status === 'verified' && ' ✓'}
+                        {specialist.verification_status === 'verified' && (
+                          <CheckCircle className="h-3.5 w-3.5" />
+                        )}
                       </span>
                     </td>
                     <td className="px-6 py-4">
