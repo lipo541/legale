@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { Menu, X, LayoutDashboard, LogOut } from 'lucide-react'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTheme } from '@/contexts/ThemeContext'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
@@ -21,6 +21,7 @@ export default function Header() {
   const [userRole, setUserRole] = useState<string | null>(null)
   const [hasPendingRequest, setHasPendingRequest] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [roleLoading, setRoleLoading] = useState(false)
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen)
   const isDark = theme === 'dark'
@@ -30,11 +31,14 @@ export default function Header() {
 
   // Check authentication status
   useEffect(() => {
-    async function getUser() {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
+    let mounted = true
 
-      if (user) {
+    async function loadUserData(user: { id: string; email?: string } | null) {
+      if (!user || !mounted) return
+
+      setRoleLoading(true)
+      
+      try {
         // Get user role from profiles
         const { data: profile } = await supabase
           .from('profiles')
@@ -42,38 +46,62 @@ export default function Header() {
           .eq('id', user.id)
           .single()
         
+        if (!mounted) return
+        
         setUserRole(profile?.role || null)
 
         // Check for pending access request
-        const { data: pendingRequest, error: requestError } = await supabase
+        const { data: pendingRequest } = await supabase
           .from('access_requests')
           .select('id, status, company_id')
           .eq('user_id', user.id)
           .eq('status', 'PENDING')
           .maybeSingle()
         
-        if (requestError) {
-          console.error('Error checking pending request:', requestError)
-        }
+        if (!mounted) return
         
         setHasPendingRequest(!!pendingRequest)
+      } catch (error) {
+        console.error('Error loading user data:', error)
+      } finally {
+        if (mounted) {
+          setRoleLoading(false)
+        }
       }
-      
-      setLoading(false)
     }
 
-    getUser()
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return
       setUser(session?.user || null)
-      if (!session?.user) {
-        setUserRole(null)
-        setHasPendingRequest(false)
+      if (session?.user) {
+        loadUserData(session.user)
+      } else {
+        setLoading(false)
       }
     })
 
-    return () => subscription.unsubscribe()
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!mounted) return
+      
+      setUser(session?.user || null)
+      
+      if (session?.user) {
+        await loadUserData(session.user)
+      } else {
+        setUserRole(null)
+        setHasPendingRequest(false)
+        setRoleLoading(false)
+      }
+      
+      setLoading(false)
+    })
+
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [supabase])
 
   // Handle logout
@@ -126,18 +154,21 @@ export default function Header() {
             <LanguageSwitcher />
 
             {/* Desktop Auth Buttons */}
-            {!loading && (
+            {!loading ? (
               <div className="hidden md:flex items-center gap-3 ml-2">
                 {user ? (
                   <>
-                    {/* Dashboard Button (for SUPER_ADMIN, ADMIN, COMPANY, SOLO_SPECIALIST, and SPECIALIST) */}
-                    {(userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' || userRole === 'COMPANY' || userRole === 'SOLO_SPECIALIST' || userRole === 'SPECIALIST') ? (
+                    {/* Show loading or buttons based on roleLoading */}
+                    {roleLoading ? (
+                      <div className="px-4 py-2 text-sm font-medium" style={{ color: isDark ? '#FFFFFF' : '#000000' }}>
+                        Loading...
+                      </div>
+                    ) : (
+                      <>
+                        {/* SUPER_ADMIN Dashboard Button */}
+                        {userRole === 'SUPER_ADMIN' && (
                       <Link 
-                        href={
-                          userRole === 'COMPANY' ? `/${currentLocale}/company-dashboard` :
-                          userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' ? `/${currentLocale}/admin` :
-                          `/${currentLocale}/solo-specialist-dashboard`
-                        }
+                        href={`/${currentLocale}/admin`}
                         style={{
                           backgroundColor: isDark ? '#000000' : '#FFFFFF',
                           borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
@@ -158,10 +189,152 @@ export default function Header() {
                         className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                       >
                         <LayoutDashboard className="w-4 h-4" />
-                        Dashboard
+                        Admin Dashboard
                       </Link>
-                    ) : (
-                      /* Profile Button (for regular users) */
+                    )}
+
+                    {/* ADMIN Dashboard Button */}
+                    {userRole === 'ADMIN' && (
+                      <Link 
+                        href={`/${currentLocale}/admin`}
+                        style={{
+                          backgroundColor: isDark ? '#000000' : '#FFFFFF',
+                          borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+                          color: isDark ? '#FFFFFF' : '#000000',
+                          borderWidth: '1px',
+                          borderStyle: 'solid'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = isDark ? '#FFFFFF' : '#000000'
+                          e.currentTarget.style.color = isDark ? '#000000' : '#FFFFFF'
+                          e.currentTarget.style.borderColor = isDark ? '#FFFFFF' : '#000000'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = isDark ? '#000000' : '#FFFFFF'
+                          e.currentTarget.style.color = isDark ? '#FFFFFF' : '#000000'
+                          e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                      >
+                        <LayoutDashboard className="w-4 h-4" />
+                        Admin Panel
+                      </Link>
+                    )}
+
+                    {/* MODERATOR Dashboard Button */}
+                    {userRole === 'MODERATOR' && (
+                      <Link 
+                        href={`/${currentLocale}/moderator-dashboard`}
+                        style={{
+                          backgroundColor: isDark ? '#000000' : '#FFFFFF',
+                          borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+                          color: isDark ? '#FFFFFF' : '#000000',
+                          borderWidth: '1px',
+                          borderStyle: 'solid'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = isDark ? '#FFFFFF' : '#000000'
+                          e.currentTarget.style.color = isDark ? '#000000' : '#FFFFFF'
+                          e.currentTarget.style.borderColor = isDark ? '#FFFFFF' : '#000000'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = isDark ? '#000000' : '#FFFFFF'
+                          e.currentTarget.style.color = isDark ? '#FFFFFF' : '#000000'
+                          e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                      >
+                        <LayoutDashboard className="w-4 h-4" />
+                        Moderator Panel
+                      </Link>
+                    )}
+
+                    {/* COMPANY Dashboard Button */}
+                    {userRole === 'COMPANY' && (
+                      <Link 
+                        href={`/${currentLocale}/company-dashboard`}
+                        style={{
+                          backgroundColor: isDark ? '#000000' : '#FFFFFF',
+                          borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+                          color: isDark ? '#FFFFFF' : '#000000',
+                          borderWidth: '1px',
+                          borderStyle: 'solid'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = isDark ? '#FFFFFF' : '#000000'
+                          e.currentTarget.style.color = isDark ? '#000000' : '#FFFFFF'
+                          e.currentTarget.style.borderColor = isDark ? '#FFFFFF' : '#000000'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = isDark ? '#000000' : '#FFFFFF'
+                          e.currentTarget.style.color = isDark ? '#FFFFFF' : '#000000'
+                          e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                      >
+                        <LayoutDashboard className="w-4 h-4" />
+                        Company Dashboard
+                      </Link>
+                    )}
+
+                    {/* SOLO_SPECIALIST Dashboard Button */}
+                    {userRole === 'SOLO_SPECIALIST' && (
+                      <Link 
+                        href={`/${currentLocale}/solo-specialist-dashboard`}
+                        style={{
+                          backgroundColor: isDark ? '#000000' : '#FFFFFF',
+                          borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+                          color: isDark ? '#FFFFFF' : '#000000',
+                          borderWidth: '1px',
+                          borderStyle: 'solid'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = isDark ? '#FFFFFF' : '#000000'
+                          e.currentTarget.style.color = isDark ? '#000000' : '#FFFFFF'
+                          e.currentTarget.style.borderColor = isDark ? '#FFFFFF' : '#000000'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = isDark ? '#000000' : '#FFFFFF'
+                          e.currentTarget.style.color = isDark ? '#FFFFFF' : '#000000'
+                          e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                      >
+                        <LayoutDashboard className="w-4 h-4" />
+                        Specialist Dashboard
+                      </Link>
+                    )}
+
+                    {/* SPECIALIST Dashboard Button */}
+                    {userRole === 'SPECIALIST' && (
+                      <Link 
+                        href={`/${currentLocale}/specialist-dashboard`}
+                        style={{
+                          backgroundColor: isDark ? '#000000' : '#FFFFFF',
+                          borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+                          color: isDark ? '#FFFFFF' : '#000000',
+                          borderWidth: '1px',
+                          borderStyle: 'solid'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = isDark ? '#FFFFFF' : '#000000'
+                          e.currentTarget.style.color = isDark ? '#000000' : '#FFFFFF'
+                          e.currentTarget.style.borderColor = isDark ? '#FFFFFF' : '#000000'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = isDark ? '#000000' : '#FFFFFF'
+                          e.currentTarget.style.color = isDark ? '#FFFFFF' : '#000000'
+                          e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                      >
+                        <LayoutDashboard className="w-4 h-4" />
+                        My Dashboard
+                      </Link>
+                    )}
+
+                    {/* USER Profile Button (default for users without specific role) */}
+                    {(!userRole || userRole === 'USER') && (
                       <Link
                         href={`/${currentLocale}/complete-profile`}
                         style={{
@@ -186,6 +359,8 @@ export default function Header() {
                         {hasPendingRequest ? 'Pending' : 'პროფილი'}
                       </Link>
                     )}
+
+                    {/* Logout Button (for all authenticated users) */}
                     <button 
                       onClick={handleLogout}
                       style={{
@@ -213,6 +388,8 @@ export default function Header() {
                       <LogOut className="w-4 h-4" />
                       გასვლა
                     </button>
+                    </>
+                    )}
                   </>
                 ) : (
                   <>
@@ -268,6 +445,12 @@ export default function Header() {
                   </>
                 )}
               </div>
+            ) : (
+              <div className="hidden md:flex items-center gap-3 ml-2">
+                <div className="px-4 py-2 text-sm font-medium" style={{ color: isDark ? '#FFFFFF' : '#000000' }}>
+                  Loading...
+                </div>
+              </div>
             )}
 
             {/* Mobile menu button */}
@@ -306,18 +489,21 @@ export default function Header() {
                 ))}
 
                 {/* Mobile Auth Buttons */}
-                {!loading && (
+                {!loading ? (
                   <div className={`flex flex-col space-y-2 pt-4 border-t transition-colors duration-300 ${isDark ? 'border-white/10' : 'border-black/10'}`}>
                     {user ? (
                       <>
-                        {/* Dashboard Button for Mobile (for SUPER_ADMIN, ADMIN, COMPANY, SOLO_SPECIALIST, and SPECIALIST) */}
-                        {(userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' || userRole === 'COMPANY' || userRole === 'SOLO_SPECIALIST' || userRole === 'SPECIALIST') ? (
+                        {/* Show loading or buttons based on roleLoading */}
+                        {roleLoading ? (
+                          <div className="px-4 py-2 text-base font-medium text-center" style={{ color: isDark ? '#FFFFFF' : '#000000' }}>
+                            Loading...
+                          </div>
+                        ) : (
+                          <>
+                            {/* SUPER_ADMIN Dashboard Button for Mobile */}
+                            {userRole === 'SUPER_ADMIN' && (
                           <Link
-                            href={
-                              userRole === 'COMPANY' ? `/${currentLocale}/company-dashboard` :
-                              userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' ? `/${currentLocale}/admin` :
-                              `/${currentLocale}/solo-specialist-dashboard`
-                            }
+                            href={`/${currentLocale}/admin`}
                             onClick={toggleMenu}
                             style={{
                               backgroundColor: isDark ? '#000000' : '#FFFFFF',
@@ -326,13 +512,110 @@ export default function Header() {
                               borderWidth: '1px',
                               borderStyle: 'solid'
                             }}
-                            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 active:scale-[0.98]"
                           >
                             <LayoutDashboard className="w-4 h-4" />
-                            Dashboard
+                            Admin Dashboard
                           </Link>
-                        ) : (
-                          /* Profile Button for Mobile (for regular users) */
+                        )}
+
+                        {/* ADMIN Dashboard Button for Mobile */}
+                        {userRole === 'ADMIN' && (
+                          <Link
+                            href={`/${currentLocale}/admin`}
+                            onClick={toggleMenu}
+                            style={{
+                              backgroundColor: isDark ? '#000000' : '#FFFFFF',
+                              borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+                              color: isDark ? '#FFFFFF' : '#000000',
+                              borderWidth: '1px',
+                              borderStyle: 'solid'
+                            }}
+                            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 active:scale-[0.98]"
+                          >
+                            <LayoutDashboard className="w-4 h-4" />
+                            Admin Panel
+                          </Link>
+                        )}
+
+                        {/* MODERATOR Dashboard Button for Mobile */}
+                        {userRole === 'MODERATOR' && (
+                          <Link
+                            href={`/${currentLocale}/moderator-dashboard`}
+                            onClick={toggleMenu}
+                            style={{
+                              backgroundColor: isDark ? '#000000' : '#FFFFFF',
+                              borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+                              color: isDark ? '#FFFFFF' : '#000000',
+                              borderWidth: '1px',
+                              borderStyle: 'solid'
+                            }}
+                            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 active:scale-[0.98]"
+                          >
+                            <LayoutDashboard className="w-4 h-4" />
+                            Moderator Panel
+                          </Link>
+                        )}
+
+                        {/* COMPANY Dashboard Button for Mobile */}
+                        {userRole === 'COMPANY' && (
+                          <Link
+                            href={`/${currentLocale}/company-dashboard`}
+                            onClick={toggleMenu}
+                            style={{
+                              backgroundColor: isDark ? '#000000' : '#FFFFFF',
+                              borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+                              color: isDark ? '#FFFFFF' : '#000000',
+                              borderWidth: '1px',
+                              borderStyle: 'solid'
+                            }}
+                            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 active:scale-[0.98]"
+                          >
+                            <LayoutDashboard className="w-4 h-4" />
+                            Company Dashboard
+                          </Link>
+                        )}
+
+                        {/* SOLO_SPECIALIST Dashboard Button for Mobile */}
+                        {userRole === 'SOLO_SPECIALIST' && (
+                          <Link
+                            href={`/${currentLocale}/solo-specialist-dashboard`}
+                            onClick={toggleMenu}
+                            style={{
+                              backgroundColor: isDark ? '#000000' : '#FFFFFF',
+                              borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+                              color: isDark ? '#FFFFFF' : '#000000',
+                              borderWidth: '1px',
+                              borderStyle: 'solid'
+                            }}
+                            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 active:scale-[0.98]"
+                          >
+                            <LayoutDashboard className="w-4 h-4" />
+                            Specialist Dashboard
+                          </Link>
+                        )}
+
+                        {/* SPECIALIST Dashboard Button for Mobile */}
+                        {userRole === 'SPECIALIST' && (
+                          <Link
+                            href={`/${currentLocale}/specialist-dashboard`}
+                            onClick={toggleMenu}
+                            style={{
+                              backgroundColor: isDark ? '#000000' : '#FFFFFF',
+                              borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+                              color: isDark ? '#FFFFFF' : '#000000',
+                              borderWidth: '1px',
+                              borderStyle: 'solid'
+                            }}
+                            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 active:scale-[0.98]"
+                          >
+                            <LayoutDashboard className="w-4 h-4" />
+                            My Dashboard
+                          </Link>
+                        )}
+
+                        {/* USER Profile Button for Mobile (default for users without specific role) */}
+                        {(!userRole || userRole === 'USER') && (
                           <Link
                             href={`/${currentLocale}/complete-profile`}
                             onClick={toggleMenu}
@@ -343,7 +626,7 @@ export default function Header() {
                               borderWidth: '1px',
                               borderStyle: 'solid'
                             }}
-                            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 active:scale-[0.98]"
                           >
                             {hasPendingRequest ? 'Pending' : 'პროფილი'}
                           </Link>
@@ -360,11 +643,13 @@ export default function Header() {
                             borderStyle: 'solid',
                             boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)'
                           }}
-                          className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                          className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 active:scale-[0.98]"
                         >
                           <LogOut className="w-4 h-4" />
                           გასვლა
                         </button>
+                        </>
+                        )}
                       </>
                     ) : (
                       <>
@@ -378,17 +663,7 @@ export default function Header() {
                             borderWidth: '1px',
                             borderStyle: 'solid'
                           }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = isDark ? '#FFFFFF' : '#000000'
-                            e.currentTarget.style.color = isDark ? '#000000' : '#FFFFFF'
-                            e.currentTarget.style.borderColor = isDark ? '#FFFFFF' : '#000000'
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = isDark ? '#000000' : '#FFFFFF'
-                            e.currentTarget.style.color = isDark ? '#FFFFFF' : '#000000'
-                            e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'
-                          }}
-                          className="px-4 py-2 rounded-lg text-base font-medium text-center transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                          className="px-4 py-2 rounded-lg text-base font-medium text-center transition-all duration-300 active:scale-[0.98]"
                         >
                           შესვლა
                         </Link>
@@ -403,24 +678,18 @@ export default function Header() {
                             borderStyle: 'solid',
                             boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)'
                           }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = '#000000'
-                            e.currentTarget.style.color = '#FFFFFF'
-                            e.currentTarget.style.borderColor = isDark ? '#FFFFFF' : '#000000'
-                            e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0,0,0,0.1)'
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = '#FFFFFF'
-                            e.currentTarget.style.color = '#000000'
-                            e.currentTarget.style.borderColor = 'transparent'
-                            e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0,0,0,0.05)'
-                          }}
-                          className="px-4 py-2 rounded-lg text-base font-medium text-center transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                          className="px-4 py-2 rounded-lg text-base font-medium text-center transition-all duration-300 active:scale-[0.98]"
                         >
                           რეგისტრაცია
                         </Link>
                       </>
                     )}
+                  </div>
+                ) : (
+                  <div className={`flex flex-col space-y-2 pt-4 border-t transition-colors duration-300 ${isDark ? 'border-white/10' : 'border-black/10'}`}>
+                    <div className="px-4 py-2 text-base font-medium text-center" style={{ color: isDark ? '#FFFFFF' : '#000000' }}>
+                      Loading...
+                    </div>
                   </div>
                 )}
               </nav>
