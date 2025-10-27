@@ -24,58 +24,44 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const serviceSlug = decodeURIComponent(encodedServiceSlug)
   const practiceSlug = decodeURIComponent(encodedPracticeSlug)
 
-  // Step 1: Find the practice by its slug to get the ID
-  const { data: practiceData } = await supabase
-    .from('practice_translations')
-    .select('practice_id')
-    .eq('slug', practiceSlug)
-    .eq('language', locale)
-    .single()
-
-  if (!practiceData) {
-    return {
-      title: 'Practice Not Found',
-      description: 'The requested practice could not be found for this service.',
-    }
-  }
-
-  // Step 2: Find the service translation by its slug
+  // Find the service translation by its slug
   const { data: translationData } = await supabase
     .from('service_translations')
-    .select('service_id, title, meta_title, meta_description, og_title, og_description, og_image_url')
+    .select(`
+      service_id, 
+      title, 
+      meta_title, 
+      meta_description, 
+      og_title, 
+      og_description,
+      services!inner (
+        og_image_url,
+        image_url
+      )
+    `)
     .eq('slug', serviceSlug)
     .eq('language', locale)
-    .single()
+    .maybeSingle()
 
   if (!translationData) {
+    // Return default metadata instead of "not found" - the notFound() will handle the page
     return {
-      title: 'Service Not Found',
-      description: 'The requested service could not be found.',
+      title: 'LegalGE',
+      description: 'Legal services platform',
     }
   }
 
-  // Step 3: Verify the service belongs to the practice and is published
-  const { data: serviceData } = await supabase
-    .from('services')
-    .select('status, og_image_url')
-    .eq('id', translationData.service_id)
-    .eq('practice_id', practiceData.practice_id) // Crucial check
-    .eq('status', 'published')
-    .single()
-
-  if (!serviceData) {
-    return {
-      title: 'Service Not Found',
-      description: 'This service is not published or does not belong to this practice.',
-    }
-  }
+  // Get the service data
+  const serviceData = Array.isArray(translationData.services) 
+    ? translationData.services[0] 
+    : translationData.services
 
   // Build metadata
   const title = translationData.meta_title || translationData.title
   const description = translationData.meta_description || translationData.title
   const ogTitle = translationData.og_title || title
   const ogDescription = translationData.og_description || description
-  const ogImage = serviceData.og_image_url || translationData.og_image_url || '/default-og-image.jpg'
+  const ogImage = serviceData?.og_image_url || serviceData?.image_url || '/default-og-image.jpg'
 
   return {
     title,
@@ -113,7 +99,7 @@ export default async function ServicePage({ params }: Props) {
     .from('service_translations')
     .select('service_id, language, slug')
     .eq('slug', serviceSlug)
-    .single()
+    .maybeSingle()
 
   // If slug not found, show 404
   if (!serviceBySlug) {
