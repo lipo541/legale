@@ -31,15 +31,13 @@ export default function Header() {
 
   // Check authentication status
   useEffect(() => {
+    const supabase = createClient()
     let mounted = true
 
-    async function loadUserData(user: { id: string; email?: string } | null) {
-      if (!user || !mounted) return
-
+    const loadUserData = async (user: { id: string; email?: string }) => {
+      if (!mounted) return
       setRoleLoading(true)
-      
       try {
-        // Get user role from profiles
         const { data: profile } = await supabase
           .from('profiles')
           .select('role')
@@ -47,10 +45,8 @@ export default function Header() {
           .single()
         
         if (!mounted) return
-        
         setUserRole(profile?.role || null)
 
-        // Check for pending access request
         const { data: pendingRequest } = await supabase
           .from('access_requests')
           .select('id, status, company_id')
@@ -59,7 +55,6 @@ export default function Header() {
           .maybeSingle()
         
         if (!mounted) return
-        
         setHasPendingRequest(!!pendingRequest)
       } catch (error) {
         console.error('Error loading user data:', error)
@@ -70,31 +65,18 @@ export default function Header() {
       }
     }
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return
-      setUser(session?.user || null)
-      if (session?.user) {
-        loadUserData(session.user)
-      } else {
-        setLoading(false)
-      }
-    })
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (!mounted) return
-      
-      setUser(session?.user || null)
-      
-      if (session?.user) {
-        await loadUserData(session.user)
+      const currentUser = session?.user
+      setUser(currentUser || null)
+
+      if (currentUser) {
+        loadUserData(currentUser)
       } else {
         setUserRole(null)
         setHasPendingRequest(false)
-        setRoleLoading(false)
       }
-      
       setLoading(false)
     })
 
@@ -102,7 +84,7 @@ export default function Header() {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [supabase])
+  }, [])
 
   // Handle logout
   const handleLogout = async () => {
