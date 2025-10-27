@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { Menu, X, LayoutDashboard, LogOut } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTheme } from '@/contexts/ThemeContext'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { 
   Building2, Mail, Phone, Globe, MapPin, Edit, Save, X, Loader2,
@@ -173,7 +173,7 @@ export default function CompanyProfilePage() {
     }
   }
 
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     setLoading(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -208,7 +208,7 @@ export default function CompanyProfilePage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
 
   const fetchCompanyCities = async (companyId: string) => {
     try {
@@ -334,7 +334,7 @@ export default function CompanyProfilePage() {
     }
   }
 
-  useEffect(() => { fetchProfile() }, [])
+  useEffect(() => { fetchProfile() }, [fetchProfile])
 
   const handleEdit = () => setEditing(true)
   
@@ -368,7 +368,8 @@ export default function CompanyProfilePage() {
         setTempSectionData({})
         alert('სექცია წარმატებით განახლდა!')
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Save section error:', error)
       alert('შეცდომა შენახვისას')
     } finally {
       setSaving(false)
@@ -413,7 +414,8 @@ export default function CompanyProfilePage() {
         setEditing(false)
         alert('პროფილი წარმატებით განახლდა!')
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Save profile error:', error)
       alert('შეცდომა შენახვისას')
     } finally {
       setSaving(false)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Fragment } from 'react'
+import { useState, useEffect, Fragment, useCallback } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { 
   Search,
@@ -44,7 +44,7 @@ export default function UsersPage() {
   const supabase = createClient()
 
   // Fetch only USER role users from database
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true)
     
     try {
@@ -64,11 +64,11 @@ export default function UsersPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
 
   useEffect(() => {
     fetchUsers()
-  }, [])
+  }, [fetchUsers])
 
   const handleViewDetails = (user: UserProfile) => {
     if (expandedUserId === user.id) {

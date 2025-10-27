@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { Plus, Search, Edit, Trash2, Eye, Loader2, Lock, Unlock } from 'lucide-react'
 import PracticeAdd from './PracticeAdd'
@@ -54,7 +54,7 @@ export default function PracticesPage() {
   const supabase = createClient()
 
   // Fetch practices from database
-  const fetchPractices = async () => {
+  const fetchPractices = useCallback(async () => {
     setLoading(true)
     const { data, error } = await supabase
       .from('practices')
@@ -89,11 +89,11 @@ export default function PracticesPage() {
       setPractices(data as PracticeWithTranslations[])
     }
     setLoading(false)
-  }
+  }, [supabase])
 
   useEffect(() => {
     fetchPractices()
-  }, [])
+  }, [fetchPractices])
 
   // Handle delete
   const handleDelete = async (id: string) => {

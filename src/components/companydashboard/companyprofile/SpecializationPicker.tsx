@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Check } from 'lucide-react';
@@ -28,15 +28,7 @@ export default function SpecializationPicker({ selectedSpecializationIds, onSave
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchSpecializations();
-  }, []);
-
-  useEffect(() => {
-    setSelectedIds(selectedSpecializationIds);
-  }, [selectedSpecializationIds]);
-
-  const fetchSpecializations = async () => {
+  const fetchSpecializations = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('specializations')
@@ -53,7 +45,19 @@ export default function SpecializationPicker({ selectedSpecializationIds, onSave
     } finally {
       setLoading(false);
     }
-  };
+  }, [locale, supabase]);
+
+  useEffect(() => {
+    fetchSpecializations();
+  }, [fetchSpecializations]);
+
+  useEffect(() => {
+    fetchSpecializations();
+  }, [fetchSpecializations]);
+
+  useEffect(() => {
+    setSelectedIds(selectedSpecializationIds);
+  }, [selectedSpecializationIds]);
 
   const toggleSpecialization = (specializationId: string) => {
     const newSelectedIds = selectedIds.includes(specializationId)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Fragment } from 'react'
+import { useState, useEffect, Fragment, useCallback } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import Link from 'next/link'
 import { 
@@ -88,7 +88,7 @@ export default function SpecialistsPage() {
 
   const supabase = createClient()
 
-  const fetchSpecialists = async () => {
+  const fetchSpecialists = useCallback(async () => {
     setLoading(true)
     
     try {
@@ -120,11 +120,11 @@ export default function SpecialistsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
 
   useEffect(() => {
     fetchSpecialists()
-  }, [])
+  }, [fetchSpecialists])
 
   const handleViewDetails = (specialist: SpecialistProfile) => {
     if (expandedId === specialist.id) {

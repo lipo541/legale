@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Fragment } from 'react'
+import { useState, useEffect, Fragment, useCallback } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { 
   Search,
@@ -90,7 +90,7 @@ export default function CompaniesPage() {
 
   const supabase = createClient()
 
-  const fetchCompanies = async () => {
+  const fetchCompanies = useCallback(async () => {
     setLoading(true)
     
     try {
@@ -110,11 +110,11 @@ export default function CompaniesPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
 
   useEffect(() => {
     fetchCompanies()
-  }, [])
+  }, [fetchCompanies])
 
   const handleViewDetails = (company: CompanyProfile) => {
     if (expandedId === company.id) {

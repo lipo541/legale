@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { Plus, Search, Edit, Trash2, Eye, Loader2, Lock, Unlock } from 'lucide-react'
 import ServiceAdd from './ServiceAdd'
@@ -52,7 +52,7 @@ export default function ServicesPage() {
   const supabase = createClient()
 
   // Fetch services from database
-  const fetchServices = async () => {
+  const fetchServices = useCallback(async () => {
     setLoading(true)
     
     try {
@@ -101,11 +101,11 @@ export default function ServicesPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
 
   useEffect(() => {
     fetchServices()
-  }, [])
+  }, [fetchServices])
 
   // Handle delete
   const handleDelete = async (id: string) => {

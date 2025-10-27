@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Fragment } from 'react'
+import { useState, useEffect, Fragment, useCallback } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { 
   Search,
@@ -43,7 +43,7 @@ export default function AuthorsPage() {
 
   const supabase = createClient()
 
-  const fetchAuthors = async () => {
+  const fetchAuthors = useCallback(async () => {
     setLoading(true)
     
     try {
@@ -63,11 +63,11 @@ export default function AuthorsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
 
   useEffect(() => {
     fetchAuthors()
-  }, [])
+  }, [fetchAuthors])
 
   const handleViewDetails = (author: AuthorProfile) => {
     if (expandedId === author.id) {

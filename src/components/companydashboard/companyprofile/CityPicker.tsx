@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { useTheme } from '@/contexts/ThemeContext';
 import { MapPin, X, Check, Search } from 'lucide-react';
@@ -31,11 +31,7 @@ export default function CityPicker({ onClose, onSave, selectedCityIds }: CityPic
   const [searchQuery, setSearchQuery] = useState('');
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchCities();
-  }, [locale]);
-
-  const fetchCities = async () => {
+  const fetchCities = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('cities')
@@ -52,7 +48,11 @@ export default function CityPicker({ onClose, onSave, selectedCityIds }: CityPic
     } finally {
       setLoading(false);
     }
-  };
+  }, [locale, supabase]);
+
+  useEffect(() => {
+    fetchCities();
+  }, [fetchCities]);
 
   const toggleCity = (cityId: string) => {
     setSelectedIds(prev => 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Briefcase, Loader2, CheckCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -26,19 +26,7 @@ export default function ServicesField({ profileId, isDark, isEditing }: Services
   const [selectedPractices, setSelectedPractices] = useState<string[]>([])
   const [tempSelectedPractices, setTempSelectedPractices] = useState<string[]>([])
 
-  // Fetch all practices and user's selected practices
-  useEffect(() => {
-    fetchData()
-  }, [profileId])
-
-  // Reset temp selection when editing starts/stops
-  useEffect(() => {
-    if (isEditing) {
-      setTempSelectedPractices([...selectedPractices])
-    }
-  }, [isEditing, selectedPractices])
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     try {
       // Fetch all practices
@@ -78,7 +66,19 @@ export default function ServicesField({ profileId, isDark, isEditing }: Services
     } finally {
       setLoading(false)
     }
-  }
+  }, [profileId, supabase])
+
+  // Fetch all practices and user's selected practices
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  // Reset temp selection when editing starts/stops
+  useEffect(() => {
+    if (isEditing) {
+      setTempSelectedPractices([...selectedPractices])
+    }
+  }, [isEditing, selectedPractices])
 
   const togglePractice = (practiceId: string) => {
     if (!isEditing) return

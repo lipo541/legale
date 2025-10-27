@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { 
   User, Mail, Phone, Loader2, Upload, X, CheckCircle, Clock, 
@@ -60,7 +60,7 @@ export default function ProfilePage() {
   }
 
   // Fetch profile data
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     setLoading(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -78,9 +78,9 @@ export default function ProfilePage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
 
-  useEffect(() => { fetchProfile() }, [])
+  useEffect(() => { fetchProfile() }, [fetchProfile])
 
   // Check if profile is complete for verification
   const isProfileComplete = (): boolean => {
@@ -111,7 +111,8 @@ export default function ProfilePage() {
           await fetchProfile()
           alert('ვერიფიკაციის მოთხოვნა გაიგზავნა! ✅\n\nადმინისტრატორი განიხილავს თქვენს პროფილს და მალე მიიღებთ პასუხს.')
         }
-      } catch (err) {
+      } catch (error) {
+        console.error('Request verification error:', error)
         alert('შეცდომა მოთხოვნის გაგზავნისას')
       } finally {
         setRequestingVerification(false)
@@ -221,7 +222,8 @@ export default function ProfilePage() {
         setTempSectionData({})
         alert('სექცია წარმატებით განახლდა!')
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Save section error:', error)
       alert('შეცდომა შენახვისას')
     } finally {
       setSaving(false)

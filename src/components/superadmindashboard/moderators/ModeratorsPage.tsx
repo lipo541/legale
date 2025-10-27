@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Fragment } from 'react'
+import { useState, useEffect, Fragment, useCallback } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { 
   Search,
@@ -43,7 +43,7 @@ export default function ModeratorsPage() {
 
   const supabase = createClient()
 
-  const fetchModerators = async () => {
+  const fetchModerators = useCallback(async () => {
     setLoading(true)
     
     try {
@@ -63,11 +63,11 @@ export default function ModeratorsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
 
   useEffect(() => {
     fetchModerators()
-  }, [])
+  }, [fetchModerators])
 
   const handleViewDetails = (moderator: ModeratorProfile) => {
     if (expandedId === moderator.id) {

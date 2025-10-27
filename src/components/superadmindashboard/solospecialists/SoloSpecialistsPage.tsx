@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Fragment } from 'react'
+import { useState, useEffect, Fragment, useCallback } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import Link from 'next/link'
 import { 
@@ -85,7 +85,7 @@ export default function SoloSpecialistsPage() {
 
   const supabase = createClient()
 
-  const fetchSpecialists = async () => {
+  const fetchSpecialists = useCallback(async () => {
     setLoading(true)
     
     try {
@@ -106,11 +106,11 @@ export default function SoloSpecialistsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
 
   useEffect(() => {
     fetchSpecialists()
-  }, [])
+  }, [fetchSpecialists])
 
   const filteredSpecialists = specialists.filter(specialist => {
     const query = searchQuery.toLowerCase()

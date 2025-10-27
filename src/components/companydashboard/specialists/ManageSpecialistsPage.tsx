@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Fragment } from 'react'
+import { useState, useEffect, Fragment, useCallback } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { 
   Search,
@@ -58,11 +58,7 @@ export default function ManageSpecialistsPage() {
 
   const supabase = createClient()
 
-  useEffect(() => {
-    fetchSpecialists()
-  }, [])
-
-  const fetchSpecialists = async () => {
+  const fetchSpecialists = useCallback(async () => {
     setLoading(true)
     try {
       // Get current user's company ID
@@ -119,7 +115,11 @@ export default function ManageSpecialistsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    fetchSpecialists()
+  }, [fetchSpecialists])
 
   const handleViewDetails = (specialist: Specialist) => {
     if (expandedId === specialist.id) {

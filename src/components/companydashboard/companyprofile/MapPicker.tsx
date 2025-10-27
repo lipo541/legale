@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -83,21 +83,7 @@ export default function MapPicker({ onLocationSelect, initialPosition, isDark = 
 
   const provider = new OpenStreetMapProvider()
 
-  // Auto-search as user types (debounced)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (searchQuery.trim().length >= 3) {
-        handleSearch()
-      } else {
-        setSearchResults([])
-        setShowResults(false)
-      }
-    }, 500) // Wait 500ms after user stops typing
-
-    return () => clearTimeout(timer)
-  }, [searchQuery])
-
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async () => {
     if (!searchQuery.trim() || searchQuery.trim().length < 3) return
 
     setSearching(true)
@@ -111,7 +97,21 @@ export default function MapPicker({ onLocationSelect, initialPosition, isDark = 
     } finally {
       setSearching(false)
     }
-  }
+  }, [searchQuery, provider])
+
+  // Auto-search as user types (debounced)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery.trim().length >= 3) {
+        handleSearch()
+      } else {
+        setSearchResults([])
+        setShowResults(false)
+      }
+    }, 500) // Wait 500ms after user stops typing
+
+    return () => clearTimeout(timer)
+  }, [searchQuery, handleSearch])
 
   const handleSelectResult = (result: SearchResult) => {
     const newPosition = L.latLng(result.y, result.x)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Fragment } from 'react'
+import { useState, useEffect, Fragment, useCallback } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { 
   Search,
@@ -82,7 +82,7 @@ export default function RequestsPage() {
 
   const supabase = createClient()
 
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
     setLoading(true)
     
     try {
@@ -108,9 +108,9 @@ export default function RequestsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
 
-  const fetchVerificationRequests = async () => {
+  const fetchVerificationRequests = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -127,12 +127,12 @@ export default function RequestsPage() {
     } catch (error) {
       console.error('Fetch error:', error)
     }
-  }
+  }, [supabase])
 
   useEffect(() => {
     fetchRequests()
     fetchVerificationRequests()
-  }, [])
+  }, [fetchRequests, fetchVerificationRequests])
 
   const handleViewDetails = (request: AccessRequest | VerificationRequest) => {
     if (expandedId === request.id) {
