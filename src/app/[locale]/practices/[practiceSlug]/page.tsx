@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createClient as createBrowserClient } from '@/lib/supabase/client'
 import PracticeDetail from '@/components/practice/PracticeDetail'
 
+export const revalidate = 0
+
 type Props = {
   params: Promise<{
     locale: 'ka' | 'en' | 'ru'
@@ -228,5 +230,3 @@ export async function generateStaticParams() {
 
   return params
 }
-
-export const revalidate = 0; // Disable cache for this page
