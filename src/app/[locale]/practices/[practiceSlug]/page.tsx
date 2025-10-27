@@ -228,3 +228,5 @@ export async function generateStaticParams() {
 
   return params
 }
+
+export const revalidate = 0; // Disable cache for this page

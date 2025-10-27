@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
   }
 
-  // Step 2: Check that the parent service exists and is published (and get og image if set on service)
+  // Step 2: Check that the parent service exists and is published
   const { data: serviceData } = await supabase
     .from('services')
     .select('status, og_image_url')
@@ -55,7 +55,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = translationData.meta_description || translationData.title
   const ogTitle = translationData.og_title || title
   const ogDescription = translationData.og_description || description
-  // prefer service-level OG image, fallback to translation-level image, then default
   const ogImage = serviceData.og_image_url || translationData.og_image_url || '/default-og-image.jpg'
 
   return {
@@ -264,3 +263,5 @@ export async function generateStaticParams() {
 
   return params
 }
+
+export const revalidate = 0; // Disable cache for this page
