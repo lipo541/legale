@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Briefcase, Loader2, CheckCircle } from 'lucide-react'
+import { Briefcase, Loader2, CheckCircle, Edit } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 interface Practice {
@@ -15,7 +15,7 @@ interface Practice {
 interface ServicesFieldProps {
   profileId: string
   isDark: boolean
-  isEditing: boolean
+  isEditing?: boolean
   onSave?: () => void
   onCancel?: () => void
   showActions?: boolean
@@ -24,7 +24,7 @@ interface ServicesFieldProps {
 export default function ServicesField({ 
   profileId, 
   isDark, 
-  isEditing,
+  isEditing: externalIsEditing,
   onSave,
   onCancel,
   showActions = true 
@@ -35,6 +35,10 @@ export default function ServicesField({
   const [practices, setPractices] = useState<Practice[]>([])
   const [selectedPractices, setSelectedPractices] = useState<string[]>([])
   const [tempSelectedPractices, setTempSelectedPractices] = useState<string[]>([])
+  const [internalIsEditing, setInternalIsEditing] = useState(false)
+  
+  // Use external isEditing if provided, otherwise use internal state
+  const isEditing = externalIsEditing !== undefined ? externalIsEditing : internalIsEditing
 
   // Fetch all practices and user's selected practices
   useEffect(() => {
@@ -140,6 +144,7 @@ export default function ServicesField({
 
       setSelectedPractices([...tempSelectedPractices])
       alert('სერვისები წარმატებით განახლდა! ✅')
+      setInternalIsEditing(false)
       onSave?.()
     } catch (error) {
       console.error('Save error:', error)
@@ -151,7 +156,12 @@ export default function ServicesField({
 
   const handleCancel = () => {
     setTempSelectedPractices([...selectedPractices])
+    setInternalIsEditing(false)
     onCancel?.()
+  }
+
+  const handleStartEdit = () => {
+    setInternalIsEditing(true)
   }
 
   if (loading) {
@@ -254,32 +264,49 @@ export default function ServicesField({
           )}
         </>
       ) : (
-        <div className="flex flex-wrap gap-2">
-          {displayPractices.length > 0 ? (
-            displayPractices.map((practiceId) => {
-              const practice = practices.find(p => p.id === practiceId)
-              if (!practice) return null
-              const title = getPracticeTitle(practice)
-              
-              return (
-                <span
-                  key={practiceId}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                    isDark
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                      : 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30'
-                  }`}
-                >
-                  {title}
-                </span>
-              )
-            })
-          ) : (
-            <p className={`text-base ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-              სერვისები არ არის არჩეული
-            </p>
+        <>
+          {showActions && (
+            <div className="flex justify-end mb-3">
+              <button
+                onClick={handleStartEdit}
+                className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                  isDark
+                    ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30'
+                    : 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/20'
+                }`}
+              >
+                <Edit className="h-3.5 w-3.5" />
+                რედაქტირება
+              </button>
+            </div>
           )}
-        </div>
+          <div className="flex flex-wrap gap-2">
+            {displayPractices.length > 0 ? (
+              displayPractices.map((practiceId) => {
+                const practice = practices.find(p => p.id === practiceId)
+                if (!practice) return null
+                const title = getPracticeTitle(practice)
+                
+                return (
+                  <span
+                    key={practiceId}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                      isDark
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                        : 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30'
+                    }`}
+                  >
+                    {title}
+                  </span>
+                )
+              })
+            ) : (
+              <p className={`text-base ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                სერვისები არ არის არჩეული
+              </p>
+            )}
+          </div>
+        </>
       )}
     </div>
   )

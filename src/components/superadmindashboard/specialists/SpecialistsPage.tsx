@@ -17,9 +17,13 @@ import {
   ExternalLink,
   Building2,
   Upload,
-  Ban
+  Ban,
+  CheckCircle,
+  Clock,
+  XCircle
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import ServicesField from '@/components/common/ServicesField'
 
 const AVAILABLE_LANGUAGES = ['English', 'Georgian', 'Russian', 'German']
 
@@ -41,6 +45,8 @@ interface SpecialistProfile {
   credentials_memberships: string[] | null
   values_how_we_work: Record<string, string> | null
   verification_status: string | null
+  verification_notes: string | null
+  verification_reviewed_at: string | null
   company_id: string | null
   company_slug: string | null
   company_name?: string | null
@@ -102,6 +108,7 @@ export default function SpecialistsPage() {
       if (error) {
         console.error('Error fetching specialists:', error)
       } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const specialistsWithCompany = (data || []).map((specialist: any) => ({
           ...specialist,
           company_name: specialist.company?.full_name || null
@@ -153,6 +160,7 @@ export default function SpecialistsPage() {
     setUpdatingId(editingSpecialist.id)
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updateData: any = {
         full_name: editForm.full_name,
         email: editForm.email,
@@ -778,6 +786,18 @@ export default function SpecialistsPage() {
 
                                     <div className="sm:col-span-2">
                                       <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                        სერვისები
+                                      </label>
+                                      <ServicesField 
+                                        profileId={specialist.id}
+                                        isDark={isDark}
+                                        isEditing={true}
+                                        showActions={true}
+                                      />
+                                    </div>
+
+                                    <div className="sm:col-span-2">
+                                      <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                                         Focus Areas (one per line)
                                       </label>
                                       <textarea
@@ -1105,6 +1125,17 @@ export default function SpecialistsPage() {
 
                                 <div className="sm:col-span-2">
                                   <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                    სერვისები
+                                  </label>
+                                  <ServicesField 
+                                    profileId={specialist.id}
+                                    isDark={isDark}
+                                    showActions={true}
+                                  />
+                                </div>
+
+                                <div className="sm:col-span-2">
+                                  <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                                     Focus Areas
                                   </label>
                                   {specialist.focus_areas && specialist.focus_areas.length > 0 ? (
@@ -1210,6 +1241,52 @@ export default function SpecialistsPage() {
                                       /{specialist.company_slug}
                                     </p>
                                   )}
+                                </div>
+
+                                <div>
+                                  <label className={`mb-2 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                    <CheckCircle className="h-4 w-4" />
+                                    ვერიფიკაციის სტატუსი
+                                  </label>
+                                  <div className="space-y-2">
+                                    {specialist.verification_status === 'verified' ? (
+                                      <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-500/10 text-emerald-600'}`}>
+                                        <CheckCircle className="h-4 w-4" />
+                                        დადასტურებული
+                                      </span>
+                                    ) : specialist.verification_status === 'pending' ? (
+                                      <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ${isDark ? 'bg-yellow-500/20 text-yellow-400' : 'bg-yellow-500/10 text-yellow-600'}`}>
+                                        <Clock className="h-4 w-4" />
+                                        განხილვაში
+                                      </span>
+                                    ) : specialist.verification_status === 'rejected' ? (
+                                      <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ${isDark ? 'bg-red-500/20 text-red-400' : 'bg-red-500/10 text-red-600'}`}>
+                                        <XCircle className="h-4 w-4" />
+                                        უარყოფილი
+                                      </span>
+                                    ) : (
+                                      <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ${isDark ? 'bg-white/10 text-white/60' : 'bg-black/10 text-black/60'}`}>
+                                        არ არის მოთხოვნილი
+                                      </span>
+                                    )}
+                                    
+                                    {specialist.verification_notes && (
+                                      <div className={`mt-2 p-3 rounded-lg ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
+                                        <p className={`text-xs font-medium mb-1 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                          შენიშვნები:
+                                        </p>
+                                        <p className={`text-sm ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+                                          {specialist.verification_notes}
+                                        </p>
+                                      </div>
+                                    )}
+                                    
+                                    {specialist.verification_reviewed_at && (
+                                      <p className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                                        განხილულია: {new Date(specialist.verification_reviewed_at).toLocaleString('ka-GE')}
+                                      </p>
+                                    )}
+                                  </div>
                                 </div>
 
                                 <div>

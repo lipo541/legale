@@ -15,6 +15,8 @@ export interface Specialist {
   credentials_memberships: string[] | null
   values_how_we_work: Record<string, string> | null
   verification_status: string | null
+  verification_notes: string | null
+  verification_reviewed_at: string | null
   company_id: string | null
   company_slug: string | null
   company_name?: string | null

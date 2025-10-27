@@ -192,6 +192,7 @@ export default function ProfilePage() {
       const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() }
 
       fields.forEach(field => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const value = tempSectionData[field] !== undefined ? tempSectionData[field] : (profile as any)[field]
 
         if (field === 'full_name' && value !== profile.full_name) {
@@ -257,6 +258,7 @@ export default function ProfilePage() {
   }
 
   const isEditing = (section: string) => editingSection === section
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const getValue = (field: string) => tempSectionData[field] !== undefined ? tempSectionData[field] as string : (profile as any)[field] || ''
   const setValue = (field: string, value: string | string[] | Record<string, string>) => setTempSectionData({ ...tempSectionData, [field]: value })
 
