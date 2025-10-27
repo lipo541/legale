@@ -21,39 +21,42 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // Decode URL-encoded slug
   const slug = decodeURIComponent(encodedSlug)
 
-  // Fetch service translation for metadata
-  const { data: service } = await supabase
-    .from('services')
-    .select(`
-      service_translations (
-        language,
-        slug,
-        title,
-        meta_title,
-        meta_description,
-        og_title,
-        og_description
-      ),
-      og_image_url
-    `)
-    .eq('service_translations.slug', slug)
-    .eq('service_translations.language', locale)
+  // Step 1: Find the translation by slug and locale to get the service_id and translation fields
+  const { data: translationData } = await supabase
+    .from('service_translations')
+    .select('service_id, title, meta_title, meta_description, og_title, og_description, og_image_url')
+    .eq('slug', slug)
+    .eq('language', locale)
     .single()
 
-  if (!service || !service.service_translations || service.service_translations.length === 0) {
+  if (!translationData) {
     return {
       title: 'Service Not Found',
       description: 'The requested service could not be found.',
     }
   }
 
-  const translation = service.service_translations[0]
+  // Step 2: Check that the parent service exists and is published (and get og image if set on service)
+  const { data: serviceData } = await supabase
+    .from('services')
+    .select('status, og_image_url')
+    .eq('id', translationData.service_id)
+    .eq('status', 'published')
+    .single()
 
-  const title = translation.meta_title || translation.title
-  const description = translation.meta_description || translation.title
-  const ogTitle = translation.og_title || title
-  const ogDescription = translation.og_description || description
-  const ogImage = service.og_image_url || '/default-og-image.jpg'
+  if (!serviceData) {
+    return {
+      title: 'Service Not Found',
+      description: 'The requested service could not be found.',
+    }
+  }
+
+  const title = translationData.meta_title || translationData.title
+  const description = translationData.meta_description || translationData.title
+  const ogTitle = translationData.og_title || title
+  const ogDescription = translationData.og_description || description
+  // prefer service-level OG image, fallback to translation-level image, then default
+  const ogImage = serviceData.og_image_url || translationData.og_image_url || '/default-og-image.jpg'
 
   return {
     title,
@@ -79,7 +82,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: [ogImage],
     },
     alternates: {
-      canonical: `https://legalge.com/${locale}/practices/${practiceSlug}/${slug}`,
+      canonical: `https://legale-opal.vercel.app/${locale}/practices/${practiceSlug}/${slug}`,
     },
   }
 }
