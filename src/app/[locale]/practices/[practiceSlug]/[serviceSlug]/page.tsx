@@ -24,35 +24,58 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const serviceSlug = decodeURIComponent(encodedServiceSlug)
   const practiceSlug = decodeURIComponent(encodedPracticeSlug)
 
-  // Find the service translation by slug and language
-  const { data: serviceTranslation } = await supabase
+  // Step 1: Find the practice by its slug to get the ID
+  const { data: practiceData } = await supabase
+    .from('practice_translations')
+    .select('practice_id')
+    .eq('slug', practiceSlug)
+    .eq('language', locale)
+    .single()
+
+  if (!practiceData) {
+    return {
+      title: 'Practice Not Found',
+      description: 'The requested practice could not be found for this service.',
+    }
+  }
+
+  // Step 2: Find the service translation by its slug
+  const { data: translationData } = await supabase
     .from('service_translations')
-    .select(`
-      title,
-      description,
-      meta_title,
-      meta_description,
-      og_title,
-      og_description,
-      og_image_url,
-      service_id
-    `)
+    .select('service_id, title, meta_title, meta_description, og_title, og_description, og_image_url')
     .eq('slug', serviceSlug)
     .eq('language', locale)
     .single()
 
-  if (!serviceTranslation) {
+  if (!translationData) {
     return {
       title: 'Service Not Found',
       description: 'The requested service could not be found.',
     }
   }
 
-  const title = serviceTranslation.meta_title || serviceTranslation.title
-  const description = serviceTranslation.meta_description || serviceTranslation.description || 'Service description'
-  const ogTitle = serviceTranslation.og_title || title
-  const ogDescription = serviceTranslation.og_description || description
-  const ogImage = serviceTranslation.og_image_url || '/default-og-image.jpg'
+  // Step 3: Verify the service belongs to the practice and is published
+  const { data: serviceData } = await supabase
+    .from('services')
+    .select('status, og_image_url')
+    .eq('id', translationData.service_id)
+    .eq('practice_id', practiceData.practice_id) // Crucial check
+    .eq('status', 'published')
+    .single()
+
+  if (!serviceData) {
+    return {
+      title: 'Service Not Found',
+      description: 'This service is not published or does not belong to this practice.',
+    }
+  }
+
+  // Build metadata
+  const title = translationData.meta_title || translationData.title
+  const description = translationData.meta_description || translationData.title
+  const ogTitle = translationData.og_title || title
+  const ogDescription = translationData.og_description || description
+  const ogImage = serviceData.og_image_url || translationData.og_image_url || '/default-og-image.jpg'
 
   return {
     title,
@@ -62,14 +85,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: ogDescription,
       type: 'article',
       locale: locale === 'ka' ? 'ka_GE' : locale === 'en' ? 'en_US' : 'ru_RU',
-      images: [
-        {
-          url: ogImage,
-          width: 1200,
-          height: 630,
-          alt: ogTitle,
-        },
-      ],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: ogTitle }],
     },
     twitter: {
       card: 'summary_large_image',
@@ -92,77 +108,89 @@ export default async function ServicePage({ params }: Props) {
   const practiceSlug = decodeURIComponent(encodedPracticeSlug)
   const serviceSlug = decodeURIComponent(encodedServiceSlug)
 
-  // Step 1: Find the service translation by slug
+  // Step 1: Find the service by slug
   const { data: serviceBySlug } = await supabase
     .from('service_translations')
     .select('service_id, language, slug')
     .eq('slug', serviceSlug)
-    .eq('language', locale)
     .single()
 
+  // If slug not found, show 404
   if (!serviceBySlug) {
     notFound()
   }
 
-  // Step 2: Fetch the full service data
-  const { data: serviceData, error: serviceError } = await supabase
+  // Step 2: Fetch the full service data with translation
+  const { data: serviceData, error } = await supabase
     .from('services')
     .select(`
       id,
       practice_id,
+      image_url,
+      og_image_url,
       status,
       created_at,
-      updated_at
+      updated_at,
+      service_translations!inner (
+        title,
+        slug,
+        description,
+        image_alt,
+        word_count,
+        reading_time,
+        meta_title,
+        meta_description,
+        og_title,
+        og_description,
+        language
+      )
     `)
     .eq('id', serviceBySlug.service_id)
+    .eq('service_translations.language', locale)
     .eq('status', 'published')
-    .single()
+    .maybeSingle()
 
-  if (serviceError || !serviceData) {
+  // If service not found or not published, show 404
+  if (error || !serviceData) {
     notFound()
   }
 
-  // Step 3: Fetch service translation
-  const { data: translation } = await supabase
-    .from('service_translations')
-    .select('*')
-    .eq('service_id', serviceData.id)
-    .eq('language', locale)
-    .single()
+  // Extract translation
+  const translation = serviceData.service_translations[0]
 
-  if (!translation) {
-    notFound()
-  }
-
-  // Step 4: Fetch practice translation to verify the practice slug
-  const { data: practiceTranslation } = await supabase
-    .from('practice_translations')
-    .select('*')
-    .eq('practice_id', serviceData.practice_id)
-    .eq('language', locale)
-    .single()
-
-  if (!practiceTranslation || practiceTranslation.slug !== practiceSlug) {
-    notFound()
-  }
-
-  // Step 5: Fetch practice data
-  const { data: practice } = await supabase
+  // Step 3: Fetch the practice data for context
+  const { data: practiceData } = await supabase
     .from('practices')
-    .select('*')
+    .select(`
+      id,
+      practice_translations!inner (
+        title,
+        slug,
+        language
+      )
+    `)
     .eq('id', serviceData.practice_id)
+    .eq('practice_translations.language', locale)
     .single()
 
-  if (!practice) {
+  if (!practiceData) {
     notFound()
+  }
+
+  const practiceTranslation = practiceData.practice_translations[0]
+
+  // If practice slug doesn't match URL, redirect
+  if (practiceTranslation.slug !== practiceSlug) {
+    const { redirect } = await import('next/navigation')
+    redirect(`/${locale}/practices/${practiceTranslation.slug}/${translation.slug}`)
   }
 
   // Prepare data for ServiceDetail component
   const service = {
     id: serviceData.id,
     practiceId: serviceData.practice_id,
-    imageUrl: translation.og_image_url || '/default-service-image.jpg',
-    ogImageUrl: translation.og_image_url,
+    imageUrl: serviceData.image_url,
+    ogImageUrl: serviceData.og_image_url,
     status: serviceData.status,
     createdAt: serviceData.created_at,
     updatedAt: serviceData.updated_at,
@@ -172,30 +200,26 @@ export default async function ServicePage({ params }: Props) {
     title: translation.title,
     slug: translation.slug,
     description: translation.description,
-    imageAlt: translation.title,
+    imageAlt: translation.image_alt,
     wordCount: translation.word_count,
     readingTime: translation.reading_time,
     metaTitle: translation.meta_title,
     metaDescription: translation.meta_description,
-    focusKeyword: translation.focus_keyword,
     ogTitle: translation.og_title,
     ogDescription: translation.og_description,
-    ogImageUrl: translation.og_image_url,
   }
 
-  const practiceData = {
-    id: practice.id,
+  const practice = {
+    id: practiceData.id,
     title: practiceTranslation.title,
     slug: practiceTranslation.slug,
-    heroImageUrl: practice.hero_image_url,
-    pageHeroImageUrl: practice.page_hero_image_url,
   }
 
   return (
     <ServiceDetail
       service={service}
       translation={translationData}
-      practice={practiceData}
+      practice={practice}
       locale={locale}
     />
   )
