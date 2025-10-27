@@ -15,17 +15,33 @@ type Props = {
 // Generate metadata for SEO
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params
-  const { locale, serviceSlug: encodedSlug, practiceSlug } = resolvedParams
+  const { locale, serviceSlug: encodedServiceSlug, practiceSlug: encodedPracticeSlug } = resolvedParams
   const supabase = await createClient()
 
-  // Decode URL-encoded slug
-  const slug = decodeURIComponent(encodedSlug)
+  // Decode URL-encoded slugs
+  const serviceSlug = decodeURIComponent(encodedServiceSlug)
+  const practiceSlug = decodeURIComponent(encodedPracticeSlug)
 
-  // Step 1: Find the translation by slug and locale to get the service_id and translation fields
+  // Step 1: Find the practice by its slug to get the ID
+  const { data: practiceData } = await supabase
+    .from('practice_translations')
+    .select('practice_id')
+    .eq('slug', practiceSlug)
+    .eq('language', locale)
+    .single()
+
+  if (!practiceData) {
+    return {
+      title: 'Practice Not Found',
+      description: 'The requested practice could not be found for this service.',
+    }
+  }
+
+  // Step 2: Find the service translation by its slug
   const { data: translationData } = await supabase
     .from('service_translations')
     .select('service_id, title, meta_title, meta_description, og_title, og_description, og_image_url')
-    .eq('slug', slug)
+    .eq('slug', serviceSlug)
     .eq('language', locale)
     .single()
 
@@ -36,21 +52,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
   }
 
-  // Step 2: Check that the parent service exists and is published
+  // Step 3: Verify the service belongs to the practice and is published
   const { data: serviceData } = await supabase
     .from('services')
     .select('status, og_image_url')
     .eq('id', translationData.service_id)
+    .eq('practice_id', practiceData.practice_id) // Crucial check
     .eq('status', 'published')
     .single()
 
   if (!serviceData) {
     return {
       title: 'Service Not Found',
-      description: 'The requested service could not be found.',
+      description: 'This service is not published or does not belong to this practice.',
     }
   }
 
+  // Build metadata
   const title = translationData.meta_title || translationData.title
   const description = translationData.meta_description || translationData.title
   const ogTitle = translationData.og_title || title
@@ -65,14 +83,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: ogDescription,
       type: 'article',
       locale: locale === 'ka' ? 'ka_GE' : locale === 'en' ? 'en_US' : 'ru_RU',
-      images: [
-        {
-          url: ogImage,
-          width: 1200,
-          height: 630,
-          alt: ogTitle,
-        },
-      ],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: ogTitle }],
     },
     twitter: {
       card: 'summary_large_image',
@@ -81,7 +92,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: [ogImage],
     },
     alternates: {
-      canonical: `https://legale-opal.vercel.app/${locale}/practices/${practiceSlug}/${slug}`,
+      canonical: `https://legale-opal.vercel.app/${locale}/practices/${practiceSlug}/${serviceSlug}`,
     },
   }
 }
