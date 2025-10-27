@@ -13,51 +13,55 @@ type Props = {
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { locale, practiceSlug: encodedSlug } = await params
-  const supabase = await createClient()
+  const { locale, practiceSlug: encodedSlug } = await params;
+  const supabase = await createClient(); // Use server client
 
   // Decode URL-encoded slug
-  const slug = decodeURIComponent(encodedSlug)
+  const slug = decodeURIComponent(encodedSlug);
 
-  // Fetch practice translation for metadata AND get all language slugs
-  const { data: practice } = await supabase
-    .from('practices')
-    .select(`
-      practice_translations (
-        language,
-        slug,
-        title,
-        meta_title,
-        meta_description,
-        focus_keyword,
-        og_title,
-        og_description,
-        og_image_url
-      )
-    `)
-    .eq('practice_translations.slug', slug)
-    .eq('practice_translations.language', locale)
-    .single()
+  // Step 1: Find the translation by slug and locale to get the practice_id
+  const { data: translationData } = await supabase
+    .from('practice_translations')
+    .select('practice_id, title, meta_title, meta_description, focus_keyword, og_title, og_description, og_image_url')
+    .eq('slug', slug)
+    .eq('language', locale)
+    .single();
 
-  if (!practice || !practice.practice_translations || practice.practice_translations.length === 0) {
+  // If no translation found, return "Not Found" metadata
+  if (!translationData) {
     return {
       title: 'Practice Not Found',
       description: 'The requested practice could not be found.',
-    }
+    };
   }
 
-  const translation = practice.practice_translations[0]
+  // Step 2: Check if the practice itself is published
+  const { data: practiceData } = await supabase
+    .from('practices')
+    .select('status')
+    .eq('id', translationData.practice_id)
+    .eq('status', 'published')
+    .single();
 
-  const title = translation.meta_title || translation.title
-  const description = translation.meta_description || translation.title
-  const ogTitle = translation.og_title || title
-  const ogDescription = translation.og_description || description
-  const ogImage = translation.og_image_url || '/default-og-image.jpg'
+  // If practice is not found or not published, return "Not Found" metadata
+  if (!practiceData) {
+    return {
+      title: 'Practice Not Found',
+      description: 'The requested practice could not be found.',
+    };
+  }
+
+  // Use the fetched translation data to build metadata
+  const title = translationData.meta_title || translationData.title;
+  const description = translationData.meta_description || 'Default description if none provided'; // Provide a fallback
+  const ogTitle = translationData.og_title || title;
+  const ogDescription = translationData.og_description || description;
+  const ogImage = translationData.og_image_url || '/default-og-image.jpg'; // Ensure this default image exists in /public
 
   return {
     title,
     description,
-    keywords: translation.focus_keyword || undefined,
+    keywords: translationData.focus_keyword || undefined,
     openGraph: {
       title: ogTitle,
       description: ogDescription,
@@ -79,9 +83,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: [ogImage],
     },
     alternates: {
-      canonical: `https://legalge.com/${locale}/practices/${slug}`,
+      // Make sure the canonical URL is correct
+      canonical: `https://legale-opal.vercel.app/${locale}/practices/${slug}`,
     },
-  }
+  };
 }
 
 // Main page component
