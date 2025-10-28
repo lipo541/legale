@@ -27,10 +27,12 @@ import {
   Users,
   Ban,
   CheckCircle,
-  XCircle
+  XCircle,
+  Languages
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import CompanyRepresentativesTable from './CompanyRepresentativesTable'
+import CompanyTranslations from './companytranslations/CompanyTranslations'
 
 interface CompanyProfile {
   id: string
@@ -102,6 +104,7 @@ export default function CompaniesPage() {
   const [blockingId, setBlockingId] = useState<string | null>(null)
   const [verifyingId, setVerifyingId] = useState<string | null>(null)
   const [showRepresentatives, setShowRepresentatives] = useState(false)
+  const [showTranslations, setShowTranslations] = useState<string | null>(null)
 
   const supabase = createClient()
 
@@ -137,6 +140,7 @@ export default function CompaniesPage() {
     } else {
       setExpandedId(company.id)
       setEditingCompany(null)
+      setShowTranslations(null)
     }
   }
 
@@ -548,6 +552,30 @@ export default function CompaniesPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
+                        {/* Translations Button */}
+                        <button
+                          onClick={() => {
+                            if (showTranslations === company.id) {
+                              setShowTranslations(null)
+                            } else {
+                              setShowTranslations(company.id)
+                              setExpandedId(null)
+                            }
+                          }}
+                          className={`rounded-lg p-2 transition-colors ${
+                            showTranslations === company.id
+                              ? isDark
+                                ? 'bg-blue-500/20 text-blue-400'
+                                : 'bg-blue-500/10 text-blue-600'
+                              : isDark 
+                              ? 'hover:bg-white/10' 
+                              : 'hover:bg-black/5'
+                          }`}
+                          title="თარგმანები"
+                        >
+                          <Languages className={`h-4 w-4 ${showTranslations === company.id ? '' : isDark ? 'text-white/60' : 'text-black/60'}`} />
+                        </button>
+
                         <button
                           onClick={() => handleViewDetails(company)}
                           className={`rounded-lg p-2 transition-colors ${
@@ -1305,6 +1333,17 @@ export default function CompaniesPage() {
                             </div>
                           )}
                         </div>
+                      </td>
+                    </tr>
+                  )}
+
+                  {showTranslations === company.id && (
+                    <tr className={isDark ? 'bg-white/5' : 'bg-black/5'}>
+                      <td colSpan={4} className="px-6 py-6">
+                        <CompanyTranslations 
+                          companyId={company.id}
+                          companyName={company.full_name || 'N/A'}
+                        />
                       </td>
                     </tr>
                   )}
