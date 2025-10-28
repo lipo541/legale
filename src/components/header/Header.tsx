@@ -99,6 +99,7 @@ export default function Header() {
     { href: `/${currentLocale}/practices`, label: 'პრაქტიკა' },
     { href: `/${currentLocale}/specialists`, label: 'სპეციალისტები' },
     { href: `/${currentLocale}/companies`, label: 'კომპანიები' },
+    { href: `/${currentLocale}/news`, label: 'სიახლეები' },
     { href: `/${currentLocale}/blog`, label: 'ბლოგი' },
     { href: `/${currentLocale}/contact`, label: 'კონტაქტი' },
   ]
