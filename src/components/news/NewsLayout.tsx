@@ -23,17 +23,6 @@ export default function NewsLayout() {
       {/* Container - Max Width 1200px (Apple style) */}
       <div className="mx-auto max-w-[1200px] px-4 md:px-6">
         {/* Minimal Apple-style Header */}
-        <div className="mb-8 md:mb-12 lg:mb-16 space-y-2 md:space-y-3">
-          <h1 className={`text-3xl md:text-5xl lg:text-6xl font-semibold tracking-tight ${
-            isDark ? 'text-white' : 'text-black'
-          }`}>
-            სიახლეები
-          </h1>
-          <p className={`text-sm md:text-lg lg:text-xl ${isDark ? 'text-white/50' : 'text-black/50'}`}>
-            უახლესი ინფორმაცია და განახლებები
-          </p>
-        </div>
-
         {/* Main Grid Layout - Apple minimalist approach */}
         <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-3 md:gap-3.5 lg:gap-4">
           {/* TOP ROW - 3 POSITIONS */}
