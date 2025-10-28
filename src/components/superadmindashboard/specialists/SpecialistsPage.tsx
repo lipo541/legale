@@ -50,6 +50,7 @@ interface SpecialistProfile {
   company_id: string | null
   company_slug: string | null
   company_name?: string | null
+  company_is_blocked?: boolean
   is_blocked: boolean | null
   blocked_by: string | null
   blocked_at: string | null
@@ -86,6 +87,10 @@ export default function SpecialistsPage() {
   const [uploadingPhotoId, setUploadingPhotoId] = useState<string | null>(null)
   const [blockingId, setBlockingId] = useState<string | null>(null)
   const [changingVerificationId, setChangingVerificationId] = useState<string | null>(null)
+  const [changingCompanyId, setChangingCompanyId] = useState<string | null>(null)
+  const [convertingToSoloId, setConvertingToSoloId] = useState<string | null>(null)
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>('')
+  const [companies, setCompanies] = useState<Array<{ id: string; full_name: string; company_slug: string }>>([])
 
   const supabase = createClient()
 
@@ -101,7 +106,7 @@ export default function SpecialistsPage() {
           teaching_writing_speaking, credentials_memberships, values_how_we_work, 
           verification_status, company_id, company_slug, is_blocked, blocked_by, 
           blocked_at, block_reason, created_at, updated_at,
-          company:company_id(full_name)
+          company:company_id(full_name, is_blocked)
         `)
         .eq('role', 'SPECIALIST')
         .order('created_at', { ascending: false })
@@ -112,7 +117,8 @@ export default function SpecialistsPage() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const specialistsWithCompany = (data || []).map((specialist: any) => ({
           ...specialist,
-          company_name: specialist.company?.full_name || null
+          company_name: specialist.company?.full_name || null,
+          company_is_blocked: specialist.company?.is_blocked || false
         }))
         setSpecialists(specialistsWithCompany)
       }
@@ -123,9 +129,28 @@ export default function SpecialistsPage() {
     }
   }, [supabase])
 
+  const fetchCompanies = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, company_slug')
+        .eq('role', 'COMPANY')
+        .order('full_name', { ascending: true })
+
+      if (error) {
+        console.error('Error fetching companies:', error)
+      } else {
+        setCompanies(data || [])
+      }
+    } catch (err) {
+      console.error('Fetch companies error:', err)
+    }
+  }, [supabase])
+
   useEffect(() => {
     fetchSpecialists()
-  }, [fetchSpecialists])
+    fetchCompanies()
+  }, [fetchSpecialists, fetchCompanies])
 
   const handleViewDetails = (specialist: SpecialistProfile) => {
     if (expandedId === specialist.id) {
@@ -486,6 +511,84 @@ export default function SpecialistsPage() {
     }
   }
 
+  const handleChangeCompany = async (specialistId: string, newCompanyId: string) => {
+    if (!newCompanyId) {
+      alert('გთხოვთ აირჩიოთ კომპანია')
+      return
+    }
+
+    const specialist = specialists.find(s => s.id === specialistId)
+    const company = companies.find(c => c.id === newCompanyId)
+    
+    if (!specialist || !company) return
+
+    if (!confirm(`დარწმუნებული ხართ რომ გსურთ ${specialist.full_name}-ს კომპანიის შეცვლა "${company.full_name}"-ზე?`)) {
+      return
+    }
+
+    setChangingCompanyId(specialistId)
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          company_id: newCompanyId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', specialistId)
+
+      if (error) {
+        console.error('Change company error:', error)
+        alert('შეცდომა კომპანიის შეცვლისას: ' + error.message)
+      } else {
+        await fetchSpecialists()
+        setSelectedCompanyId('')
+        alert(`${specialist.full_name}-ის კომპანია წარმატებით შეიცვალა!`)
+      }
+    } catch (err) {
+      console.error('Change company error:', err)
+      alert('შეცდომა კომპანიის შეცვლისას')
+    } finally {
+      setChangingCompanyId(null)
+    }
+  }
+
+  const handleConvertToSoloSpecialist = async (specialistId: string) => {
+    const specialist = specialists.find(s => s.id === specialistId)
+    
+    if (!specialist) return
+
+    if (!confirm(`დარწმუნებული ხართ რომ გსურთ ${specialist.full_name}-ის სოლო სპეციალისტად გადაყვანა? ეს მოხსნის კავშირს კომპანიასთან "${specialist.company_name}".`)) {
+      return
+    }
+
+    setConvertingToSoloId(specialistId)
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          role: 'SOLO_SPECIALIST',
+          company_id: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', specialistId)
+
+      if (error) {
+        console.error('Convert error:', error)
+        alert('შეცდომა გადაყვანისას: ' + error.message)
+      } else {
+        await fetchSpecialists()
+        alert(`${specialist.full_name} წარმატებით გადაიყვანა სოლო სპეციალისტად!`)
+      }
+    } catch (err) {
+      console.error('Convert error:', err)
+      alert('შეცდომა გადაყვანისას')
+    } finally {
+      setConvertingToSoloId(null)
+    }
+  }
+
   const filteredSpecialists = specialists.filter((specialist) => {
     const matchesSearch = 
       specialist.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -589,8 +692,18 @@ export default function SpecialistsPage() {
                             </div>
                           )}
                           {specialist.company_name && (
-                            <div className={`text-xs mt-0.5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
-                              🏢 {specialist.company_name}
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className={`text-xs ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                                🏢 {specialist.company_name}
+                              </span>
+                              {specialist.company_is_blocked && (
+                                <span className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                                  isDark ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-red-500/10 text-red-600 border border-red-500/20'
+                                }`}>
+                                  <Ban className="h-2.5 w-2.5" />
+                                  დაბლოკილი
+                                </span>
+                              )}
                             </div>
                           )}
                         </div>
@@ -617,6 +730,107 @@ export default function SpecialistsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
+                        {/* Change Company Button */}
+                        <div className="relative group">
+                          <button
+                            onClick={() => {
+                              if (changingCompanyId === specialist.id) {
+                                setChangingCompanyId(null)
+                                setSelectedCompanyId('')
+                              } else {
+                                setChangingCompanyId(specialist.id)
+                                setSelectedCompanyId(specialist.company_id || '')
+                              }
+                            }}
+                            disabled={!companies || companies.length === 0}
+                            className={`rounded-lg p-2 transition-colors ${
+                              changingCompanyId === specialist.id
+                                ? isDark ? 'bg-blue-500/20' : 'bg-blue-500/10'
+                                : isDark ? 'hover:bg-white/10' : 'hover:bg-black/5'
+                            } ${(!companies || companies.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            title="კომპანიის შეცვლა"
+                          >
+                            <Building2 className={`h-4 w-4 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+                          </button>
+                          
+                          {/* Dropdown for company selection */}
+                          {changingCompanyId === specialist.id && (
+                            <div className={`absolute right-0 top-full mt-2 w-64 rounded-lg border shadow-lg z-50 ${
+                              isDark ? 'bg-black border-white/10' : 'bg-white border-black/10'
+                            }`}>
+                              <div className="p-3 space-y-3">
+                                <p className={`text-xs font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                  შეცვალეთ კომპანია:
+                                </p>
+                                <select
+                                  value={selectedCompanyId}
+                                  onChange={(e) => setSelectedCompanyId(e.target.value)}
+                                  className={`w-full rounded-lg border px-3 py-2 text-sm transition-colors focus:outline-none ${
+                                    isDark
+                                      ? 'border-white/10 bg-black text-white focus:border-white/20'
+                                      : 'border-black/10 bg-white text-black focus:border-black/20'
+                                  }`}
+                                >
+                                  <option value="">აირჩიეთ კომპანია...</option>
+                                  {companies.map((company) => (
+                                    <option key={company.id} value={company.id}>
+                                      {company.full_name} ({company.company_slug || 'No slug'})
+                                    </option>
+                                  ))}
+                                </select>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleChangeCompany(specialist.id, selectedCompanyId)}
+                                    disabled={!selectedCompanyId || selectedCompanyId === specialist.company_id}
+                                    className={`flex-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+                                      selectedCompanyId && selectedCompanyId !== specialist.company_id
+                                        ? isDark
+                                          ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                                          : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
+                                        : isDark
+                                        ? 'bg-white/5 text-white/40 cursor-not-allowed'
+                                        : 'bg-black/5 text-black/40 cursor-not-allowed'
+                                    }`}
+                                  >
+                                    შეცვლა
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setChangingCompanyId(null)
+                                      setSelectedCompanyId('')
+                                    }}
+                                    className={`flex-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+                                      isDark
+                                        ? 'bg-white/10 text-white hover:bg-white/20'
+                                        : 'bg-black/10 text-black hover:bg-black/20'
+                                    }`}
+                                  >
+                                    გაუქმება
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Convert to Solo Specialist Button */}
+                        <button
+                          onClick={() => handleConvertToSoloSpecialist(specialist.id)}
+                          disabled={convertingToSoloId === specialist.id}
+                          className={`rounded-lg p-2 transition-colors ${
+                            isDark
+                              ? 'hover:bg-white/10'
+                              : 'hover:bg-black/5'
+                          }`}
+                          title="სოლო სპეციალისტად გადაყვანა"
+                        >
+                          {convertingToSoloId === specialist.id ? (
+                            <Loader2 className={`h-4 w-4 animate-spin ${isDark ? 'text-purple-400' : 'text-purple-600'}`} />
+                          ) : (
+                            <User className={`h-4 w-4 ${isDark ? 'text-purple-400' : 'text-purple-600'}`} />
+                          )}
+                        </button>
+
                         <button
                           onClick={() => handleViewDetails(specialist)}
                           className={`rounded-lg p-2 transition-colors ${
@@ -1325,9 +1539,19 @@ export default function SpecialistsPage() {
                                     <Building2 className="h-4 w-4" />
                                     კომპანია
                                   </label>
-                                  <p className={`font-semibold ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
-                                    {specialist.company_name || 'არ არის მითითებული'}
-                                  </p>
+                                  <div className="flex items-center gap-2">
+                                    <p className={`font-semibold ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                                      {specialist.company_name || 'არ არის მითითებული'}
+                                    </p>
+                                    {specialist.company_is_blocked && (
+                                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                                        isDark ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-red-500/10 text-red-600 border border-red-500/20'
+                                      }`}>
+                                        <Ban className="h-3 w-3" />
+                                        დაბლოკილია
+                                      </span>
+                                    )}
+                                  </div>
                                   {specialist.company_slug && (
                                     <p className={`text-xs mt-1 font-mono ${isDark ? 'text-white/40' : 'text-black/40'}`}>
                                       /{specialist.company_slug}

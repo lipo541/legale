@@ -24,9 +24,13 @@ import {
   Target,
   Lightbulb,
   History,
-  Users
+  Users,
+  Ban,
+  CheckCircle,
+  XCircle
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import CompanyRepresentativesTable from './CompanyRepresentativesTable'
 
 interface CompanyProfile {
   id: string
@@ -38,6 +42,14 @@ interface CompanyProfile {
   phone_number: string | null
   created_at: string
   updated_at: string
+  is_blocked: boolean | null
+  blocked_by: string | null
+  blocked_at: string | null
+  block_reason: string | null
+  verification_status: string | null
+  verification_reviewed_at: string | null
+  verification_reviewed_by: string | null
+  verification_notes: string | null
   // Company Overview
   company_overview: string | null
   summary: string | null
@@ -87,6 +99,9 @@ export default function CompaniesPage() {
   })
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [blockingId, setBlockingId] = useState<string | null>(null)
+  const [verifyingId, setVerifyingId] = useState<string | null>(null)
+  const [showRepresentatives, setShowRepresentatives] = useState(false)
 
   const supabase = createClient()
 
@@ -222,12 +237,191 @@ export default function CompaniesPage() {
     }
   }
 
-  const filteredCompanies = companies.filter((company) => {
-    const matchesSearch = 
-      company.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      company.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  const handleToggleBlock = async (company: CompanyProfile) => {
+    const action = company.is_blocked ? 'განბლოკვა' : 'დაბლოკვა'
+    
+    if (!confirm(`დარწმუნებული ხართ რომ გსურთ ${company.full_name}-ის ${action}?${!company.is_blocked ? '\n\nგაითვალისწინეთ: კომპანიის დაბლოკვისას დაიბლოკება ყველა მისი სპეციალისტიც.' : ''}`)) {
+      return
+    }
 
-    return matchesSearch
+    setBlockingId(company.id)
+
+    try {
+      // Get current super admin ID
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        alert('არ ხართ ავტორიზებული')
+        return
+      }
+
+      const updateData = company.is_blocked
+        ? {
+            // Unblock
+            is_blocked: false,
+            blocked_by: null,
+            blocked_at: null,
+            block_reason: null,
+            updated_at: new Date().toISOString()
+          }
+        : {
+            // Block by SUPER_ADMIN
+            is_blocked: true,
+            blocked_by: user.id,
+            blocked_at: new Date().toISOString(),
+            block_reason: 'დაბლოკილია კომპანიის დაბლოკვის გამო',
+            updated_at: new Date().toISOString()
+          }
+
+      // Update company
+      const { error } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', company.id)
+
+      if (error) {
+        console.error('Block/Unblock company error:', error)
+        alert(`შეცდომა კომპანიის ${action}ისას`)
+        return
+      }
+
+      // Update all specialists of this company
+      const specialistUpdateData = company.is_blocked
+        ? {
+            // Unblock specialists
+            is_blocked: false,
+            blocked_by: null,
+            blocked_at: null,
+            block_reason: null,
+            updated_at: new Date().toISOString()
+          }
+        : {
+            // Block specialists
+            is_blocked: true,
+            blocked_by: user.id,
+            blocked_at: new Date().toISOString(),
+            block_reason: `დაბლოკილია კომპანიის "${company.full_name}" დაბლოკვის გამო`,
+            updated_at: new Date().toISOString()
+          }
+
+      const { error: specialistsError } = await supabase
+        .from('profiles')
+        .update(specialistUpdateData)
+        .eq('role', 'SPECIALIST')
+        .eq('company_id', company.id)
+
+      if (specialistsError) {
+        console.error('Block/Unblock specialists error:', specialistsError)
+        alert(`კომპანია ${company.is_blocked ? 'განბლოკილია' : 'დაბლოკილია'}, მაგრამ სპეციალისტების განახლებისას მოხდა შეცდომა`)
+      } else {
+        await fetchCompanies()
+        alert(`კომპანია და მისი ყველა სპეციალისტი წარმატებით ${company.is_blocked ? 'განბლოკილია' : 'დაბლოკილია'}!`)
+      }
+    } catch (err) {
+      console.error('Block/Unblock error:', err)
+      alert(`შეცდომა ${action}ისას`)
+    } finally {
+      setBlockingId(null)
+    }
+  }
+
+  const handleToggleVerification = async (company: CompanyProfile) => {
+    const isVerified = company.verification_status === 'verified'
+    const action = isVerified ? 'ვერიფიკაციის გაუქმება' : 'ვერიფიკაცია'
+    
+    if (!confirm(`დარწმუნებული ხართ რომ გსურთ ${company.full_name}-ის ${action}?${!isVerified ? '\n\nკომპანიის ვერიფიკაციისას ვერიფიცირდება ყველა მისი სპეციალისტიც.' : '\n\nვერიფიკაციის გაუქმებისას გაუქმდება ყველა სპეციალისტის ვერიფიკაციაც.'}`)) {
+      return
+    }
+
+    setVerifyingId(company.id)
+
+    try {
+      // Get current super admin ID
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        alert('არ ხართ ავტორიზებული')
+        return
+      }
+
+      const updateData = isVerified
+        ? {
+            // Unverify
+            verification_status: 'unverified',
+            verification_reviewed_at: null,
+            verification_reviewed_by: null,
+            verification_notes: null,
+            updated_at: new Date().toISOString()
+          }
+        : {
+            // Verify
+            verification_status: 'verified',
+            verification_reviewed_at: new Date().toISOString(),
+            verification_reviewed_by: user.id,
+            verification_notes: 'ვერიფიცირებულია სუპერ ადმინის მიერ',
+            updated_at: new Date().toISOString()
+          }
+
+      // Update company
+      const { error } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', company.id)
+
+      if (error) {
+        console.error('Verify/Unverify company error:', error)
+        alert(`შეცდომა კომპანიის ${action}ისას`)
+        return
+      }
+
+      // Update all specialists of this company
+      const specialistUpdateData = isVerified
+        ? {
+            // Unverify specialists
+            verification_status: 'unverified',
+            verification_reviewed_at: null,
+            verification_reviewed_by: null,
+            verification_notes: null,
+            updated_at: new Date().toISOString()
+          }
+        : {
+            // Verify specialists
+            verification_status: 'verified',
+            verification_reviewed_at: new Date().toISOString(),
+            verification_reviewed_by: user.id,
+            verification_notes: `ვერიფიცირებულია კომპანიის "${company.full_name}" ვერიფიკაციის გამო`,
+            updated_at: new Date().toISOString()
+          }
+
+      const { error: specialistsError } = await supabase
+        .from('profiles')
+        .update(specialistUpdateData)
+        .eq('role', 'SPECIALIST')
+        .eq('company_id', company.id)
+
+      if (specialistsError) {
+        console.error('Verify/Unverify specialists error:', specialistsError)
+        alert(`კომპანია ${isVerified ? 'დაუვერიფიცირდა' : 'ვერიფიცირდა'}, მაგრამ სპეციალისტების განახლებისას მოხდა შეცდომა`)
+      } else {
+        await fetchCompanies()
+        alert(`კომპანია და მისი ყველა სპეციალისტი წარმატებით ${isVerified ? 'დაუვერიფიცირდა' : 'ვერიფიცირდა'}!`)
+      }
+    } catch (err) {
+      console.error('Verify/Unverify error:', err)
+      alert(`შეცდომა ${action}ისას`)
+    } finally {
+      setVerifyingId(null)
+    }
+  }
+
+  const filteredCompanies = companies.filter((company) => {
+    const query = searchQuery.toLowerCase()
+    return (
+      company.full_name?.toLowerCase().includes(query) ||
+      company.email?.toLowerCase().includes(query) ||
+      company.company_slug?.toLowerCase().includes(query) ||
+      company.phone_number?.toLowerCase().includes(query) ||
+      company.website?.toLowerCase().includes(query) ||
+      company.address?.toLowerCase().includes(query)
+    )
   })
 
   return (
@@ -241,22 +435,41 @@ export default function CompaniesPage() {
             კომპანიების მართვა
           </p>
         </div>
+        <button
+          onClick={() => setShowRepresentatives(!showRepresentatives)}
+          className={`flex items-center gap-2 rounded-xl px-6 py-3 font-semibold transition-all duration-300 ${
+            showRepresentatives
+              ? isDark
+                ? 'bg-emerald-500/20 text-emerald-400 border-2 border-emerald-500/30'
+                : 'bg-emerald-500/10 text-emerald-600 border-2 border-emerald-500/20'
+              : isDark
+              ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border-2 border-blue-500/30'
+              : 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border-2 border-blue-500/20'
+          }`}
+        >
+          <Users className="h-5 w-5" />
+          {showRepresentatives ? 'კომპანიების სია' : 'კომპანიების წარმომადგენლები'}
+        </button>
       </div>
 
-      <div className="mb-6">
-        <div className={`relative rounded-xl border ${isDark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
-          <Search className={`absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
-          <input
-            type="text"
-            placeholder="ძებნა სახელით, ელფოსტით..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={`w-full rounded-xl bg-transparent py-3 pl-12 pr-4 outline-none transition-colors ${
-              isDark ? 'text-white placeholder:text-white/40' : 'text-black placeholder:text-black/40'
-            }`}
-          />
-        </div>
-      </div>
+      {showRepresentatives ? (
+        <CompanyRepresentativesTable onBack={() => setShowRepresentatives(false)} />
+      ) : (
+        <>
+          <div className="mb-6">
+            <div className={`relative rounded-xl border ${isDark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
+              <Search className={`absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
+              <input
+                type="text"
+                placeholder="ძებნა სახელით, ელფოსტით, slug-ით, ტელეფონით, ვებსაიტით..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={`w-full rounded-xl bg-transparent py-3 pl-12 pr-4 outline-none transition-colors ${
+                  isDark ? 'text-white placeholder:text-white/40' : 'text-black placeholder:text-black/40'
+                }`}
+              />
+            </div>
+          </div>
 
       {loading && (
         <div className="flex items-center justify-center py-20">
@@ -303,8 +516,26 @@ export default function CompaniesPage() {
                           )}
                         </div>
                         <div>
-                          <div className={`font-medium ${isDark ? 'text-white' : 'text-black'}`}>
-                            {company.full_name || 'N/A'}
+                          <div className="flex items-center gap-2">
+                            <div className={`font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+                              {company.full_name || 'N/A'}
+                            </div>
+                            {company.verification_status === 'verified' && (
+                              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                                isDark ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
+                              }`}>
+                                <CheckCircle className="h-3 w-3" />
+                                ვერიფიცირებული
+                              </span>
+                            )}
+                            {company.is_blocked && (
+                              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                                isDark ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-red-500/10 text-red-600 border border-red-500/20'
+                              }`}>
+                                <Ban className="h-3 w-3" />
+                                დაბლოკილია
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -331,6 +562,46 @@ export default function CompaniesPage() {
                           title="დეტალების ნახვა"
                         >
                           <Eye className={`h-4 w-4 ${expandedId === company.id ? '' : isDark ? 'text-white/60' : 'text-black/60'}`} />
+                        </button>
+                        <button
+                          onClick={() => handleToggleBlock(company)}
+                          disabled={blockingId === company.id}
+                          className={`rounded-lg p-2 transition-colors ${
+                            isDark
+                              ? 'hover:bg-white/10'
+                              : 'hover:bg-black/5'
+                          }`}
+                          title={company.is_blocked ? 'განბლოკვა' : 'დაბლოკვა'}
+                        >
+                          {blockingId === company.id ? (
+                            <Loader2 className={`h-4 w-4 animate-spin ${isDark ? 'text-orange-400' : 'text-orange-600'}`} />
+                          ) : (
+                            <Ban className={`h-4 w-4 ${
+                              company.is_blocked 
+                                ? isDark ? 'text-red-400' : 'text-red-600'
+                                : isDark ? 'text-emerald-400' : 'text-emerald-600'
+                            }`} />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleToggleVerification(company)}
+                          disabled={verifyingId === company.id}
+                          className={`rounded-lg p-2 transition-colors ${
+                            isDark
+                              ? 'hover:bg-white/10'
+                              : 'hover:bg-black/5'
+                          }`}
+                          title={company.verification_status === 'verified' ? 'ვერიფიკაციის გაუქმება' : 'ვერიფიკაცია'}
+                        >
+                          {verifyingId === company.id ? (
+                            <Loader2 className={`h-4 w-4 animate-spin ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+                          ) : (
+                            company.verification_status === 'verified' ? (
+                              <CheckCircle className={`h-4 w-4 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                            ) : (
+                              <XCircle className={`h-4 w-4 ${isDark ? 'text-orange-400' : 'text-orange-600'}`} />
+                            )
+                          )}
                         </button>
                         <button
                           onClick={() => handleDelete(company.id)}
@@ -1050,6 +1321,8 @@ export default function CompaniesPage() {
             {searchQuery ? 'კომპანიები ვერ მოიძებნა' : 'კომპანიები ჯერ არ არის'}
           </p>
         </div>
+      )}
+        </>
       )}
     </div>
   )

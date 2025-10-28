@@ -82,6 +82,9 @@ export default function SoloSpecialistsPage() {
   const [uploadingPhotoId, setUploadingPhotoId] = useState<string | null>(null)
   const [blockingId, setBlockingId] = useState<string | null>(null)
   const [changingVerificationId, setChangingVerificationId] = useState<string | null>(null)
+  const [convertingToCompanyId, setConvertingToCompanyId] = useState<string | null>(null)
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>('')
+  const [companies, setCompanies] = useState<Array<{ id: string; full_name: string; company_slug: string }>>([])
 
   const supabase = createClient()
 
@@ -108,9 +111,28 @@ export default function SoloSpecialistsPage() {
     }
   }, [supabase])
 
+  const fetchCompanies = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, company_slug')
+        .eq('role', 'COMPANY')
+        .order('full_name', { ascending: true })
+
+      if (error) {
+        console.error('Error fetching companies:', error)
+      } else {
+        setCompanies(data || [])
+      }
+    } catch (err) {
+      console.error('Fetch companies error:', err)
+    }
+  }, [supabase])
+
   useEffect(() => {
     fetchSpecialists()
-  }, [fetchSpecialists])
+    fetchCompanies()
+  }, [fetchSpecialists, fetchCompanies])
 
   const filteredSpecialists = specialists.filter(specialist => {
     const query = searchQuery.toLowerCase()
@@ -432,6 +454,49 @@ export default function SoloSpecialistsPage() {
     }
   }
 
+  const handleConvertToCompanySpecialist = async (specialistId: string, companyId: string) => {
+    if (!companyId) {
+      alert('გთხოვთ აირჩიოთ კომპანია')
+      return
+    }
+
+    const specialist = specialists.find(s => s.id === specialistId)
+    const company = companies.find(c => c.id === companyId)
+    
+    if (!specialist || !company) return
+
+    if (!confirm(`დარწმუნებული ხართ რომ გსურთ ${specialist.full_name}-ის კომპანია "${company.full_name}"-ის სპეციალისტად გადაყვანა?`)) {
+      return
+    }
+
+    setConvertingToCompanyId(specialistId)
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          role: 'SPECIALIST',
+          company_id: companyId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', specialistId)
+
+      if (error) {
+        console.error('Convert error:', error)
+        alert('შეცდომა გადაყვანისას: ' + error.message)
+      } else {
+        await fetchSpecialists()
+        setSelectedCompanyId('')
+        alert(`${specialist.full_name} წარმატებით გადაიყვანა კომპანიის სპეციალისტად!`)
+      }
+    } catch (err) {
+      console.error('Convert error:', err)
+      alert('შეცდომა გადაყვანისას')
+    } finally {
+      setConvertingToCompanyId(null)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -542,6 +607,88 @@ export default function SoloSpecialistsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
+                        {/* Convert to Company Specialist Button */}
+                        <div className="relative group">
+                          <button
+                            onClick={() => {
+                              if (convertingToCompanyId === specialist.id) {
+                                setConvertingToCompanyId(null)
+                                setSelectedCompanyId('')
+                              } else {
+                                setConvertingToCompanyId(specialist.id)
+                              }
+                            }}
+                            disabled={!companies || companies.length === 0}
+                            className={`rounded-lg p-2 transition-colors ${
+                              convertingToCompanyId === specialist.id
+                                ? isDark ? 'bg-blue-500/20' : 'bg-blue-500/10'
+                                : isDark ? 'hover:bg-white/10' : 'hover:bg-black/5'
+                            } ${(!companies || companies.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            title="კომპანიის სპეციალისტად გადაყვანა"
+                          >
+                            <Building2 className={`h-4 w-4 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+                          </button>
+                          
+                          {/* Dropdown for company selection */}
+                          {convertingToCompanyId === specialist.id && (
+                            <div className={`absolute right-0 top-full mt-2 w-64 rounded-lg border shadow-lg z-50 ${
+                              isDark ? 'bg-black border-white/10' : 'bg-white border-black/10'
+                            }`}>
+                              <div className="p-3 space-y-3">
+                                <p className={`text-xs font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                  აირჩიეთ კომპანია:
+                                </p>
+                                <select
+                                  value={selectedCompanyId}
+                                  onChange={(e) => setSelectedCompanyId(e.target.value)}
+                                  className={`w-full rounded-lg border px-3 py-2 text-sm transition-colors focus:outline-none ${
+                                    isDark
+                                      ? 'border-white/10 bg-black text-white focus:border-white/20'
+                                      : 'border-black/10 bg-white text-black focus:border-black/20'
+                                  }`}
+                                >
+                                  <option value="">აირჩიეთ კომპანია...</option>
+                                  {companies.map((company) => (
+                                    <option key={company.id} value={company.id}>
+                                      {company.full_name} ({company.company_slug || 'No slug'})
+                                    </option>
+                                  ))}
+                                </select>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleConvertToCompanySpecialist(specialist.id, selectedCompanyId)}
+                                    disabled={!selectedCompanyId}
+                                    className={`flex-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+                                      selectedCompanyId
+                                        ? isDark
+                                          ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                                          : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
+                                        : isDark
+                                        ? 'bg-white/5 text-white/40 cursor-not-allowed'
+                                        : 'bg-black/5 text-black/40 cursor-not-allowed'
+                                    }`}
+                                  >
+                                    დამატება
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setConvertingToCompanyId(null)
+                                      setSelectedCompanyId('')
+                                    }}
+                                    className={`flex-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+                                      isDark
+                                        ? 'bg-white/10 text-white hover:bg-white/20'
+                                        : 'bg-black/10 text-black hover:bg-black/20'
+                                    }`}
+                                  >
+                                    გაუქმება
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
                         <button
                           onClick={() => setExpandedId(expandedId === specialist.id ? null : specialist.id)}
                           className={`rounded-lg p-2 transition-colors ${

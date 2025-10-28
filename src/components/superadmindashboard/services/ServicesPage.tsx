@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
-import { Plus, Search, Edit, Trash2, Eye, Loader2, Lock, Unlock } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, Eye, Loader2, Lock, Unlock, Filter, ChevronDown } from 'lucide-react'
 import ServiceAdd from './ServiceAdd'
 import { createClient } from '@/lib/supabase/client'
 
@@ -38,6 +38,19 @@ interface ServiceWithTranslations extends Service {
   service_translations: ServiceTranslation[]
 }
 
+interface Practice {
+  id: string
+  created_at: string
+}
+
+interface PracticeTranslation {
+  id: string
+  practice_id: string
+  language: Language
+  title: string
+  slug: string
+}
+
 export default function ServicesPage() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
@@ -48,8 +61,50 @@ export default function ServicesPage() {
   const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [togglingStatusId, setTogglingStatusId] = useState<string | null>(null)
+  const [showFilters, setShowFilters] = useState(false)
+  const [selectedPracticeId, setSelectedPracticeId] = useState<string>('')
+  const [practices, setPractices] = useState<{ id: string; title: string }[]>([])
 
   const supabase = createClient()
+
+  // Fetch practices from database
+  const fetchPractices = useCallback(async () => {
+    try {
+      const { data: practicesData, error: practicesError } = await supabase
+        .from('practices')
+        .select('id, created_at')
+        .order('created_at', { ascending: false })
+
+      if (practicesError) {
+        console.error('Error fetching practices:', practicesError)
+        return
+      }
+
+      // Fetch practice translations (Georgian only for dropdown)
+      const { data: translationsData, error: translationsError } = await supabase
+        .from('practice_translations')
+        .select('practice_id, title')
+        .eq('language', 'ka')
+
+      if (translationsError) {
+        console.error('Error fetching practice translations:', translationsError)
+        return
+      }
+
+      // Combine practices with their Georgian titles
+      const practicesWithTitles = (practicesData || []).map(practice => {
+        const translation = (translationsData || []).find(t => t.practice_id === practice.id)
+        return {
+          id: practice.id,
+          title: translation?.title || 'N/A'
+        }
+      })
+
+      setPractices(practicesWithTitles)
+    } catch (error) {
+      console.error('Fetch practices error:', error)
+    }
+  }, [supabase])
 
   // Fetch services from database
   const fetchServices = useCallback(async () => {
@@ -104,8 +159,9 @@ export default function ServicesPage() {
   }, [supabase])
 
   useEffect(() => {
+    fetchPractices()
     fetchServices()
-  }, [fetchServices])
+  }, [fetchPractices, fetchServices])
 
   // Handle delete
   const handleDelete = async (id: string) => {
@@ -173,11 +229,18 @@ export default function ServicesPage() {
     setShowAddForm(true)
   }
 
-  // Filter services based on search
+  // Filter services based on search and practice
   const filteredServices = services.filter((service) => {
     const kaTranslation = service.service_translations.find(t => t.language === 'ka')
     if (!kaTranslation) return false
-    return kaTranslation.title.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    // Filter by search query
+    const matchesSearch = kaTranslation.title.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    // Filter by selected practice
+    const matchesPractice = selectedPracticeId === '' || service.practice_id === selectedPracticeId
+    
+    return matchesSearch && matchesPractice
   })
 
   // Show Add/Edit Form
@@ -219,9 +282,9 @@ export default function ServicesPage() {
         </button>
       </div>
 
-      {/* Search Bar */}
-      <div className="mb-6">
-        <div className={`relative rounded-xl border ${isDark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
+      {/* Search Bar and Filter */}
+      <div className="mb-6 flex gap-4">
+        <div className={`relative flex-1 rounded-xl border ${isDark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
           <Search className={`absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
           <input
             type="text"
@@ -233,7 +296,62 @@ export default function ServicesPage() {
             }`}
           />
         </div>
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className={`flex items-center gap-2 rounded-xl px-6 py-3 font-semibold transition-all duration-300 ${
+            showFilters
+              ? isDark
+                ? 'bg-blue-500 text-white'
+                : 'bg-blue-500 text-white'
+              : isDark
+              ? 'bg-white/10 text-white hover:bg-white/20'
+              : 'bg-black/10 text-black hover:bg-black/20'
+          }`}
+        >
+          <Filter className="h-5 w-5" />
+          ფილტრაცია
+          <ChevronDown className={`h-4 w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+        </button>
       </div>
+
+      {/* Filter Dropdown */}
+      {showFilters && (
+        <div className={`mb-6 rounded-xl border p-6 ${isDark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
+          <div className="space-y-4">
+            <div>
+              <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+                პრაქტიკის არჩევა
+              </label>
+              <select
+                value={selectedPracticeId}
+                onChange={(e) => setSelectedPracticeId(e.target.value)}
+                className={`w-full rounded-xl border px-4 py-3 outline-none transition-colors ${
+                  isDark
+                    ? 'border-white/10 bg-black text-white hover:border-white/20 [&>option]:bg-black [&>option]:text-white'
+                    : 'border-black/10 bg-white text-black hover:border-black/20 [&>option]:bg-white [&>option]:text-black'
+                }`}
+              >
+                <option value="">ყველა პრაქტიკა</option>
+                {practices.map((practice) => (
+                  <option key={practice.id} value={practice.id}>
+                    {practice.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {selectedPracticeId && (
+              <button
+                onClick={() => setSelectedPracticeId('')}
+                className={`text-sm font-medium transition-colors ${
+                  isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
+                }`}
+              >
+                ფილტრის გასუფთავება
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Loading State */}
       {loading && (
