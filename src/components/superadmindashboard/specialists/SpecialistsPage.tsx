@@ -20,10 +20,12 @@ import {
   Ban,
   CheckCircle,
   Clock,
-  XCircle
+  XCircle,
+  Languages
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import ServicesField from '@/components/common/ServicesField'
+import SpecialistTranslations from './translations/SpecialistTranslations'
 
 const AVAILABLE_LANGUAGES = ['English', 'Georgian', 'Russian', 'German']
 
@@ -91,6 +93,7 @@ export default function SpecialistsPage() {
   const [convertingToSoloId, setConvertingToSoloId] = useState<string | null>(null)
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('')
   const [companies, setCompanies] = useState<Array<{ id: string; full_name: string; company_slug: string }>>([])
+  const [showTranslations, setShowTranslations] = useState<string | null>(null)
 
   const supabase = createClient()
 
@@ -158,6 +161,7 @@ export default function SpecialistsPage() {
     } else {
       setExpandedId(specialist.id)
       setEditingSpecialist(null)
+      setShowTranslations(null)
     }
   }
 
@@ -730,6 +734,30 @@ export default function SpecialistsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
+                        {/* Translations Button */}
+                        <button
+                          onClick={() => {
+                            if (showTranslations === specialist.id) {
+                              setShowTranslations(null)
+                            } else {
+                              setShowTranslations(specialist.id)
+                              setExpandedId(null)
+                            }
+                          }}
+                          className={`rounded-lg p-2 transition-colors ${
+                            showTranslations === specialist.id
+                              ? isDark
+                                ? 'bg-blue-500/20 text-blue-400'
+                                : 'bg-blue-500/10 text-blue-600'
+                              : isDark 
+                              ? 'hover:bg-white/10' 
+                              : 'hover:bg-black/5'
+                          }`}
+                          title="თარგმანები"
+                        >
+                          <Languages className={`h-4 w-4 ${showTranslations === specialist.id ? '' : isDark ? 'text-white/60' : 'text-black/60'}`} />
+                        </button>
+
                         {/* Change Company Button */}
                         <div className="relative group">
                           <button
@@ -1701,6 +1729,17 @@ export default function SpecialistsPage() {
                             </div>
                           )}
                         </div>
+                      </td>
+                    </tr>
+                  )}
+
+                  {showTranslations === specialist.id && (
+                    <tr className={isDark ? 'bg-white/5' : 'bg-black/5'}>
+                      <td colSpan={5} className="px-6 py-6">
+                        <SpecialistTranslations 
+                          specialistId={specialist.id}
+                          specialistName={specialist.full_name || 'N/A'}
+                        />
                       </td>
                     </tr>
                   )}
