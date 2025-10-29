@@ -27,6 +27,7 @@ import SoloSpecialistsPage from './solospecialists/SoloSpecialistsPage'
 import CompaniesPage from './companies/CompaniesPage'
 import AuthorsPage from './authors/AuthorsPage'
 import ModeratorsPage from './moderators/ModeratorsPage'
+import PostsPage from './posts/PostsPage'
 
 export default function SuperAdminDashboard() {
   const { theme } = useTheme()
@@ -84,17 +85,7 @@ export default function SuperAdminDashboard() {
       case 'requests':
         return <RequestsPage />
       case 'posts':
-        return (
-          <div>
-            <h1 className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
-              Posts
-            </h1>
-            <p className={`mt-2 text-lg ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-              პოსტების მართვა
-            </p>
-            {/* TODO: Posts მართვა */}
-          </div>
-        )
+        return <PostsPage />
       case 'categories':
         return (
           <div>
