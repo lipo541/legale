@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Briefcase, Loader2, CheckCircle, Edit } from 'lucide-react'
+import { Briefcase, Loader2, CheckCircle, Edit, Search, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
-interface Practice {
+interface Service {
   id: string
-  practice_translations: {
+  service_translations: {
     title: string
     language: string
   }[]
@@ -32,53 +32,54 @@ export default function ServicesField({
   const supabase = createClient()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [practices, setPractices] = useState<Practice[]>([])
-  const [selectedPractices, setSelectedPractices] = useState<string[]>([])
-  const [tempSelectedPractices, setTempSelectedPractices] = useState<string[]>([])
+  const [services, setServices] = useState<Service[]>([])
+  const [selectedServices, setSelectedServices] = useState<string[]>([])
+  const [tempSelectedServices, setTempSelectedServices] = useState<string[]>([])
   const [internalIsEditing, setInternalIsEditing] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
   
   // Use external isEditing if provided, otherwise use internal state
   const isEditing = externalIsEditing !== undefined ? externalIsEditing : internalIsEditing
 
-  // Fetch all practices and user's selected practices
+  // Fetch all services and user's selected services
   const fetchData = useCallback(async () => {
-    console.log('Fetching practices and selected services for profile:', profileId)
+    console.log('Fetching services and selected services for profile:', profileId)
     setLoading(true)
     try {
-      // Fetch all practices
-      const { data: practicesData, error: practicesError } = await supabase
-        .from('practices')
+      // Fetch all services with translations
+      const { data: servicesData, error: servicesError } = await supabase
+        .from('services')
         .select(`
           id,
-          practice_translations (
+          service_translations (
             title,
             language
           )
         `)
-        .eq('practice_translations.language', 'ka')
+        .eq('service_translations.language', 'ka')
         .eq('status', 'published')
         .order('created_at', { ascending: false })
 
-      if (practicesError) {
-        console.error('Error fetching practices:', practicesError)
+      if (servicesError) {
+        console.error('Error fetching services:', servicesError)
       } else {
-        console.log('Fetched practices:', practicesData?.length || 0)
-        setPractices(practicesData || [])
+        console.log('Fetched services:', servicesData?.length || 0)
+        setServices(servicesData || [])
       }
 
-      // Fetch user's selected practices
+      // Fetch user's selected services
       const { data: selectedData, error: selectedError } = await supabase
         .from('specialist_services')
-        .select('practice_id')
+        .select('service_id')
         .eq('profile_id', profileId)
 
       if (selectedError) {
-        console.error('Error fetching selected practices:', selectedError)
+        console.error('Error fetching selected services:', selectedError)
       } else {
         console.log('Fetched selected services:', selectedData?.length || 0)
-        const ids = selectedData?.map(item => item.practice_id) || []
-        setSelectedPractices(ids)
-        setTempSelectedPractices(ids)
+        const ids = selectedData?.map(item => item.service_id) || []
+        setSelectedServices(ids)
+        setTempSelectedServices(ids)
       }
     } catch (error) {
       console.error('Fetch error:', error)
@@ -100,17 +101,17 @@ export default function ServicesField({
   // Reset temp selection when editing starts/stops
   useEffect(() => {
     if (isEditing) {
-      setTempSelectedPractices([...selectedPractices])
+      setTempSelectedServices([...selectedServices])
     }
-  }, [isEditing, selectedPractices])
+  }, [isEditing, selectedServices])
 
-  const togglePractice = (practiceId: string) => {
+  const toggleService = (serviceId: string) => {
     if (!isEditing) return
     
-    setTempSelectedPractices(prev => 
-      prev.includes(practiceId)
-        ? prev.filter(id => id !== practiceId)
-        : [...prev, practiceId]
+    setTempSelectedServices(prev => 
+      prev.includes(serviceId)
+        ? prev.filter(id => id !== serviceId)
+        : [...prev, serviceId]
     )
   }
 
@@ -130,13 +131,13 @@ export default function ServicesField({
       }
 
       // Insert new selections
-      if (tempSelectedPractices.length > 0) {
+      if (tempSelectedServices.length > 0) {
         const { error: insertError } = await supabase
           .from('specialist_services')
           .insert(
-            tempSelectedPractices.map(practice_id => ({
+            tempSelectedServices.map(service_id => ({
               profile_id: profileId,
-              practice_id
+              service_id
             }))
           )
 
@@ -147,7 +148,7 @@ export default function ServicesField({
         }
       }
 
-      setSelectedPractices([...tempSelectedPractices])
+      setSelectedServices([...tempSelectedServices])
       alert('სერვისები წარმატებით განახლდა! ✅')
       setInternalIsEditing(false)
       onSave?.()
@@ -160,7 +161,7 @@ export default function ServicesField({
   }
 
   const handleCancel = () => {
-    setTempSelectedPractices([...selectedPractices])
+    setTempSelectedServices([...selectedServices])
     setInternalIsEditing(false)
     onCancel?.()
   }
@@ -177,43 +178,79 @@ export default function ServicesField({
     )
   }
 
-  const getPracticeTitle = (practice: Practice) => {
-    const translation = practice.practice_translations.find(t => t.language === 'ka')
+  const getServiceTitle = (service: Service) => {
+    const translation = service.service_translations.find((t: { language: string }) => t.language === 'ka')
     return translation?.title || 'N/A'
   }
 
-  const displayPractices = isEditing ? tempSelectedPractices : selectedPractices
+  // Filter services based on search term
+  const filteredServices = services.filter(service => {
+    if (!searchTerm) return true
+    const title = getServiceTitle(service).toLowerCase()
+    return title.includes(searchTerm.toLowerCase())
+  })
+
+  const displayServices = isEditing ? tempSelectedServices : selectedServices
 
   return (
     <div>
-      <label className={`mb-3 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-        <Briefcase className="h-4 w-4" />
-        სერვისები / სპეციალიზაციები
+      <label className={`mb-2 flex items-center gap-2 text-xs font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+        <Briefcase className="h-3.5 w-3.5" />
+        სერვისები
       </label>
 
       {isEditing ? (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-            {practices.map((practice) => {
-              const isSelected = tempSelectedPractices.includes(practice.id)
-              const title = getPracticeTitle(practice)
+          {/* Search Box */}
+          <div className="mb-3 relative">
+            <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="ძებნა..."
+              className={`w-full pl-9 pr-9 py-2 rounded-lg text-xs border transition-colors ${
+                isDark
+                  ? 'bg-white/5 border-white/10 text-white placeholder:text-white/40 focus:bg-white/10 focus:border-white/20'
+                  : 'bg-black/5 border-black/10 text-black placeholder:text-black/40 focus:bg-black/10 focus:border-black/20'
+              } focus:outline-none`}
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className={`absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-white/40 hover:text-white/60' : 'text-black/40 hover:text-black/60'}`}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Selected Count */}
+          <div className={`mb-2 text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+            არჩეული: {tempSelectedServices.length} / {services.length}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3 max-h-96 overflow-y-auto pr-1">
+            {filteredServices.map((service) => {
+              const isSelected = tempSelectedServices.includes(service.id)
+              const title = getServiceTitle(service)
               
               return (
                 <button
-                  key={practice.id}
+                  key={service.id}
                   type="button"
-                  onClick={() => togglePractice(practice.id)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium transition-all ${
+                  onClick={() => toggleService(service.id)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-left text-xs font-medium transition-all ${
                     isSelected
                       ? isDark
-                        ? 'bg-emerald-500/20 text-emerald-400 border-2 border-emerald-500/50'
-                        : 'bg-emerald-500/20 text-emerald-600 border-2 border-emerald-500/50'
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50'
+                        : 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/50'
                       : isDark
-                      ? 'bg-white/5 text-white/80 border-2 border-white/10 hover:bg-white/10 hover:border-white/20'
-                      : 'bg-black/5 text-black/80 border-2 border-black/10 hover:bg-black/10 hover:border-black/20'
+                      ? 'bg-white/5 text-white/80 border border-white/10 hover:bg-white/10 hover:border-white/20'
+                      : 'bg-black/5 text-black/80 border border-black/10 hover:bg-black/10 hover:border-black/20'
                   }`}
                 >
-                  <div className={`flex items-center justify-center w-5 h-5 rounded border-2 flex-shrink-0 ${
+                  <div className={`flex items-center justify-center w-4 h-4 rounded border flex-shrink-0 ${
                     isSelected
                       ? isDark
                         ? 'bg-emerald-500/30 border-emerald-400'
@@ -222,7 +259,7 @@ export default function ServicesField({
                       ? 'border-white/30'
                       : 'border-black/30'
                   }`}>
-                    {isSelected && <CheckCircle className="w-4 h-4" fill="currentColor" />}
+                    {isSelected && <CheckCircle className="w-3 h-3" fill="currentColor" />}
                   </div>
                   <span className="flex-1">{title}</span>
                 </button>
@@ -230,13 +267,19 @@ export default function ServicesField({
             })}
           </div>
 
+          {filteredServices.length === 0 && (
+            <p className={`text-center py-4 text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+              სერვისები ვერ მოიძებნა
+            </p>
+          )}
+
           {/* Save/Cancel Buttons - Only show if showActions is true */}
           {showActions && (
-            <div className="flex gap-3 mt-4">
+            <div className="flex gap-2 mt-3">
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className={`flex items-center gap-2 rounded-lg px-6 py-2.5 font-semibold transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed ${
+                className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed ${
                   isDark
                     ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30'
                     : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border border-emerald-500/20'
@@ -244,12 +287,12 @@ export default function ServicesField({
               >
                 {saving ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     შენახვა...
                   </>
                 ) : (
                   <>
-                    <CheckCircle className="h-4 w-4" />
+                    <CheckCircle className="h-3.5 w-3.5" />
                     შენახვა
                   </>
                 )}
@@ -257,7 +300,7 @@ export default function ServicesField({
               <button
                 onClick={handleCancel}
                 disabled={saving}
-                className={`rounded-lg px-6 py-2.5 font-semibold transition-all hover:scale-[1.02] disabled:opacity-50 ${
+                className={`rounded-lg px-4 py-2 text-xs font-semibold transition-all hover:scale-[1.02] disabled:opacity-50 ${
                   isDark
                     ? 'bg-white/5 text-white/80 hover:bg-white/10 border border-white/10'
                     : 'bg-black/5 text-black/80 hover:bg-black/10 border border-black/10'
@@ -271,31 +314,31 @@ export default function ServicesField({
       ) : (
         <>
           {showActions && (
-            <div className="flex justify-end mb-3">
+            <div className="flex justify-end mb-2">
               <button
                 onClick={handleStartEdit}
-                className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                   isDark
                     ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30'
                     : 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/20'
                 }`}
               >
-                <Edit className="h-3.5 w-3.5" />
+                <Edit className="h-3 w-3" />
                 რედაქტირება
               </button>
             </div>
           )}
-          <div className="flex flex-wrap gap-2">
-            {displayPractices.length > 0 ? (
-              displayPractices.map((practiceId) => {
-                const practice = practices.find(p => p.id === practiceId)
-                if (!practice) return null
-                const title = getPracticeTitle(practice)
+          <div className="flex flex-wrap gap-1.5">
+            {displayServices.length > 0 ? (
+              displayServices.map((serviceId) => {
+                const service = services.find(s => s.id === serviceId)
+                if (!service) return null
+                const title = getServiceTitle(service)
                 
                 return (
                   <span
-                    key={practiceId}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                    key={serviceId}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium ${
                       isDark
                         ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                         : 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30'
@@ -306,7 +349,7 @@ export default function ServicesField({
                 )
               })
             ) : (
-              <p className={`text-base ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+              <p className={`text-xs ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                 სერვისები არ არის არჩეული
               </p>
             )}
@@ -317,7 +360,7 @@ export default function ServicesField({
   )
 }
 
-// Export a version that can get the selected practice IDs
-export const getSelectedPractices = (tempSelectedPractices: string[]) => {
-  return tempSelectedPractices
+// Export a version that can get the selected service IDs
+export const getSelectedServices = (tempSelectedServices: string[]) => {
+  return tempSelectedServices
 }

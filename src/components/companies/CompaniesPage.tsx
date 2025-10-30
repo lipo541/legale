@@ -59,6 +59,7 @@ export default function CompaniesPage() {
           .from('profiles')
           .select('*')
           .eq('role', 'COMPANY')
+          .eq('verification_status', 'verified')
           .order('full_name', { ascending: true });
 
         if (companiesError) {
@@ -120,11 +121,12 @@ export default function CompaniesPage() {
           setSpecializations(sortedSpecializations);
         }
 
-        // Fetch ALL specialists count (company + independent)
+        // Fetch ALL specialists count (company + independent) - only verified
         const { count: specialistsCount, error: specialistsError } = await supabase
           .from('profiles')
           .select('*', { count: 'exact', head: true })
-          .eq('role', 'SPECIALIST');
+          .eq('role', 'SPECIALIST')
+          .eq('verification_status', 'verified');
 
         if (specialistsError) {
           console.error('Error fetching specialists:', specialistsError.message, specialistsError);

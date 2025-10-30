@@ -10,25 +10,86 @@ export default function ContentTab({ companyId }: { companyId: string }) {
   const { translations, activeLanguage, updateContentField } = useCompanyTranslations()
   const { theme } = useTheme()
   const isDark = theme === 'dark'
+  const supabase = createClient()
+  
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [currentSlug, setCurrentSlug] = useState<string>('')
+  const [isSlugEditable, setIsSlugEditable] = useState(false)
+  const [companyName, setCompanyName] = useState<string>('')
 
   const currentData = translations[activeLanguage].content
 
+  const generateSlug = (text: string) => {
+    const translitMap: { [key: string]: string } = {
+      // Georgian
+      'ა': 'a', 'ბ': 'b', 'გ': 'g', 'დ': 'd', 'ე': 'e', 'ვ': 'v', 'ზ': 'z', 'თ': 't', 'ი': 'i', 'კ': 'k', 'ლ': 'l', 'მ': 'm', 'ნ': 'n', 'ო': 'o', 'პ': 'p', 'ჟ': 'zh', 'რ': 'r', 'ს': 's', 'ტ': 't', 'უ': 'u', 'ფ': 'f', 'ქ': 'q', 'ღ': 'gh', 'ყ': 'y', 'შ': 'sh', 'ჩ': 'ch', 'ც': 'ts', 'ძ': 'dz', 'წ': 'w', 'ჭ': 'ch', 'ხ': 'kh', 'ჯ': 'j', 'ჰ': 'h',
+      // Russian
+      'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo', 'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'shch', 'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya'
+    }
+
+    let slug = text.toLowerCase().trim()
+    
+    // Transliterate character by character
+    slug = slug.split('').map(char => translitMap[char] || char).join('')
+
+    return slug
+      .replace(/[^a-z0-9\s-]/g, '') // Remove non-latin, non-numeric, non-space, non-hyphen characters
+      .replace(/\s+/g, '-')           // Replace spaces with -
+      .replace(/--+/g, '-')           // Replace multiple - with single -
+      .replace(/^-+/, '')             // Trim - from start
+      .replace(/-+$/, '')            // Trim - from end
+  }
+
+  // Fetch avatar URL, current slug and company name from profiles
   useEffect(() => {
-    const fetchAvatar = async () => {
-      const supabase = createClient()
-      const { data } = await supabase
+    const fetchProfileData = async () => {
+      if (!companyId) return
+      
+      const { data: profile } = await supabase
         .from('profiles')
-        .select('avatar_url')
+        .select('avatar_url, company_slug, full_name')
         .eq('id', companyId)
         .single()
       
-      if (data?.avatar_url) {
-        setAvatarUrl(data.avatar_url)
+      if (profile) {
+        if (profile.avatar_url) setAvatarUrl(profile.avatar_url)
+        if (profile.company_slug) setCurrentSlug(profile.company_slug)
+        if (profile.full_name) setCompanyName(profile.full_name)
       }
     }
-    fetchAvatar()
-  }, [companyId])
+    
+    fetchProfileData()
+  }, [companyId, supabase])
+
+  const handleSlugChange = (value: string) => {
+    const sanitizedSlug = generateSlug(value)
+    setCurrentSlug(sanitizedSlug)
+  }
+
+  const handleSlugSave = async () => {
+    if (!companyId || !currentSlug) return
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ company_slug: currentSlug })
+      .eq('id', companyId)
+
+    if (error) {
+      console.error('Error updating company_slug:', error)
+      alert('შეცდომა slug-ის განახლებისას')
+    } else {
+      alert(`Slug წარმატებით განახლდა: ${currentSlug}`)
+    }
+  }
+
+  const handleAutoGenerate = () => {
+    if (!companyName) {
+      alert('კომპანიის სახელი უნდა იყოს შევსებული')
+      return
+    }
+    const generatedSlug = generateSlug(companyName)
+    setCurrentSlug(generatedSlug)
+  }
 
   const getPlaceholder = (field: string): string => {
     const placeholders: Record<string, Record<string, string>> = {
@@ -124,6 +185,87 @@ export default function ContentTab({ companyId }: { companyId: string }) {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Slug Input - როგორც posts-ში და specialists-ში */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <label className={`text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+            URL Slug (სამივე ენისთვის)
+          </label>
+          <button
+            type="button"
+            onClick={() => setIsSlugEditable(!isSlugEditable)}
+            className={`text-xs px-2 py-0.5 rounded-md transition-colors ${
+              isDark
+                ? 'text-emerald-400 hover:bg-emerald-500/10'
+                : 'text-emerald-600 hover:bg-emerald-500/10'
+            }`}
+          >
+            {isSlugEditable ? '🔓 ხელით' : '🔒 ავტო'}
+          </button>
+        </div>
+        <div className={`flex items-center gap-1.5 px-2 py-1.5 text-xs rounded-md border ${
+          isDark
+            ? 'bg-white/5 border-white/20'
+            : 'bg-black/5 border-black/10'
+        }`}>
+          <span className={`${isDark ? 'text-white/40' : 'text-black/40'}`}>
+            /practices/
+          </span>
+          {isSlugEditable ? (
+            <input
+              type="text"
+              value={currentSlug}
+              onChange={(e) => handleSlugChange(e.target.value)}
+              placeholder="slug-avtomaturad-generirebuli"
+              className={`flex-1 bg-transparent border-none outline-none ${
+                isDark ? 'text-white placeholder:text-white/40' : 'text-black placeholder:text-black/40'
+              }`}
+            />
+          ) : (
+            <span className={`flex-1 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+              {currentSlug || 'slug-avtomaturad-generirebuli'}
+            </span>
+          )}
+        </div>
+        
+        {/* Buttons Row */}
+        <div className="flex gap-2">
+          {!isSlugEditable && (
+            <button
+              type="button"
+              onClick={handleAutoGenerate}
+              disabled={!companyName}
+              className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                isDark
+                  ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30'
+                  : 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/20'
+              }`}
+            >
+              ⚡ კომპანიის სახელიდან გენერაცია
+            </button>
+          )}
+          
+          {isSlugEditable && (
+            <button
+              type="button"
+              onClick={handleSlugSave}
+              disabled={!currentSlug}
+              className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                isDark
+                  ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                  : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
+              }`}
+            >
+              💾 Slug-ის შენახვა
+            </button>
+          )}
+        </div>
+        
+        <p className={`text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+          💡 Slug გენერირდება კომპანიის სახელიდან. გსურთ თუ არა ხელით რედაქტირება, დააჭირეთ 🔓 ხელით.
+        </p>
       </div>
 
       {/* Company Overview */}

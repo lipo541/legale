@@ -587,12 +587,15 @@ export default function PostsPage() {
                           isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'
                         }`}>
                       <td className="px-3 py-3">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 max-w-[250px]">
                           <FileText className={`h-4 w-4 flex-shrink-0 ${
                             isDark ? 'text-white/40' : 'text-black/40'
                           }`} />
-                          <div className="min-w-0">
-                            <div className={`font-medium text-sm truncate ${isDark ? 'text-white' : 'text-black'}`}>
+                          <div className="min-w-0 flex-1">
+                            <div 
+                              className={`font-medium text-sm truncate ${isDark ? 'text-white' : 'text-black'}`}
+                              title={post.post_translations?.find(t => t.language === 'ka')?.title || 'უსათაურო პოსტი'}
+                            >
                               {post.post_translations?.find(t => t.language === 'ka')?.title || 'უსათაურო პოსტი'}
                             </div>
                           </div>
