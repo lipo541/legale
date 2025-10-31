@@ -54,7 +54,7 @@ export default function SpecialistsStatistics({
   const [servicesSearchTerm, setServicesSearchTerm] = useState('');
 
   // Cities data
-  const [cities, setCities] = useState<Array<{ name: string; count: number }>>([])
+  const [cities, setCities] = useState<Array<{ id: string; name: string; count: number }>>([])
   const [loadingCities, setLoadingCities] = useState(true)
 
   // Services data
@@ -72,7 +72,7 @@ export default function SpecialistsStatistics({
           .select('cities(id, name_ka, name_en, name_ru)')
 
         // Extract unique cities with counts
-        const counts: Record<string, number> = {}
+        const counts: Record<string, { id: string; count: number }> = {}
         
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         specialistCitiesData?.forEach((item: any) => {
@@ -80,15 +80,19 @@ export default function SpecialistsStatistics({
             const cityName = locale === 'ka' ? item.cities.name_ka 
                            : locale === 'en' ? item.cities.name_en 
                            : item.cities.name_ru
-            if (cityName) {
-              counts[cityName] = (counts[cityName] || 0) + 1
+            const cityId = item.cities.id
+            if (cityName && cityId) {
+              if (!counts[cityName]) {
+                counts[cityName] = { id: cityId, count: 0 }
+              }
+              counts[cityName].count += 1
             }
           }
         })
 
         // Convert to array and sort by count
         const citiesArray = Object.entries(counts)
-          .map(([name, count]) => ({ name, count }))
+          .map(([name, data]) => ({ id: data.id, name, count: data.count }))
           .sort((a, b) => b.count - a.count)
 
         setCities(citiesArray)
@@ -640,13 +644,13 @@ export default function SpecialistsStatistics({
                   ) : (
                     cities.map((city) => (
                       <button
-                        key={city.name}
+                        key={city.id}
                         onClick={() => {
-                          setSelectedCity(city.name === selectedCity ? null : city.name);
+                          setSelectedCity(city.id === selectedCity ? null : city.id);
                           setOpenDropdown(null);
                         }}
                         className={`flex w-full items-center justify-between px-3 py-2.5 text-left transition-colors ${
-                          selectedCity === city.name
+                          selectedCity === city.id
                             ? isDark
                               ? 'bg-white text-black font-medium'
                               : 'bg-black text-white font-medium'
@@ -856,13 +860,13 @@ export default function SpecialistsStatistics({
                   ) : (
                     cities.map((city) => (
                       <button
-                        key={city.name}
+                        key={city.id}
                         onClick={() => {
-                          setSelectedCity(city.name === selectedCity ? null : city.name);
+                          setSelectedCity(city.id === selectedCity ? null : city.id);
                           setOpenDropdown(null);
                         }}
                         className={`w-full px-2 py-1.5 text-left text-xs transition-colors flex items-center justify-between ${
-                          selectedCity === city.name
+                          selectedCity === city.id
                             ? isDark
                               ? 'bg-white text-black'
                               : 'bg-black text-white'
@@ -873,7 +877,7 @@ export default function SpecialistsStatistics({
                       >
                         <span>{city.name}</span>
                         <span className={`text-[10px] ${
-                          selectedCity === city.name 
+                          selectedCity === city.id 
                             ? isDark ? 'text-black/60' : 'text-white/60'
                             : isDark ? 'text-white/40' : 'text-black/40'
                         }`}>
