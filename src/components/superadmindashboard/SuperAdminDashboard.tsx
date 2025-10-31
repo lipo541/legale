@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useTheme } from '@/contexts/ThemeContext'
 import { 
   LayoutDashboard,
@@ -32,8 +33,26 @@ import PostsPage from './posts/PostsPage'
 export default function SuperAdminDashboard() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [activeTab, setActiveTab] = useState('dashboard')
+
+  // Sync activeTab with URL on mount and when searchParams change
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab) {
+      setActiveTab(tab)
+    }
+  }, [searchParams])
+
+  // Update URL when tab changes
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', tabId)
+    router.push(`?${params.toString()}`, { scroll: false })
+  }
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -164,7 +183,7 @@ export default function SuperAdminDashboard() {
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => handleTabChange(item.id)}
                 className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-200 ${
                   isActive
                     ? isDark
