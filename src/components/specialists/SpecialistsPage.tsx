@@ -317,7 +317,10 @@ export default function SpecialistsPage() {
         <Breadcrumb items={[{ label: t.breadcrumb }]} />
         
         {/* Hero Section */}
-        <SpecialistsHero totalSpecialists={totalSpecialists} locale={locale} />
+        <SpecialistsHero 
+          locale={locale}
+          totalSpecialists={totalSpecialists}
+        />
         
         {/* Statistics Section */}
         <div className="mb-8">

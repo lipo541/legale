@@ -3,6 +3,8 @@
 import { useTheme } from '@/contexts/ThemeContext';
 import { ChevronDown, Building2, Briefcase, MapPin, X } from 'lucide-react';
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { companiesTranslations } from '@/translations/companies';
 
 interface CompanyFiltersProps {
   isOpen: boolean;
@@ -33,6 +35,9 @@ export default function CompanyFilters({
 }: CompanyFiltersProps) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const pathname = usePathname();
+  const locale = pathname?.split('/')[1] || 'ka';
+  const t = companiesTranslations[locale as keyof typeof companiesTranslations] || companiesTranslations.ka;
 
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
@@ -46,6 +51,9 @@ export default function CompanyFilters({
 
   return (
     <div
+      id="company-filters"
+      role="region"
+      aria-label={t.filterTitle}
       className={`rounded-lg border p-3 transition-all duration-300 ${
         isDark
           ? 'border-white/10 bg-white/5'
@@ -54,7 +62,7 @@ export default function CompanyFilters({
     >
       <div className="mb-2 flex items-center justify-between">
         <h3 className={`text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>
-          ფილტრაცია
+          {t.filterTitle}
         </h3>
         {hasActiveFilters && (
           <button
@@ -66,7 +74,7 @@ export default function CompanyFilters({
             }`}
           >
             <X size={12} />
-            გასუფთავება
+            {t.clearFilters}
           </button>
         )}
       </div>
@@ -76,19 +84,22 @@ export default function CompanyFilters({
         <div className="relative">
           <button
             onClick={() => toggleDropdown('company')}
-            className={`flex w-full items-center justify-between rounded border px-2 py-1.5 text-left transition-all ${
+            aria-label={t.companyFilter}
+            aria-expanded={openDropdown === 'company'}
+            aria-controls="company-dropdown"
+            className={`flex w-full items-center justify-between rounded border px-2 py-1.5 text-left transition-all focus-visible:ring-2 focus-visible:ring-offset-2 ${
               selectedCompany
                 ? isDark
-                  ? 'border-white bg-white text-black'
-                  : 'border-black bg-black text-white'
+                  ? 'border-white bg-white text-black focus-visible:ring-white/20'
+                  : 'border-black bg-black text-white focus-visible:ring-black/20'
                 : isDark
-                ? 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
-                : 'border-black/10 bg-gray-50 hover:border-black/20 hover:bg-gray-100'
+                ? 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10 focus-visible:ring-white/20'
+                : 'border-black/10 bg-gray-50 hover:border-black/20 hover:bg-gray-100 focus-visible:ring-black/20'
             }`}
           >
             <div className="flex items-center gap-1">
-              <Building2 size={12} strokeWidth={1.5} />
-              <span className="text-xs font-medium">კომპანია</span>
+              <Building2 size={12} strokeWidth={1.5} aria-hidden="true" />
+              <span className="text-xs font-medium">{t.companyFilter}</span>
             </div>
             <ChevronDown
               size={12}
@@ -134,19 +145,22 @@ export default function CompanyFilters({
         <div className="relative">
           <button
             onClick={() => toggleDropdown('specialization')}
-            className={`flex w-full items-center justify-between rounded border px-2 py-1.5 text-left transition-all ${
+            aria-label={t.specializationFilter}
+            aria-expanded={openDropdown === 'specialization'}
+            aria-controls="specialization-dropdown"
+            className={`flex w-full items-center justify-between rounded border px-2 py-1.5 text-left transition-all focus-visible:ring-2 focus-visible:ring-offset-2 ${
               selectedSpecialization
                 ? isDark
-                  ? 'border-white bg-white text-black'
-                  : 'border-black bg-black text-white'
+                  ? 'border-white bg-white text-black focus-visible:ring-white/20'
+                  : 'border-black bg-black text-white focus-visible:ring-black/20'
                 : isDark
-                ? 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
-                : 'border-black/10 bg-gray-50 hover:border-black/20 hover:bg-gray-100'
+                ? 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10 focus-visible:ring-white/20'
+                : 'border-black/10 bg-gray-50 hover:border-black/20 hover:bg-gray-100 focus-visible:ring-black/20'
             }`}
           >
             <div className="flex items-center gap-1">
-              <Briefcase size={12} strokeWidth={1.5} />
-              <span className="text-xs font-medium">სპეციალიზაცია</span>
+              <Briefcase size={12} strokeWidth={1.5} aria-hidden="true" />
+              <span className="text-xs font-medium">{t.specializationFilter}</span>
             </div>
             <ChevronDown
               size={12}
@@ -192,19 +206,22 @@ export default function CompanyFilters({
         <div className="relative">
           <button
             onClick={() => toggleDropdown('city')}
-            className={`flex w-full items-center justify-between rounded border px-2 py-1.5 text-left transition-all ${
+            aria-label={t.cityFilter}
+            aria-expanded={openDropdown === 'city'}
+            aria-controls="city-dropdown"
+            className={`flex w-full items-center justify-between rounded border px-2 py-1.5 text-left transition-all focus-visible:ring-2 focus-visible:ring-offset-2 ${
               selectedCity
                 ? isDark
-                  ? 'border-white bg-white text-black'
-                  : 'border-black bg-black text-white'
+                  ? 'border-white bg-white text-black focus-visible:ring-white/20'
+                  : 'border-black bg-black text-white focus-visible:ring-black/20'
                 : isDark
-                ? 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
-                : 'border-black/10 bg-gray-50 hover:border-black/20 hover:bg-gray-100'
+                ? 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10 focus-visible:ring-white/20'
+                : 'border-black/10 bg-gray-50 hover:border-black/20 hover:bg-gray-100 focus-visible:ring-black/20'
             }`}
           >
             <div className="flex items-center gap-1">
-              <MapPin size={12} strokeWidth={1.5} />
-              <span className="text-xs font-medium">ქალაქი</span>
+              <MapPin size={12} strokeWidth={1.5} aria-hidden="true" />
+              <span className="text-xs font-medium">{t.cityFilter}</span>
             </div>
             <ChevronDown
               size={12}

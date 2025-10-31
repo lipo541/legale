@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Mail, Phone, Building2 } from 'lucide-react';
 import { useParams } from 'next/navigation';
+import { specialistsTranslations } from '@/translations/specialists';
 
 interface CompanySpecialist {
   id: string;
@@ -28,6 +29,7 @@ export default function CompanySpecialistCard({ specialist, viewMode = 'grid' }:
   const isDark = theme === 'dark';
   const params = useParams();
   const locale = params?.locale || 'ka';
+  const t = specialistsTranslations[locale as keyof typeof specialistsTranslations] || specialistsTranslations.ka;
 
   // Static contact info - same for all specialists
   const COMPANY_EMAIL = 'contact@legalsandbox.ge';
@@ -159,7 +161,7 @@ export default function CompanySpecialistCard({ specialist, viewMode = 'grid' }:
                       : 'bg-black/10 text-black hover:bg-black/20 focus-visible:ring-black/50'
                   }`}
                 >
-                  <span className="hidden sm:inline">იხილეთ მეტი</span>
+                  <span className="hidden sm:inline">{t.viewMore}</span>
                   <span className="sm:hidden">მეტი</span>
                 </button>
               </Link>
@@ -171,7 +173,7 @@ export default function CompanySpecialistCard({ specialist, viewMode = 'grid' }:
                     : 'bg-black/10 text-black hover:bg-black/20 focus-visible:ring-black/50'
                 }`}
               >
-                <span className="hidden sm:inline">იხილეთ მეტი</span>
+                <span className="hidden sm:inline">{t.viewMore}</span>
                 <span className="sm:hidden">მეტი</span>
               </button>
             )}
@@ -323,7 +325,7 @@ export default function CompanySpecialistCard({ specialist, viewMode = 'grid' }:
                   : 'text-black hover:bg-black/5 focus-visible:ring-black/50'
               }`}
             >
-              იხილეთ მეტი
+              {t.viewMore}
             </button>
           </Link>
         ) : (
@@ -334,7 +336,7 @@ export default function CompanySpecialistCard({ specialist, viewMode = 'grid' }:
                 : 'text-black hover:bg-black/5 focus-visible:ring-black/50'
             }`}
           >
-            იხილეთ მეტი
+            {t.viewMore}
           </button>
         )}
       </div>

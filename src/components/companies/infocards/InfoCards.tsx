@@ -2,6 +2,8 @@
 
 import { useTheme } from '@/contexts/ThemeContext';
 import { Building2, Users, Briefcase } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { companiesTranslations } from '@/translations/companies';
 
 interface InfoCardsProps {
   totalCompanies: number;
@@ -16,21 +18,24 @@ export default function InfoCards({
 }: InfoCardsProps) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const pathname = usePathname();
+  const locale = pathname?.split('/')[1] || 'ka';
+  const t = companiesTranslations[locale as keyof typeof companiesTranslations] || companiesTranslations.ka;
 
   const cards = [
     {
       icon: Building2,
-      label: 'კომპანიები',
+      label: t.companies,
       count: totalCompanies,
     },
     {
       icon: Users,
-      label: 'სპეციალისტები',
+      label: t.specialists,
       count: totalSpecialists,
     },
     {
       icon: Briefcase,
-      label: 'სერვისები',
+      label: t.services,
       count: totalServices,
     },
   ];

@@ -1,18 +1,18 @@
 'use client';
 
-import { Users } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
-import { specialistsTranslations } from '@/translations/specialists';
+import { companiesTranslations } from '@/translations/companies';
 
-interface SpecialistsHeroProps {
+interface CompaniesHeroProps {
   locale: string;
-  totalSpecialists: number;
+  totalCompanies: number;
 }
 
-export default function SpecialistsHero({ locale, totalSpecialists }: SpecialistsHeroProps) {
+export default function CompaniesHero({ locale, totalCompanies }: CompaniesHeroProps) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  const t = specialistsTranslations[locale as keyof typeof specialistsTranslations] || specialistsTranslations.ka;
+  const t = companiesTranslations[locale as keyof typeof companiesTranslations] || companiesTranslations.ka;
 
   return (
     <div className="mb-8 text-center">
@@ -23,7 +23,7 @@ export default function SpecialistsHero({ locale, totalSpecialists }: Specialist
             isDark ? 'bg-white/5' : 'bg-black/5'
           }`}
         >
-          <Users
+          <Building2
             className={`transition-colors duration-300 ${
               isDark ? 'text-white/40' : 'text-black/40'
             }`}
@@ -58,9 +58,9 @@ export default function SpecialistsHero({ locale, totalSpecialists }: Specialist
         }`}
       >
         <span className={`font-bold ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-          {totalSpecialists}
+          {totalCompanies}
         </span>{' '}
-        {t.specialistsFound}
+        {t.companiesFound}
       </div>
     </div>
   );

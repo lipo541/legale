@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useTheme } from '@/contexts/ThemeContext'
+import { specialistDetailTranslations } from '@/translations/specialist-detail'
 import { 
   Briefcase, 
   Mail, 
@@ -72,6 +73,7 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
   const isDark = theme === 'dark'
   const supabase = createClient()
   const router = useRouter()
+  const t = specialistDetailTranslations[locale as keyof typeof specialistDetailTranslations] || specialistDetailTranslations.ka
 
   const [specialist, setSpecialist] = useState<Specialist | null>(null)
   const [cities, setCities] = useState<Array<{ id: string; name_ka: string; name_en: string; name_ru: string }>>([])
@@ -199,7 +201,7 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
         isDark ? 'bg-black text-white' : 'bg-white text-black'
       }`}>
         <div className="text-center">
-          <h1 className="text-3xl font-bold mb-4">სპეციალისტი ვერ მოიძებნა</h1>
+          <h1 className="text-3xl font-bold mb-4">{t.notFound}</h1>
           <button
             onClick={() => router.push(`/${locale}/specialists`)}
             className={`flex items-center gap-2 mx-auto px-6 py-3 rounded-lg transition-colors ${
@@ -209,7 +211,7 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
             }`}
           >
             <ChevronLeft className="h-4 w-4" />
-            უკან დაბრუნება
+            {t.backButton}
           </button>
         </div>
       </div>
@@ -225,7 +227,7 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
       <div className={`min-h-screen flex items-center justify-center ${
         isDark ? 'bg-black text-white' : 'bg-white text-black'
       }`}>
-        <p>თარგმანი ვერ მოიძებნა</p>
+        <p>{t.translationNotFound}</p>
       </div>
     )
   }

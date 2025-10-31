@@ -1,14 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { useTheme } from '@/contexts/ThemeContext';
 import { createClient } from '@/lib/supabase/client';
-import { Building2, Loader2 } from 'lucide-react';
+import { Building2, Search, SlidersHorizontal } from 'lucide-react';
 import CompanyCard from './companycard/CompanyCard';
-import CompanySearch from './companysearch/CompanySearch';
+import CompanyCardSkeleton from './CompanyCardSkeleton';
 import CompanyFilters from './companyfilters/CompanyFilters';
 import InfoCards from './infocards/InfoCards';
+import CompaniesHero from './CompaniesHero';
+import Breadcrumb from '../common/Breadcrumb';
+import Sort from '../common/Sort';
+import ViewModeToggle from '../common/ViewModeToggle';
+import { companiesTranslations } from '@/translations/companies';
 
 interface Company {
   id: string;
@@ -29,10 +34,12 @@ export default function CompaniesPage() {
   const supabase = createClient();
   const pathname = usePathname();
   const locale = pathname?.split('/')[1] || 'ka';
+  const t = companiesTranslations[locale as keyof typeof companiesTranslations] || companiesTranslations.ka;
 
   const [companies, setCompanies] = useState<Company[]>([]);
   const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
@@ -40,6 +47,10 @@ export default function CompaniesPage() {
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [selectedSpecialization, setSelectedSpecialization] = useState<string | null>(null);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
+
+  // Sort and View Mode states
+  const [sortBy, setSortBy] = useState<string>('a-z');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // Stats
   const [totalSpecialists, setTotalSpecialists] = useState(0);
@@ -49,6 +60,38 @@ export default function CompaniesPage() {
   const [specializations, setSpecializations] = useState<Array<{ id: string; name: string }>>([]);
 
   const [cities, setCities] = useState<string[]>([]);
+
+  // Load view mode and sort from localStorage
+  useEffect(() => {
+    const savedViewMode = localStorage.getItem('companiesViewMode');
+    const savedSortBy = localStorage.getItem('companiesSortBy');
+    
+    if (savedViewMode === 'grid' || savedViewMode === 'list') {
+      setViewMode(savedViewMode);
+    }
+    if (savedSortBy) {
+      setSortBy(savedSortBy);
+    }
+  }, []);
+
+  // Save view mode to localStorage
+  useEffect(() => {
+    localStorage.setItem('companiesViewMode', viewMode);
+  }, [viewMode]);
+
+  // Save sort preference to localStorage
+  useEffect(() => {
+    localStorage.setItem('companiesSortBy', sortBy);
+  }, [sortBy]);
+
+  // Debounce search term to reduce API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   // Fetch companies and stats
   useEffect(() => {
@@ -67,7 +110,6 @@ export default function CompaniesPage() {
           throw companiesError;
         }
 
-        console.log('Companies fetched:', companiesData?.length || 0);
         setCompanies(companiesData || []);
         setFilteredCompanies(companiesData || []);
 
@@ -131,7 +173,6 @@ export default function CompaniesPage() {
         if (specialistsError) {
           console.error('Error fetching specialists:', specialistsError.message, specialistsError);
         } else {
-          console.log('Specialists count:', specialistsCount);
           setTotalSpecialists(specialistsCount || 0);
         }
 
@@ -145,7 +186,6 @@ export default function CompaniesPage() {
           // Services table might not exist yet, set to 0
           setTotalServices(0);
         } else {
-          console.log('Services count:', servicesCount);
           setTotalServices(servicesCount || 0);
         }
       } catch (error) {
@@ -158,19 +198,13 @@ export default function CompaniesPage() {
     fetchData();
   }, [supabase, locale]);
 
-  // Apply filters
-  useEffect(() => {
-    console.log('🔄 useEffect triggered! searchTerm:', searchTerm, 'companies:', companies.length);
-    
-    const applyFilters = async () => {
-      console.log('🏁 applyFilters started');
-      let filtered = companies;
+  // Apply filters - memoized to prevent recreation on every render
+  const applyFilters = useCallback(async () => {
+    let filtered = companies;
 
       // Enhanced search filter - search across multiple fields and languages
-      if (searchTerm.trim()) {
-        const searchLower = searchTerm.toLowerCase();
-        
-        console.log('🔍 Searching for:', searchTerm, 'lowercase:', searchLower);
+      if (debouncedSearchTerm.trim()) {
+        const searchLower = debouncedSearchTerm.toLowerCase();
         
         // Get all company IDs that match search criteria
         const matchingCompanyIds = new Set<string>();
@@ -179,7 +213,6 @@ export default function CompaniesPage() {
         companies.forEach(company => {
           if (company.full_name.toLowerCase().includes(searchLower)) {
             matchingCompanyIds.add(company.id);
-            console.log('✅ Found in company name:', company.full_name);
           }
         });
 
@@ -195,8 +228,6 @@ export default function CompaniesPage() {
             city.name_ru.toLowerCase().includes(searchLower)
           ) || [];
 
-          console.log('🏙️ City matches:', cityMatches);
-
           if (cityMatches.length > 0) {
             const cityIds = cityMatches.map(c => c.id);
             const { data: companyCities } = await supabase
@@ -204,7 +235,6 @@ export default function CompaniesPage() {
               .select('company_id')
               .in('city_id', cityIds);
             
-            console.log('🏢 Companies with matching cities:', companyCities);
             companyCities?.forEach(cc => matchingCompanyIds.add(cc.company_id));
           }
 
@@ -219,8 +249,6 @@ export default function CompaniesPage() {
             spec.name_ru.toLowerCase().includes(searchLower)
           ) || [];
 
-          console.log('📚 Specialization matches:', specializationMatches);
-
           if (specializationMatches.length > 0) {
             const specIds = specializationMatches.map(s => s.id);
             const { data: companySpecs, error: companySpecError } = await supabase
@@ -230,8 +258,6 @@ export default function CompaniesPage() {
             
             if (companySpecError) {
               console.error('❌ Company specialization search error:', companySpecError);
-            } else {
-              console.log('🏢 Companies with matching specializations:', companySpecs);
             }
             
             companySpecs?.forEach(cs => matchingCompanyIds.add(cs.company_id));
@@ -247,8 +273,6 @@ export default function CompaniesPage() {
           const specialistMatches = allSpecialists?.filter(s =>
             s.full_name.toLowerCase().includes(searchLower)
           ) || [];
-
-          console.log('👤 Specialist matches:', specialistMatches);
 
           specialistMatches.forEach(s => {
             if (s.company_id) matchingCompanyIds.add(s.company_id);
@@ -266,8 +290,6 @@ export default function CompaniesPage() {
             (service.title_ru && service.title_ru.toLowerCase().includes(searchLower))
           ) || [];
 
-          console.log('📋 Service matches:', serviceMatches);
-
           serviceMatches.forEach(s => {
             if (s.company_id) matchingCompanyIds.add(s.company_id);
           });
@@ -275,13 +297,9 @@ export default function CompaniesPage() {
         } catch (error) {
           console.error('❌ Error in search:', error);
         }
-
-        console.log('🎯 Total matching company IDs:', Array.from(matchingCompanyIds));
         
         // Filter companies by matching IDs
         filtered = filtered.filter((company) => matchingCompanyIds.has(company.id));
-        
-        console.log('✅ Filtered companies:', filtered.length);
       }
 
       // Company filter
@@ -338,11 +356,28 @@ export default function CompaniesPage() {
         }
       }
 
-      setFilteredCompanies(filtered);
-    };
+      // Apply sorting
+      const sortedFiltered = [...filtered].sort((a, b) => {
+        switch (sortBy) {
+          case 'a-z':
+            return a.full_name.localeCompare(b.full_name, locale);
+          case 'z-a':
+            return b.full_name.localeCompare(a.full_name, locale);
+          case 'newest':
+            return b.id.localeCompare(a.id);
+          case 'oldest':
+            return a.id.localeCompare(b.id);
+          default:
+            return 0;
+        }
+      });
 
+      setFilteredCompanies(sortedFiltered);
+  }, [debouncedSearchTerm, selectedCompany, selectedSpecialization, selectedCity, companies, supabase, sortBy, locale]);
+
+  useEffect(() => {
     applyFilters();
-  }, [searchTerm, selectedCompany, selectedSpecialization, selectedCity, companies, supabase]);
+  }, [applyFilters]);
 
   const handleClearFilters = () => {
     setSelectedCompany(null);
@@ -353,24 +388,44 @@ export default function CompaniesPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className={`animate-spin ${isDark ? 'text-white' : 'text-black'}`} size={40} />
+      <div className="min-h-screen px-4 py-6">
+        <div className="mx-auto max-w-[1200px]">
+          {/* Header */}
+          <div className="mb-6 text-center">
+            <h1 className={`mb-1 text-3xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-black'}`}>
+              {t.breadcrumb}
+            </h1>
+            <p className={`text-sm ${isDark ? 'text-white/70' : 'text-black/70'}`}>
+              {t.loading}
+            </p>
+          </div>
+
+          {/* Skeleton Grid */}
+          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: 12 }).map((_, index) => (
+              <CompanyCardSkeleton key={index} />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen px-4 py-6">
-      <div className="mx-auto max-w-[1200px]">
-        {/* Header */}
-        <div className="mb-6 text-center">
-          <h1 className={`mb-1 text-3xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-black'}`}>
-            კომპანიები
-          </h1>
-          <p className={`text-sm ${isDark ? 'text-white/70' : 'text-black/70'}`}>
-            დარეგისტრირებული იურიდიული კომპანიები პლატფორმაზე
-          </p>
-        </div>
+      <div className="mx-auto max-w-7xl px-2 py-4 sm:px-4 lg:px-8">
+        {/* Breadcrumb Navigation */}
+        <Breadcrumb 
+          items={[{ 
+            label: t.breadcrumb
+          }]} 
+        />
+
+        {/* Hero Section */}
+        <CompaniesHero 
+          locale={locale}
+          totalCompanies={companies.length}
+        />
 
         {/* Info Cards */}
         <div className="mb-4">
@@ -381,43 +436,187 @@ export default function CompaniesPage() {
           />
         </div>
 
-        {/* Search & Filter */}
-        <div className="mb-3">
-          <CompanySearch
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            onFilterClick={() => setIsFilterOpen(!isFilterOpen)}
-            isFilterOpen={isFilterOpen}
-          />
+        {/* Search, Sort, View Mode, Filter - All in One Row (Desktop) */}
+        <div className="mb-4">
+          {/* Mobile: Stacked layout */}
+          <div className="flex flex-col gap-3 sm:hidden">
+            {/* Search Input - Full width on mobile */}
+            <div className="relative w-full">
+              <Search
+                className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 transition-colors duration-300 ${
+                  isDark ? 'text-white/30' : 'text-black/30'
+                }`}
+                size={16}
+                strokeWidth={1.5}
+                aria-hidden="true"
+              />
+              <input
+                type="search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder={t.searchPlaceholder}
+                aria-label={t.searchAriaLabelFull}
+                aria-describedby="search-description"
+                className={`w-full rounded-xl border py-2 pl-9 pr-3 text-sm transition-all duration-300 placeholder:text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                  isDark
+                    ? 'border-white/10 bg-white/5 text-white placeholder:text-white/40 hover:border-white/20 focus:border-white/30 focus:bg-white/10 focus:ring-white/50'
+                    : 'border-black/10 bg-white text-black placeholder:text-black/40 hover:border-black/20 focus:border-black/30 focus:bg-gray-50 shadow-sm focus:ring-black/50'
+                }`}
+              />
+              <span id="search-description" className="sr-only">
+                {t.searchDescriptionText}
+              </span>
+            </div>
+
+            {/* Controls Row - Sort, View, Filter */}
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {/* Sort */}
+              <div className="flex-1">
+                <Sort 
+                  options={[
+                    { value: 'a-z', label: t.sortAZ },
+                    { value: 'z-a', label: t.sortZA },
+                    { value: 'newest', label: t.sortNewest },
+                    { value: 'oldest', label: t.sortOldest },
+                  ]}
+                  value={sortBy}
+                  onChange={setSortBy}
+                />
+              </div>
+
+              {/* View Mode Toggle - Centered */}
+              <div className="flex-shrink-0">
+                <ViewModeToggle view={viewMode} onChange={setViewMode} />
+              </div>
+
+              {/* Filter Button */}
+              <button
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                aria-label={t.filterButton}
+                aria-expanded={isFilterOpen}
+                aria-controls="company-filters"
+                className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg border px-2 py-1.5 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+                  isFilterOpen
+                    ? isDark
+                      ? 'border-white bg-white text-black scale-[0.98] focus-visible:ring-white/50'
+                      : 'border-black bg-black text-white scale-[0.98] focus-visible:ring-black/50'
+                    : isDark
+                    ? 'border-white/10 bg-white/5 text-white hover:border-white/20 hover:bg-white/10 hover:scale-[1.02] focus-visible:ring-white/50'
+                    : 'border-black/10 bg-white text-black hover:border-black/20 hover:bg-gray-50 shadow-sm hover:shadow-md hover:scale-[1.02] focus-visible:ring-black/50'
+                }`}
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" strokeWidth={1.5} aria-hidden="true" />
+                <span className="whitespace-nowrap truncate">{t.filterButton}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Desktop: Single row layout */}
+          <div className="hidden sm:flex w-full gap-3">
+            {/* Search Input */}
+            <div className="relative flex-1">
+              <Search
+                className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 transition-colors duration-300 ${
+                  isDark ? 'text-white/30' : 'text-black/30'
+                }`}
+                size={16}
+                strokeWidth={1.5}
+                aria-hidden="true"
+              />
+              <input
+                type="search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder={t.searchPlaceholder}
+                aria-label={t.searchAriaLabelFull}
+                aria-describedby="search-description-desktop"
+                className={`w-full rounded-xl border py-2 pl-9 pr-3 text-sm transition-all duration-300 placeholder:text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                  isDark
+                    ? 'border-white/10 bg-white/5 text-white placeholder:text-white/40 hover:border-white/20 focus:border-white/30 focus:bg-white/10 focus:ring-white/50'
+                    : 'border-black/10 bg-white text-black placeholder:text-black/40 hover:border-black/20 focus:border-black/30 focus:bg-gray-50 shadow-sm focus:ring-black/50'
+                }`}
+              />
+              <span id="search-description-desktop" className="sr-only">
+                {t.searchDescriptionText}
+              </span>
+            </div>
+
+            {/* Sort and View Mode Toggle */}
+            <div className="flex items-center gap-2">
+              {/* Sort */}
+              <Sort 
+                options={[
+                  { value: 'a-z', label: t.sortAZ },
+                  { value: 'z-a', label: t.sortZA },
+                  { value: 'newest', label: t.sortNewest },
+                  { value: 'oldest', label: t.sortOldest },
+                ]}
+                value={sortBy}
+                onChange={setSortBy}
+              />
+
+              {/* View Mode Toggle */}
+              <ViewModeToggle view={viewMode} onChange={setViewMode} />
+            </div>
+
+            {/* Filter Button */}
+            <button
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              aria-label={t.filterButton}
+              aria-expanded={isFilterOpen}
+              aria-controls="company-filters"
+              className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-all duration-300 md:px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+                isFilterOpen
+                  ? isDark
+                    ? 'border-white bg-white text-black scale-[0.98] focus-visible:ring-white/50'
+                    : 'border-black bg-black text-white scale-[0.98] focus-visible:ring-black/50'
+                  : isDark
+                  ? 'border-white/10 bg-white/5 text-white hover:border-white/20 hover:bg-white/10 hover:scale-[1.02] focus-visible:ring-white/50'
+                  : 'border-black/10 bg-white text-black hover:border-black/20 hover:bg-gray-50 shadow-sm hover:shadow-md hover:scale-[1.02] focus-visible:ring-black/50'
+              }`}
+            >
+              <SlidersHorizontal size={16} strokeWidth={1.5} aria-hidden="true" />
+              <span>{t.filterButton}</span>
+            </button>
+          </div>
         </div>
 
         {/* Filters Dropdown */}
-        <div className="mb-3">
-          <CompanyFilters
-            isOpen={isFilterOpen}
-            companies={companies}
-            specializations={specializations}
-            cities={cities}
-            selectedCompany={selectedCompany}
-            selectedSpecialization={selectedSpecialization}
-            selectedCity={selectedCity}
-            onCompanyChange={setSelectedCompany}
-            onSpecializationChange={setSelectedSpecialization}
-            onCityChange={setSelectedCity}
-            onClearFilters={handleClearFilters}
-          />
+        {isFilterOpen && (
+          <div className="mb-4">
+            <CompanyFilters
+              isOpen={isFilterOpen}
+              companies={companies}
+              specializations={specializations}
+              cities={cities}
+              selectedCompany={selectedCompany}
+              selectedSpecialization={selectedSpecialization}
+              selectedCity={selectedCity}
+              onCompanyChange={setSelectedCompany}
+              onSpecializationChange={setSelectedSpecialization}
+              onCityChange={setSelectedCity}
+              onClearFilters={handleClearFilters}
+            />
+          </div>
+        )}
+
+        {/* Screen Reader Announcement for Results */}
+        <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+          {filteredCompanies.length} {t.companiesFoundAria}
         </div>
 
-        {/* Companies Count */}
         <div className="mb-4 text-center">
           <p className={`text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
-            {filteredCompanies.length} კომპანია
+            {filteredCompanies.length} {t.companiesCount}
           </p>
         </div>
 
         {/* Companies Grid */}
         {filteredCompanies.length > 0 ? (
-          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          <div className={viewMode === 'grid' 
+            ? "grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4" 
+            : "flex flex-col gap-3"
+          }>
             {filteredCompanies.map((company) => (
               <CompanyCard
                 key={company.id}
@@ -428,21 +627,44 @@ export default function CompaniesPage() {
                 address={company.address}
                 phone_number={company.phone_number}
                 website={company.website}
+                viewMode={viewMode}
               />
             ))}
           </div>
         ) : (
-          <div className="py-12 text-center">
-            <Building2
-              className={`mx-auto mb-2 ${isDark ? 'text-white/10' : 'text-black/10'}`}
-              size={40}
-              strokeWidth={1}
-            />
-            <p className={`text-sm ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+          <div className="py-16 text-center">
+            <div className="mb-4 flex justify-center">
+              <div
+                className={`rounded-full p-4 transition-all duration-300 ${
+                  isDark ? 'bg-white/5' : 'bg-black/5'
+                }`}
+              >
+                <Building2
+                  className={`transition-colors duration-300 ${
+                    isDark ? 'text-white/20' : 'text-black/20'
+                  }`}
+                  size={48}
+                  strokeWidth={1.5}
+                />
+              </div>
+            </div>
+            <p className={`mb-2 text-base font-medium ${isDark ? 'text-white/70' : 'text-black/70'}`}>
               {searchTerm || selectedCompany || selectedCity || selectedSpecialization
-                ? 'კომპანია ვერ მოიძებნა'
-                : 'ჯერ არ არის დარეგისტრირებული კომპანიები'}
+                ? t.noCompaniesFound
+                : t.noCompaniesYet}
             </p>
+            {(searchTerm || selectedCompany || selectedCity || selectedSpecialization) && (
+              <button
+                onClick={handleClearFilters}
+                className={`mt-4 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+                  isDark
+                    ? 'bg-white/10 text-white hover:bg-white/20 focus-visible:ring-white/30'
+                    : 'bg-black/10 text-black hover:bg-black/20 focus-visible:ring-black/30'
+                }`}
+              >
+                {t.clearFiltersButton}
+              </button>
+            )}
           </div>
         )}
       </div>

@@ -169,15 +169,15 @@ export default function SpecialistsStatistics({
 
   // Static data
   const specialistTypes = [
-    { id: 'company', name: 'კომპანიის სპეციალისტი' },
-    { id: 'solo', name: 'დამოუკიდებელი სპეციალისტი' },
+    { id: 'company', name: t.companySpecialist },
+    { id: 'solo', name: t.soloSpecialist },
   ];
 
   const sortOptions = [
-    { value: 'newest', label: 'უახლესი' },
-    { value: 'oldest', label: 'უძველესი' },
-    { value: 'a-z', label: 'A-Z' },
-    { value: 'z-a', label: 'Z-A' },
+    { value: 'newest', label: t.sortNewest },
+    { value: 'oldest', label: t.sortOldest },
+    { value: 'a-z', label: t.sortAZ },
+    { value: 'z-a', label: t.sortZA },
   ];
 
   const handleClearFilters = () => {
@@ -209,17 +209,17 @@ export default function SpecialistsStatistics({
   const cards = [
     {
       icon: Building2,
-      label: 'კომპანიები',
+      label: t.companies,
       count: totalCompanies,
     },
     {
       icon: Users,
-      label: 'სპეციალისტები',
+      label: t.specialists,
       count: totalSpecialists,
     },
     {
       icon: Briefcase,
-      label: 'სერვისები',
+      label: t.services,
       count: totalServices,
     },
   ];
@@ -438,7 +438,7 @@ export default function SpecialistsStatistics({
         >
           <div className="mb-3 flex items-center justify-between">
             <h3 className={`text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>
-              ფილტრაცია
+              {t.filterTitle}
             </h3>
             {hasActiveFilters && (
               <button
@@ -450,7 +450,7 @@ export default function SpecialistsStatistics({
                 }`}
               >
                 <X size={12} />
-                გასუფთავება
+                {t.clearFilters}
               </button>
             )}
           </div>
@@ -473,7 +473,7 @@ export default function SpecialistsStatistics({
               >
                 <div className="flex items-center gap-2">
                   <UserCircle size={14} strokeWidth={1.5} />
-                  <span className="text-sm font-medium">კომპანია</span>
+                  <span className="text-sm font-medium">{t.companyFilter}</span>
                 </div>
                 <ChevronDown
                   size={14}
@@ -532,7 +532,7 @@ export default function SpecialistsStatistics({
                 <div className="flex items-center gap-2">
                   <Briefcase size={14} strokeWidth={1.5} />
                   <span className="text-sm font-medium">
-                    სპეციალიზაცია {selectedServices.length > 0 && `(${selectedServices.length})`}
+                    {t.specializationFilter} {selectedServices.length > 0 && `(${selectedServices.length})`}
                   </span>
                 </div>
                 <ChevronDown
@@ -557,7 +557,7 @@ export default function SpecialistsStatistics({
                       type="text"
                       value={servicesSearchTerm}
                       onChange={(e) => setServicesSearchTerm(e.target.value)}
-                      placeholder="ძებნა..."
+                      placeholder={t.searchServices}
                       className={`w-full px-3 py-2 text-sm rounded-lg border ${
                         isDark
                           ? 'bg-white/5 border-white/10 text-white placeholder:text-white/40'
@@ -570,9 +570,9 @@ export default function SpecialistsStatistics({
                   {/* Services list */}
                   <div className="max-h-64 overflow-y-auto">
                     {loadingServices ? (
-                      <div className="px-3 py-8 text-center text-sm text-white/40">იტვირთება...</div>
+                      <div className="px-3 py-8 text-center text-sm text-white/40">{t.loading}</div>
                     ) : filteredServices.length === 0 ? (
-                      <div className="px-3 py-8 text-center text-sm text-white/40">სერვისები არ მოიძებნა</div>
+                      <div className="px-3 py-8 text-center text-sm text-white/40">{t.noServicesFound}</div>
                     ) : (
                       filteredServices.map((service) => (
                         <label
@@ -619,7 +619,7 @@ export default function SpecialistsStatistics({
               >
                 <div className="flex items-center gap-2">
                   <MapPin size={14} strokeWidth={1.5} />
-                  <span className="text-sm font-medium">ქალაქი</span>
+                  <span className="text-sm font-medium">{t.cityFilter}</span>
                 </div>
                 <ChevronDown
                   size={14}
@@ -638,9 +638,9 @@ export default function SpecialistsStatistics({
                   }`}
                 >
                   {loadingCities ? (
-                    <div className="px-3 py-8 text-center text-sm text-white/40">იტვირთება...</div>
+                    <div className="px-3 py-8 text-center text-sm text-white/40">{t.loading}</div>
                   ) : cities.length === 0 ? (
-                    <div className="px-3 py-8 text-center text-sm text-white/40">ქალაქები არ მოიძებნა</div>
+                    <div className="px-3 py-8 text-center text-sm text-white/40">{t.noCitiesFound}</div>
                   ) : (
                     cities.map((city) => (
                       <button
@@ -689,7 +689,7 @@ export default function SpecialistsStatistics({
               >
                 <div className="flex items-center gap-1">
                   <UserCircle size={12} strokeWidth={1.5} />
-                  <span className="text-xs font-medium">კომპანია</span>
+                  <span className="text-xs font-medium">{t.companyFilter}</span>
                 </div>
                 <ChevronDown
                   size={12}
@@ -748,7 +748,7 @@ export default function SpecialistsStatistics({
                 <div className="flex items-center gap-1">
                   <Briefcase size={12} strokeWidth={1.5} />
                   <span className="text-xs font-medium">
-                    სპეციალიზაცია {selectedServices.length > 0 && `(${selectedServices.length})`}
+                    {t.specializationFilter} {selectedServices.length > 0 && `(${selectedServices.length})`}
                   </span>
                 </div>
                 <ChevronDown
@@ -773,7 +773,7 @@ export default function SpecialistsStatistics({
                       type="text"
                       value={servicesSearchTerm}
                       onChange={(e) => setServicesSearchTerm(e.target.value)}
-                      placeholder="ძებნა..."
+                      placeholder={t.searchServices}
                       className={`w-full px-2 py-1 text-xs rounded border ${
                         isDark
                           ? 'bg-white/5 border-white/10 text-white placeholder:text-white/40'
@@ -786,9 +786,9 @@ export default function SpecialistsStatistics({
                   {/* Services list with checkboxes */}
                   <div className="max-h-60 overflow-y-auto">
                     {loadingServices ? (
-                      <div className="px-2 py-4 text-center text-xs text-white/40">იტვირთება...</div>
+                      <div className="px-2 py-4 text-center text-xs text-white/40">{t.loading}</div>
                     ) : filteredServices.length === 0 ? (
-                      <div className="px-2 py-4 text-center text-xs text-white/40">სერვისები არ მოიძებნა</div>
+                      <div className="px-2 py-4 text-center text-xs text-white/40">{t.noServicesFound}</div>
                     ) : (
                       filteredServices.map((service) => (
                         <label
@@ -835,7 +835,7 @@ export default function SpecialistsStatistics({
               >
                 <div className="flex items-center gap-1">
                   <MapPin size={12} strokeWidth={1.5} />
-                  <span className="text-xs font-medium">ქალაქი</span>
+                  <span className="text-xs font-medium">{t.cityFilter}</span>
                 </div>
                 <ChevronDown
                   size={12}
@@ -854,9 +854,9 @@ export default function SpecialistsStatistics({
                   }`}
                 >
                   {loadingCities ? (
-                    <div className="px-2 py-4 text-center text-xs text-white/40">იტვირთება...</div>
+                    <div className="px-2 py-4 text-center text-xs text-white/40">{t.loading}</div>
                   ) : cities.length === 0 ? (
-                    <div className="px-2 py-4 text-center text-xs text-white/40">ქალაქები არ მოიძებნა</div>
+                    <div className="px-2 py-4 text-center text-xs text-white/40">{t.noCitiesFound}</div>
                   ) : (
                     cities.map((city) => (
                       <button

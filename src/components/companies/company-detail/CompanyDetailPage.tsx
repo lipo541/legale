@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useTheme } from '@/contexts/ThemeContext'
+import { companyDetailTranslations } from '@/translations/company-detail'
 import { 
   Building2,
   Mail, 
@@ -69,6 +70,7 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
   const isDark = theme === 'dark'
   const supabase = createClient()
   const router = useRouter()
+  const t = companyDetailTranslations[locale as keyof typeof companyDetailTranslations] || companyDetailTranslations.ka
 
   const [company, setCompany] = useState<Company | null>(null)
   const [cities, setCities] = useState<Array<{ id: string; name_ka: string; name_en: string; name_ru: string }>>([])
@@ -161,7 +163,7 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
         isDark ? 'bg-black text-white' : 'bg-white text-black'
       }`}>
         <div className="text-center">
-          <h1 className="text-3xl font-bold mb-4">კომპანია ვერ მოიძებნა</h1>
+          <h1 className="text-3xl font-bold mb-4">{t.notFound}</h1>
           <button
             onClick={() => router.push(`/${locale}/companies`)}
             className={`flex items-center gap-2 mx-auto px-6 py-3 rounded-lg transition-colors ${
@@ -171,7 +173,7 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
             }`}
           >
             <ChevronLeft className="h-5 w-5" />
-            უკან დაბრუნება
+            {t.backButton}
           </button>
         </div>
       </div>
@@ -193,7 +195,7 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
             }`}
           >
             <ChevronLeft className="h-4 w-4" />
-            უკან დაბრუნება
+            {t.backButton}
           </button>
         </div>
       </div>

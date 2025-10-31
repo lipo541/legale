@@ -30,6 +30,18 @@ export const specialistsTranslations = {
     allTypes: 'ყველა ტიპი',
     companySpecialist: 'კომპანიის სპეციალისტი',
     soloSpecialist: 'დამოუკიდებელი სპეციალისტი',
+    companyFilter: 'კომპანია',
+    specializationFilter: 'სპეციალიზაცია',
+    cityFilter: 'ქალაქი',
+    searchServices: 'ძებნა...',
+    noServicesFound: 'სერვისები არ მოიძებნა',
+    noCitiesFound: 'ქალაქები არ მოიძებნა',
+
+    // Sort Options
+    sortNewest: 'უახლესი',
+    sortOldest: 'უძველესი',
+    sortAZ: 'ა-ჰ',
+    sortZA: 'ჰ-ა',
 
     // Empty States
     noResultsTitle: 'სპეციალისტები არ მოიძებნა',
@@ -86,6 +98,18 @@ export const specialistsTranslations = {
     allTypes: 'All Types',
     companySpecialist: 'Company Specialist',
     soloSpecialist: 'Independent Specialist',
+    companyFilter: 'Company',
+    specializationFilter: 'Specialization',
+    cityFilter: 'City',
+    searchServices: 'Search...',
+    noServicesFound: 'No services found',
+    noCitiesFound: 'No cities found',
+
+    // Sort Options
+    sortNewest: 'Newest',
+    sortOldest: 'Oldest',
+    sortAZ: 'A-Z',
+    sortZA: 'Z-A',
 
     // Empty States
     noResultsTitle: 'No specialists found',
@@ -142,6 +166,18 @@ export const specialistsTranslations = {
     allTypes: 'Все типы',
     companySpecialist: 'Специалист компании',
     soloSpecialist: 'Независимый специалист',
+    companyFilter: 'Компания',
+    specializationFilter: 'Специализация',
+    cityFilter: 'Город',
+    searchServices: 'Поиск...',
+    noServicesFound: 'Сервисы не найдены',
+    noCitiesFound: 'Города не найдены',
+
+    // Sort Options
+    sortNewest: 'Новые',
+    sortOldest: 'Старые',
+    sortAZ: 'А-Я',
+    sortZA: 'Я-А',
 
     // Empty States
     noResultsTitle: 'Специалисты не найдены',
