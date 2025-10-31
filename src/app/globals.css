@@ -77,3 +77,67 @@ p {
 small {
   font-size: var(--text-sm);
 }
+
+/* Accessibility - Screen Reader Only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Accessibility - Focus Visible (for keyboard navigation) */
+.focus-visible-enhanced:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* Accessibility - Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Accessibility - High Contrast Mode Support */
+@media (forced-colors: active) {
+  * {
+    forced-color-adjust: auto;
+  }
+}
+
+/* Accessibility - Improved Color Contrast (WCAG AA Compliant) */
+/* Dark mode - minimum 4.5:1 contrast ratio */
+.dark .text-secondary {
+  color: rgba(255, 255, 255, 0.75); /* Instead of 0.60 - better contrast */
+}
+
+.dark .text-tertiary {
+  color: rgba(255, 255, 255, 0.65); /* Instead of 0.50 - better contrast */
+}
+
+/* Light mode - minimum 4.5:1 contrast ratio */
+.text-secondary-light {
+  color: rgba(0, 0, 0, 0.75); /* Instead of 0.60 - better contrast */
+}
+
+.text-tertiary-light {
+  color: rgba(0, 0, 0, 0.65); /* Instead of 0.50 - better contrast */
+}
+
+/* Focus Indicators - Enhanced for better visibility */
+:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+

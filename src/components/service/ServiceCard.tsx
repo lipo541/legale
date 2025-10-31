@@ -3,47 +3,46 @@
 import { useTheme } from '@/contexts/ThemeContext'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRight, Tag } from 'lucide-react'
+import { ArrowRight, FileText } from 'lucide-react'
 
-interface PracticeTranslation {
+interface ServiceTranslation {
   title: string
   slug: string
   description: string
-  hero_image_alt: string
-  word_count?: number
-  reading_time?: number
-  category?: string
-  services_count?: number
+  image_alt: string
+  practice_title?: string
+  practice_slug?: string
 }
 
-interface PracticeCardProps {
+interface ServiceCardProps {
   id: string
-  hero_image_url: string
-  translation: PracticeTranslation
+  image_url: string
+  translation: ServiceTranslation
   locale: 'ka' | 'en' | 'ru'
   viewMode?: 'grid' | 'list'
 }
 
-export default function PracticeCard({
-  hero_image_url,
+export default function ServiceCard({
+  id,
+  image_url,
   translation,
   locale,
   viewMode = 'grid',
-}: PracticeCardProps) {
+}: ServiceCardProps) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
 
   // Grid View (default)
   if (viewMode === 'grid') {
     const ariaLabel = locale === 'ka' 
-      ? `პრაქტიკა: ${translation.title}. სერვისები: ${translation.services_count ?? 0}. ${translation.category ? `კატეგორია: ${translation.category}` : ''}`
+      ? `სერვისი: ${translation.title}. ${translation.practice_title ? `პრაქტიკა: ${translation.practice_title}` : ''}`
       : locale === 'en'
-      ? `Practice: ${translation.title}. Services: ${translation.services_count ?? 0}. ${translation.category ? `Category: ${translation.category}` : ''}`
-      : `Практика: ${translation.title}. Услуги: ${translation.services_count ?? 0}. ${translation.category ? `Категория: ${translation.category}` : ''}`
+      ? `Service: ${translation.title}. ${translation.practice_title ? `Practice: ${translation.practice_title}` : ''}`
+      : `Услуга: ${translation.title}. ${translation.practice_title ? `Практика: ${translation.practice_title}` : ''}`
 
     return (
       <Link
-        href={`/${locale}/practices/${translation.slug}`}
+        href={`/${locale}/practices/${translation.practice_slug}/${translation.slug}`}
         className={`group flex flex-col h-full rounded-lg overflow-hidden transition-all duration-300 hover:scale-[1.005] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
           isDark
             ? 'bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 hover:shadow-2xl focus-visible:ring-white/50'
@@ -57,8 +56,8 @@ export default function PracticeCard({
         isDark ? 'bg-gradient-to-br from-white/5 to-white/10' : 'bg-gradient-to-br from-black/5 to-black/10'
       }`}>
         <Image
-          src={hero_image_url}
-          alt={translation.hero_image_alt}
+          src={image_url}
+          alt={translation.image_alt}
           fill
           className="object-cover transition-transform duration-500 group-hover:scale-102"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -75,28 +74,28 @@ export default function PracticeCard({
             {translation.title}
           </div>
           
-          {/* Services Count */}
-          <div className="flex items-center gap-1">
-            <span className="text-xs md:text-sm text-white/70">
-              {locale === 'ka' ? 'სერვისები' : locale === 'en' ? 'Services' : 'Услуги'}:{' '}
-              <span className="font-semibold text-white">
-                {translation.services_count ?? 0}
+          {/* Practice Reference */}
+          {translation.practice_title && (
+            <div className="flex items-center gap-1">
+              <span className="text-xs md:text-sm text-white/70">
+                {locale === 'ka' ? 'პრაქტიკა' : locale === 'en' ? 'Practice' : 'Практика'}:{' '}
+                <span className="font-semibold text-white">
+                  {translation.practice_title}
+                </span>
               </span>
+            </div>
+          )}
+        </div>
+
+        {/* Service Badge - Top */}
+        <div className="absolute top-3 left-3 z-10">
+          <div className="flex items-center gap-1 rounded-full bg-blue-500/90 backdrop-blur-sm px-2.5 py-1 text-white">
+            <FileText className="h-3 w-3" />
+            <span className="text-[10px] md:text-xs font-medium">
+              {locale === 'ka' ? 'სერვისი' : locale === 'en' ? 'Service' : 'Услуга'}
             </span>
           </div>
         </div>
-
-        {/* Category Badge - Top */}
-        {translation.category && (
-          <div className="absolute top-3 left-3 z-10">
-            <div className="flex items-center gap-1 rounded-full bg-white/90 backdrop-blur-sm px-2.5 py-1 text-black">
-              <Tag className="h-3 w-3" />
-              <span className="text-[10px] md:text-xs font-medium">
-                {translation.category}
-              </span>
-            </div>
-          </div>
-        )}
       </div>
     </Link>
     )
@@ -104,14 +103,14 @@ export default function PracticeCard({
 
   // List View
   const ariaLabel = locale === 'ka' 
-    ? `პრაქტიკა: ${translation.title}. სერვისები: ${translation.services_count ?? 0}. ${translation.category ? `კატეგორია: ${translation.category}` : ''}`
+    ? `სერვისი: ${translation.title}. ${translation.practice_title ? `პრაქტიკა: ${translation.practice_title}` : ''}`
     : locale === 'en'
-    ? `Practice: ${translation.title}. Services: ${translation.services_count ?? 0}. ${translation.category ? `Category: ${translation.category}` : ''}`
-    : `Практика: ${translation.title}. Услуги: ${translation.services_count ?? 0}. ${translation.category ? `Категория: ${translation.category}` : ''}`
+    ? `Service: ${translation.title}. ${translation.practice_title ? `Practice: ${translation.practice_title}` : ''}`
+    : `Услуга: ${translation.title}. ${translation.practice_title ? `Практика: ${translation.practice_title}` : ''}`
 
   return (
     <Link
-      href={`/${locale}/practices/${translation.slug}`}
+      href={`/${locale}/practices/${translation.practice_slug}/${translation.slug}`}
       className={`group flex items-center gap-3 md:gap-4 rounded-lg overflow-hidden transition-all duration-300 hover:scale-[1.005] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
         isDark
           ? 'bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 hover:shadow-xl focus-visible:ring-white/50'
@@ -125,25 +124,23 @@ export default function PracticeCard({
         isDark ? 'bg-gradient-to-br from-white/5 to-white/10' : 'bg-gradient-to-br from-black/5 to-black/10'
       }`}>
         <Image
-          src={hero_image_url}
-          alt={translation.hero_image_alt}
+          src={image_url}
+          alt={translation.image_alt}
           fill
           className="object-cover transition-transform duration-500 group-hover:scale-102"
           sizes="(max-width: 640px) 128px, 192px"
           loading="lazy"
         />
         
-        {/* Category Badge */}
-        {translation.category && (
-          <div className="absolute top-2 left-2">
-            <div className="flex items-center gap-1 rounded-full bg-white/90 backdrop-blur-sm px-2 py-0.5 text-black">
-              <Tag className="h-2.5 w-2.5" />
-              <span className="text-[9px] md:text-[10px] font-medium">
-                {translation.category}
-              </span>
-            </div>
+        {/* Service Badge */}
+        <div className="absolute top-2 left-2">
+          <div className="flex items-center gap-1 rounded-full bg-blue-500/90 backdrop-blur-sm px-2 py-0.5 text-white">
+            <FileText className="h-2.5 w-2.5" />
+            <span className="text-[9px] md:text-[10px] font-medium">
+              {locale === 'ka' ? 'სერვისი' : locale === 'en' ? 'Service' : 'Услуга'}
+            </span>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Content Section - Horizontal layout */}
@@ -158,17 +155,19 @@ export default function PracticeCard({
             {translation.title}
           </div>
           
-          {/* Services Count */}
-          <span
-            className={`text-xs md:text-sm ${
-              isDark ? 'text-white/50' : 'text-black/50'
-            }`}
-          >
-            {locale === 'ka' ? 'სერვისები' : locale === 'en' ? 'Services' : 'Услуги'}:{' '}
-            <span className={`font-medium ${isDark ? 'text-white/70' : 'text-black/70'}`}>
-              {translation.services_count ?? 0}
+          {/* Practice Reference */}
+          {translation.practice_title && (
+            <span
+              className={`text-xs md:text-sm ${
+                isDark ? 'text-white/50' : 'text-black/50'
+              }`}
+            >
+              {locale === 'ka' ? 'პრაქტიკა' : locale === 'en' ? 'Practice' : 'Практика'}:{' '}
+              <span className={`font-medium ${isDark ? 'text-white/70' : 'text-black/70'}`}>
+                {translation.practice_title}
+              </span>
             </span>
-          </span>
+          )}
         </div>
 
         {/* Read More Button */}
