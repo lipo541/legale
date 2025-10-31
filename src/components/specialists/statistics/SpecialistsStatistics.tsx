@@ -1,18 +1,35 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Building2, Users, Briefcase, Search, SlidersHorizontal, ChevronDown, UserCircle, MapPin, X } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import { usePathname } from 'next/navigation';
 
 interface SpecialistsStatisticsProps {
   totalCompanies: number;
   totalSpecialists: number;
   totalServices: number;
+  onSearchChange?: (search: string) => void;
+  onCityChange?: (city: string | null) => void;
+  onSpecialistTypeChange?: (type: string | null) => void;
+  onServicesChange?: (services: string[]) => void;
 }
 
-export default function SpecialistsStatistics({ totalCompanies, totalSpecialists, totalServices }: SpecialistsStatisticsProps) {
+export default function SpecialistsStatistics({ 
+  totalCompanies, 
+  totalSpecialists, 
+  totalServices,
+  onSearchChange,
+  onCityChange,
+  onSpecialistTypeChange,
+  onServicesChange
+}: SpecialistsStatisticsProps) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const pathname = usePathname();
+  const locale = pathname?.split('/')[1] || 'ka';
+  const supabase = createClient();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -20,33 +37,151 @@ export default function SpecialistsStatistics({ totalCompanies, totalSpecialists
 
   // Filter states
   const [selectedSpecialistType, setSelectedSpecialistType] = useState<string | null>(null);
-  const [selectedSpecialization, setSelectedSpecialization] = useState<string | null>(null);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [servicesSearchTerm, setServicesSearchTerm] = useState('');
+
+  // Cities data
+  const [cities, setCities] = useState<Array<{ name: string; count: number }>>([])
+  const [loadingCities, setLoadingCities] = useState(true)
+
+  // Services data
+  const [services, setServices] = useState<Array<{ id: string; title: string }>>([])
+  const [loadingServices, setLoadingServices] = useState(true)
+
+  // Load cities with specialist counts
+  useEffect(() => {
+    const loadCities = async () => {
+      setLoadingCities(true)
+      try {
+        // Get all specialist-city relationships with city details
+        const { data: specialistCitiesData } = await supabase
+          .from('specialist_cities')
+          .select('cities(id, name_ka, name_en, name_ru)')
+
+        // Extract unique cities with counts
+        const counts: Record<string, number> = {}
+        
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        specialistCitiesData?.forEach((item: any) => {
+          if (item.cities) {
+            const cityName = locale === 'ka' ? item.cities.name_ka 
+                           : locale === 'en' ? item.cities.name_en 
+                           : item.cities.name_ru
+            if (cityName) {
+              counts[cityName] = (counts[cityName] || 0) + 1
+            }
+          }
+        })
+
+        // Convert to array and sort by count
+        const citiesArray = Object.entries(counts)
+          .map(([name, count]) => ({ name, count }))
+          .sort((a, b) => b.count - a.count)
+
+        setCities(citiesArray)
+      } catch (error) {
+        console.error('Error loading cities:', error)
+      } finally {
+        setLoadingCities(false)
+      }
+    }
+
+    loadCities()
+  }, [locale, supabase])
+
+  // Load all services
+  useEffect(() => {
+    const loadServices = async () => {
+      setLoadingServices(true)
+      try {
+        const { data: servicesData, error } = await supabase
+          .from('service_translations')
+          .select(`
+            service_id,
+            title,
+            language,
+            services!inner(id)
+          `)
+          .eq('language', locale)
+          .order('title')
+
+        if (error) {
+          console.error('Error loading services:', error)
+        }
+
+        const servicesArray = servicesData?.map((s: { service_id: string; title: string }) => ({
+          id: s.service_id,
+          title: s.title
+        })) || []
+
+        setServices(servicesArray)
+      } catch (error) {
+        console.error('Error loading services:', error)
+      } finally {
+        setLoadingServices(false)
+      }
+    }
+
+    loadServices()
+  }, [locale, supabase])
+
+  // Notify parent of filter changes
+  useEffect(() => {
+    if (onSearchChange) {
+      onSearchChange(searchTerm)
+    }
+  }, [searchTerm, onSearchChange])
+
+  useEffect(() => {
+    if (onCityChange) {
+      onCityChange(selectedCity)
+    }
+  }, [selectedCity, onCityChange])
+
+  useEffect(() => {
+    if (onSpecialistTypeChange) {
+      onSpecialistTypeChange(selectedSpecialistType)
+    }
+  }, [selectedSpecialistType, onSpecialistTypeChange])
+
+  useEffect(() => {
+    if (onServicesChange) {
+      onServicesChange(selectedServices)
+    }
+  }, [selectedServices, onServicesChange])
 
   // Static data
   const specialistTypes = [
-    { id: 'company', name: 'კომპანია' },
-    { id: 'solo', name: 'სპეციალისტი' },
+    { id: 'company', name: 'კომპანიის სპეციალისტი' },
+    { id: 'solo', name: 'დამოუკიდებელი სპეციალისტი' },
   ];
-
-  const specializations = [
-    { id: '1', name: 'სპეციალიზაცია' },
-  ];
-
-  const cities = ['ქალაქი'];
 
   const handleClearFilters = () => {
     setSelectedSpecialistType(null);
-    setSelectedSpecialization(null);
     setSelectedCity(null);
+    setSelectedServices([]);
     setSearchTerm('');
+    setServicesSearchTerm('');
   };
 
   const toggleDropdown = (dropdown: string) => {
     setOpenDropdown(openDropdown === dropdown ? null : dropdown);
   };
 
-  const hasActiveFilters = selectedSpecialistType || selectedSpecialization || selectedCity;
+  const toggleService = (serviceId: string) => {
+    setSelectedServices(prev =>
+      prev.includes(serviceId)
+        ? prev.filter(id => id !== serviceId)
+        : [...prev, serviceId]
+    );
+  };
+
+  const filteredServices = services.filter(service =>
+    service.title.toLowerCase().includes(servicesSearchTerm.toLowerCase())
+  );
+
+  const hasActiveFilters = selectedSpecialistType || selectedServices.length > 0 || selectedCity;
 
   const cards = [
     {
@@ -249,12 +384,12 @@ export default function SpecialistsStatistics({ totalCompanies, totalSpecialists
               )}
             </div>
 
-            {/* Specializations Filter */}
+            {/* Specializations Filter - Services with Search & Checkboxes */}
             <div className="relative">
               <button
                 onClick={() => toggleDropdown('specialization')}
                 className={`flex w-full items-center justify-between rounded border px-2 py-1.5 text-left transition-all ${
-                  selectedSpecialization
+                  selectedServices.length > 0
                     ? isDark
                       ? 'border-white bg-white text-black'
                       : 'border-black bg-black text-white'
@@ -265,7 +400,9 @@ export default function SpecialistsStatistics({ totalCompanies, totalSpecialists
               >
                 <div className="flex items-center gap-1">
                   <Briefcase size={12} strokeWidth={1.5} />
-                  <span className="text-xs font-medium">სპეციალიზაცია</span>
+                  <span className="text-xs font-medium">
+                    სპეციალიზაცია {selectedServices.length > 0 && `(${selectedServices.length})`}
+                  </span>
                 </div>
                 <ChevronDown
                   size={12}
@@ -277,32 +414,60 @@ export default function SpecialistsStatistics({ totalCompanies, totalSpecialists
 
               {openDropdown === 'specialization' && (
                 <div
-                  className={`absolute left-0 right-0 top-full z-10 mt-1 max-h-40 overflow-y-auto rounded border ${
+                  className={`absolute left-0 right-0 top-full z-10 mt-1 rounded border ${
                     isDark
                       ? 'border-white/10 bg-black'
                       : 'border-black/10 bg-white shadow-md'
                   }`}
                 >
-                  {specializations.map((spec) => (
-                    <button
-                      key={spec.id}
-                      onClick={() => {
-                        setSelectedSpecialization(spec.id === selectedSpecialization ? null : spec.id);
-                        setOpenDropdown(null);
-                      }}
-                      className={`w-full px-2 py-1 text-left text-xs transition-colors ${
-                        selectedSpecialization === spec.id
-                          ? isDark
-                            ? 'bg-white text-black'
-                            : 'bg-black text-white'
-                          : isDark
-                          ? 'text-white/70 hover:bg-white/10 hover:text-white'
-                          : 'text-black/70 hover:bg-gray-100 hover:text-black'
+                  {/* Search input */}
+                  <div className="p-2 border-b border-white/10">
+                    <input
+                      type="text"
+                      value={servicesSearchTerm}
+                      onChange={(e) => setServicesSearchTerm(e.target.value)}
+                      placeholder="ძებნა..."
+                      className={`w-full px-2 py-1 text-xs rounded border ${
+                        isDark
+                          ? 'bg-white/5 border-white/10 text-white placeholder:text-white/40'
+                          : 'bg-gray-50 border-black/10 text-black placeholder:text-black/40'
                       }`}
-                    >
-                      {spec.name}
-                    </button>
-                  ))}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+
+                  {/* Services list with checkboxes */}
+                  <div className="max-h-60 overflow-y-auto">
+                    {loadingServices ? (
+                      <div className="px-2 py-4 text-center text-xs text-white/40">იტვირთება...</div>
+                    ) : filteredServices.length === 0 ? (
+                      <div className="px-2 py-4 text-center text-xs text-white/40">სერვისები არ მოიძებნა</div>
+                    ) : (
+                      filteredServices.map((service) => (
+                        <label
+                          key={service.id}
+                          className={`flex items-center gap-2 px-2 py-1.5 cursor-pointer transition-colors ${
+                            isDark
+                              ? 'hover:bg-white/10'
+                              : 'hover:bg-gray-100'
+                          }`}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedServices.includes(service.id)}
+                            onChange={() => toggleService(service.id)}
+                            className="rounded text-emerald-500 focus:ring-emerald-500"
+                          />
+                          <span className={`text-xs ${
+                            isDark ? 'text-white/70' : 'text-black/70'
+                          }`}>
+                            {service.title}
+                          </span>
+                        </label>
+                      ))
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -341,26 +506,39 @@ export default function SpecialistsStatistics({ totalCompanies, totalSpecialists
                       : 'border-black/10 bg-white shadow-md'
                   }`}
                 >
-                  {cities.map((city) => (
-                    <button
-                      key={city}
-                      onClick={() => {
-                        setSelectedCity(city === selectedCity ? null : city);
-                        setOpenDropdown(null);
-                      }}
-                      className={`w-full px-2 py-1 text-left text-xs transition-colors ${
-                        selectedCity === city
-                          ? isDark
-                            ? 'bg-white text-black'
-                            : 'bg-black text-white'
-                          : isDark
-                          ? 'text-white/70 hover:bg-white/10 hover:text-white'
-                          : 'text-black/70 hover:bg-gray-100 hover:text-black'
-                      }`}
-                    >
-                      {city}
-                    </button>
-                  ))}
+                  {loadingCities ? (
+                    <div className="px-2 py-4 text-center text-xs text-white/40">იტვირთება...</div>
+                  ) : cities.length === 0 ? (
+                    <div className="px-2 py-4 text-center text-xs text-white/40">ქალაქები არ მოიძებნა</div>
+                  ) : (
+                    cities.map((city) => (
+                      <button
+                        key={city.name}
+                        onClick={() => {
+                          setSelectedCity(city.name === selectedCity ? null : city.name);
+                          setOpenDropdown(null);
+                        }}
+                        className={`w-full px-2 py-1.5 text-left text-xs transition-colors flex items-center justify-between ${
+                          selectedCity === city.name
+                            ? isDark
+                              ? 'bg-white text-black'
+                              : 'bg-black text-white'
+                            : isDark
+                            ? 'text-white/70 hover:bg-white/10 hover:text-white'
+                            : 'text-black/70 hover:bg-gray-100 hover:text-black'
+                        }`}
+                      >
+                        <span>{city.name}</span>
+                        <span className={`text-[10px] ${
+                          selectedCity === city.name 
+                            ? isDark ? 'text-black/60' : 'text-white/60'
+                            : isDark ? 'text-white/40' : 'text-black/40'
+                        }`}>
+                          ({city.count})
+                        </span>
+                      </button>
+                    ))
+                  )}
                 </div>
               )}
             </div>

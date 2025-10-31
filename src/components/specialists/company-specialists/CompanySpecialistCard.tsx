@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Mail, Phone, Building2 } from 'lucide-react';
+import { useParams } from 'next/navigation';
 
 interface CompanySpecialist {
   id: string;
@@ -23,6 +24,8 @@ interface CompanySpecialistCardProps {
 export default function CompanySpecialistCard({ specialist }: CompanySpecialistCardProps) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const params = useParams();
+  const locale = params?.locale || 'ka';
 
   // Static contact info - same for all specialists
   const COMPANY_EMAIL = 'contact@legalsandbox.ge';
@@ -88,7 +91,7 @@ export default function CompanySpecialistCard({ specialist }: CompanySpecialistC
               />
               {specialist.company_slug ? (
                 <Link 
-                  href={`/companies/${specialist.company_slug}`}
+                  href={`/${locale}/companies/${specialist.company_slug}`}
                   className={`text-xs transition-colors hover:underline ${
                     isDark ? 'text-white/60 hover:text-white/80' : 'text-black/60 hover:text-black/80'
                   }`}
@@ -154,7 +157,7 @@ export default function CompanySpecialistCard({ specialist }: CompanySpecialistC
         isDark ? 'border-white/10' : 'border-black/10'
       }`}>
         {specialist.slug ? (
-          <Link href={`/specialists/${specialist.slug}`}>
+          <Link href={`/${locale}/specialists/${specialist.slug}`}>
             <button
               className={`w-full px-6 py-3 text-xs font-medium transition-all duration-300 ${
                 isDark

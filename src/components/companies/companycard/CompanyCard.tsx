@@ -4,6 +4,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Building2, MapPin, Phone, Globe } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 interface CompanyCardProps {
   full_name: string;
@@ -26,10 +27,12 @@ export default function CompanyCard({
 }: CompanyCardProps) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const pathname = usePathname();
+  const locale = pathname?.split('/')[1] || 'ka';
 
   return (
     <Link
-      href={`/practices/${company_slug}`}
+      href={`/${locale}/companies/${company_slug}`}
       className={`group relative block overflow-hidden rounded-lg border transition-all duration-300 ${
         isDark
           ? 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'

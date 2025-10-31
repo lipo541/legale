@@ -33,6 +33,7 @@ import {
 import { createClient } from '@/lib/supabase/client'
 import CompanyRepresentativesTable from './CompanyRepresentativesTable'
 import CompanyTranslations from './companytranslations/CompanyTranslations'
+import CityPicker from '@/components/companydashboard/companyprofile/CityPicker'
 
 interface CompanyProfile {
   id: string
@@ -105,6 +106,11 @@ export default function CompaniesPage() {
   const [verifyingId, setVerifyingId] = useState<string | null>(null)
   const [showRepresentatives, setShowRepresentatives] = useState(false)
   const [showTranslations, setShowTranslations] = useState<string | null>(null)
+  const [showCityPicker, setShowCityPicker] = useState(false)
+  const [selectedCities, setSelectedCities] = useState<Array<{ id: string; name_ka: string; name_en: string; name_ru: string }>>([])
+  const [selectedCityIds, setSelectedCityIds] = useState<string[]>([])
+  const [editingCompanyIdForCities, setEditingCompanyIdForCities] = useState<string | null>(null)
+  const [companyCities, setCompanyCities] = useState<Record<string, Array<{ id: string; name_ka: string; name_en: string; name_ru: string }>>>({})
 
   const supabase = createClient()
 
@@ -141,6 +147,11 @@ export default function CompaniesPage() {
       setExpandedId(company.id)
       setEditingCompany(null)
       setShowTranslations(null)
+      
+      // Load cities if not already loaded
+      if (!companyCities[company.id]) {
+        loadCompanyCities(company.id)
+      }
     }
   }
 
@@ -165,6 +176,72 @@ export default function CompaniesPage() {
       linkedin_link: company.linkedin_link || '',
       twitter_link: company.twitter_link || ''
     })
+    
+    // Load company cities
+    loadCompanyCities(company.id)
+  }
+
+  const loadCompanyCities = async (companyId: string) => {
+    try {
+      const { data } = await supabase
+        .from('company_cities')
+        .select(`
+          city_id,
+          cities (
+            id,
+            name_ka,
+            name_en,
+            name_ru
+          )
+        `)
+        .eq('company_id', companyId)
+
+      if (data) {
+        const cityList = data.map((item: { cities: { id: string; name_ka: string; name_en: string; name_ru: string }[] }) => item.cities[0]).filter(Boolean)
+        
+        // Save to both selectedCities (for edit mode) and companyCities (for view mode)
+        setSelectedCities(cityList)
+        setSelectedCityIds(cityList.map((c: { id: string }) => c.id))
+        setCompanyCities(prev => ({
+          ...prev,
+          [companyId]: cityList
+        }))
+      }
+    } catch (error) {
+      console.error('Error loading cities:', error)
+    }
+  }
+
+  const handleSaveCities = async (cityIds: string[]) => {
+    if (!editingCompanyIdForCities) return
+
+    try {
+      // 1. Delete all existing cities
+      await supabase
+        .from('company_cities')
+        .delete()
+        .eq('company_id', editingCompanyIdForCities)
+
+      // 2. Insert new cities
+      if (cityIds.length > 0) {
+        const insertData = cityIds.map(cityId => ({
+          company_id: editingCompanyIdForCities,
+          city_id: cityId
+        }))
+
+        await supabase
+          .from('company_cities')
+          .insert(insertData)
+      }
+
+      // 3. Reload cities
+      await loadCompanyCities(editingCompanyIdForCities)
+      setShowCityPicker(false)
+      alert('ქალაქები წარმატებით განახლდა! ✅')
+    } catch (error) {
+      console.error('Error saving cities:', error)
+      alert('ქალაქების შენახვისას მოხდა შეცდომა')
+    }
   }
 
   const handleSaveEdit = async () => {
@@ -899,6 +976,53 @@ export default function CompaniesPage() {
                                   />
                                 </div>
 
+                                {/* Cities Section in Edit Mode */}
+                                <div className="sm:col-span-2">
+                                  <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                    ქალაქები
+                                  </label>
+                                  <div className={`rounded-lg border p-4 ${isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/5'}`}>
+                                    <div className="flex items-center justify-between mb-3">
+                                      <span className="text-sm font-medium">არჩეული ქალაქები</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditingCompanyIdForCities(company.id)
+                                          setShowCityPicker(true)
+                                        }}
+                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                          isDark 
+                                            ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' 
+                                            : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
+                                        }`}
+                                      >
+                                        <MapPin className="h-3.5 w-3.5" />
+                                        {selectedCities.length === 0 ? 'დამატება' : 'რედაქტირება'}
+                                      </button>
+                                    </div>
+                                    {selectedCities.length === 0 ? (
+                                      <p className={`text-sm ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                                        ქალაქები არ არის არჩეული
+                                      </p>
+                                    ) : (
+                                      <div className="flex flex-wrap gap-2">
+                                        {selectedCities.map(city => (
+                                          <span
+                                            key={city.id}
+                                            className={`px-3 py-1.5 rounded-lg text-sm ${
+                                              isDark 
+                                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                                                : 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
+                                            }`}
+                                          >
+                                            {city.name_ka}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
                                 {/* Social Links */}
                                 <div className="sm:col-span-2 mt-4">
                                   <h4 className={`mb-3 text-sm font-bold ${isDark ? 'text-white' : 'text-black'}`}>
@@ -1217,6 +1341,34 @@ export default function CompaniesPage() {
                                         ) : 'N/A'}
                                       </p>
                                     </div>
+
+                                    {/* Cities Section in View Mode */}
+                                    <div className="sm:col-span-2">
+                                      <label className={`mb-2 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                        <MapPin className="h-4 w-4" />
+                                        ქალაქები
+                                      </label>
+                                      {companyCities[company.id]?.length > 0 ? (
+                                        <div className="flex flex-wrap gap-2">
+                                          {companyCities[company.id].map(city => (
+                                            <span
+                                              key={city.id}
+                                              className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
+                                                isDark 
+                                                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                                                  : 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30'
+                                              }`}
+                                            >
+                                              {city.name_ka}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <p className={`text-sm ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                                          არ არის მითითებული
+                                        </p>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
 
@@ -1360,6 +1512,18 @@ export default function CompaniesPage() {
             {searchQuery ? 'კომპანიები ვერ მოიძებნა' : 'კომპანიები ჯერ არ არის'}
           </p>
         </div>
+      )}
+
+      {/* CityPicker Modal */}
+      {showCityPicker && (
+        <CityPicker
+          selectedCityIds={selectedCityIds}
+          onSave={handleSaveCities}
+          onClose={() => {
+            setShowCityPicker(false)
+            setEditingCompanyIdForCities(null)
+          }}
+        />
       )}
         </>
       )}

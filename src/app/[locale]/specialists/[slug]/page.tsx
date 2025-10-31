@@ -1,12 +1,17 @@
-export default async function SpecialistPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params
-  
-  return (
-    <div className="min-h-screen px-4 py-6">
-      <div className="mx-auto max-w-[1200px]">
-        <h1 className="text-3xl font-bold mb-8">სპეციალისტი: {slug}</h1>
-        <p>სპეციალისტის გვერდი მალე დაემატება...</p>
-      </div>
-    </div>
-  );
+import SpecialistDetailPage from '@/components/specialists/specialist-detail/SpecialistDetailPage'
+
+interface PageProps {
+  params: Promise<{ slug: string; locale: string }>
 }
+
+export default async function SpecialistPage({ params }: PageProps) {
+  const resolvedParams = await params
+  const slug = resolvedParams.slug
+  const locale = resolvedParams.locale || 'ka'
+  
+  console.log('Page rendered with slug:', slug, 'locale:', locale)
+  
+  return <SpecialistDetailPage slug={slug} locale={locale} />
+}
+
+export const dynamic = 'force-dynamic'

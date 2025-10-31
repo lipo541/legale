@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { 
   User, Mail, Phone, Loader2, Upload, X, CheckCircle, Clock, 
-  Globe, Briefcase, Lightbulb, Target, BookOpen, Award
+  Globe, Briefcase, Lightbulb, Target, BookOpen, Award, MapPin
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import FormSection from './components/FormSection'
@@ -13,6 +13,7 @@ import TextAreaField from './components/TextAreaField'
 import ListField from './components/ListField'
 import ObjectField from './components/ObjectField'
 import ServicesField from '@/components/common/ServicesField'
+import CityPicker from '@/components/companydashboard/companyprofile/CityPicker'
 
 interface ProfileData {
   id: string
@@ -51,7 +52,10 @@ export default function ProfilePage() {
   const [requestingVerification, setRequestingVerification] = useState(false)
   const [editingSection, setEditingSection] = useState<string | null>(null)
   const [showPhotoPreview, setShowPhotoPreview] = useState(false)
+  const [showCityPicker, setShowCityPicker] = useState(false)
   const [profile, setProfile] = useState<ProfileData | null>(null)
+  const [selectedCities, setSelectedCities] = useState<Array<{ id: string; name_ka: string; name_en: string; name_ru: string }>>([])
+  const [selectedCityIds, setSelectedCityIds] = useState<string[]>([])
   const [tempSectionData, setTempSectionData] = useState<Record<string, string | string[] | Record<string, string>>>({})
 
   // Generate slug from full name
@@ -72,6 +76,26 @@ export default function ProfilePage() {
       } else {
         setProfile(data)
         setTempSectionData({})
+      }
+
+      // Fetch specialist cities
+      const { data: cityData } = await supabase
+        .from('specialist_cities')
+        .select(`
+          city_id,
+          cities (
+            id,
+            name_ka,
+            name_en,
+            name_ru
+          )
+        `)
+        .eq('specialist_id', user.id)
+
+      if (cityData) {
+        const cityList = cityData.map((item: { cities: { id: number; name_ka: string; name_en: string; name_ru: string }[] | null }) => Array.isArray(item.cities) ? item.cities[0] : item.cities).filter((city): city is { id: number; name_ka: string; name_en: string; name_ru: string } => city !== null && city !== undefined).map(city => ({ ...city, id: String(city.id) }))
+        setSelectedCities(cityList)
+        setSelectedCityIds(cityList.map(c => c.id))
       }
     } catch (error) {
       console.error('Fetch error:', error)
@@ -182,6 +206,51 @@ export default function ProfilePage() {
       alert('ფოტოს ატვირთვისას მოხდა შეცდომა')
     } finally {
       setUploadingPhoto(false)
+    }
+  }
+
+  // Handle save cities
+  const handleSaveCities = async (cityIds: string[]) => {
+    if (!profile) return
+
+    try {
+      // 1. Delete all existing cities for this specialist
+      const { error: deleteError } = await supabase
+        .from('specialist_cities')
+        .delete()
+        .eq('specialist_id', profile.id)
+
+      if (deleteError) {
+        console.error('Error deleting cities:', deleteError)
+        alert('ქალაქების წაშლისას მოხდა შეცდომა')
+        return
+      }
+
+      // 2. Insert new selected cities
+      if (cityIds.length > 0) {
+        const insertData = cityIds.map(cityId => ({
+          specialist_id: profile.id,
+          city_id: cityId
+        }))
+
+        const { error: insertError } = await supabase
+          .from('specialist_cities')
+          .insert(insertData)
+
+        if (insertError) {
+          console.error('Error inserting cities:', insertError)
+          alert('ქალაქების დამატებისას მოხდა შეცდომა')
+          return
+        }
+      }
+
+      // 3. Reload cities
+      await fetchProfile()
+      setShowCityPicker(false)
+      alert('ქალაქები წარმატებით განახლდა! ✅')
+    } catch (error) {
+      console.error('Save cities error:', error)
+      alert('ქალაქების შენახვისას მოხდა შეცდომა')
     }
   }
 
@@ -423,6 +492,49 @@ export default function ProfilePage() {
           </div>
         </FormSection>
 
+        {/* Cities Section */}
+        <div className={`rounded-xl border p-6 ${isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/5'}`}>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className={`text-2xl font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-black'}`}>
+              <MapPin className="h-6 w-6" />
+              ქალაქები
+            </h2>
+            <button
+              onClick={() => setShowCityPicker(true)}
+              className={`text-sm font-medium transition-colors px-4 py-2 rounded-lg ${
+                isDark 
+                  ? 'text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20' 
+                  : 'text-emerald-600 hover:text-emerald-700 bg-emerald-500/10 hover:bg-emerald-500/20'
+              }`}
+            >
+              {selectedCities.length === 0 ? 'ქალაქების დამატება' : 'რედაქტირება'}
+            </button>
+          </div>
+
+          {selectedCities.length === 0 ? (
+            <div className={`text-center py-8 ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+              <MapPin className="h-12 w-12 mx-auto mb-3 opacity-20" />
+              <p className="text-sm">არჩეული ქალაქები არ არის</p>
+              <p className="text-xs mt-1">აირჩიეთ ქალაქები სადაც მუშაობთ</p>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {selectedCities.map(city => (
+                <span
+                  key={city.id}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                    isDark 
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                      : 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
+                  }`}
+                >
+                  {city.name_ka}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Professional Experience Section */}
         <FormSection
           title="Professional Experience"
@@ -486,6 +598,17 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
+      {/* City Picker Modal */}
+      {showCityPicker && (
+        <CityPicker
+          onClose={() => setShowCityPicker(false)}
+          onSave={handleSaveCities}
+          selectedCityIds={selectedCityIds}
+        />
+      )}
     </div>
   )
 }
+
+

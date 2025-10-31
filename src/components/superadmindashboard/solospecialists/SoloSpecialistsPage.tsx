@@ -23,11 +23,13 @@ import {
   XCircle,
   Building2,
   Ban,
-  Languages
+  Languages,
+  MapPin
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import ServicesField from '@/components/common/ServicesField'
 import SpecialistTranslations from '@/components/superadmindashboard/specialists/translations/SpecialistTranslations'
+import CityPicker from '@/components/companydashboard/companyprofile/CityPicker'
 
 const AVAILABLE_LANGUAGES = ['English', 'Georgian', 'Russian', 'German']
 
@@ -88,6 +90,11 @@ export default function SoloSpecialistsPage() {
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('')
   const [companies, setCompanies] = useState<Array<{ id: string; full_name: string; company_slug: string }>>([])
   const [showTranslations, setShowTranslations] = useState<string | null>(null)
+  const [showCityPicker, setShowCityPicker] = useState(false)
+  const [selectedCities, setSelectedCities] = useState<Array<{ id: string; name_ka: string; name_en: string; name_ru: string }>>([])
+  const [selectedCityIds, setSelectedCityIds] = useState<string[]>([])
+  const [editingSpecialistIdForCities, setEditingSpecialistIdForCities] = useState<string | null>(null)
+  const [specialistCities, setSpecialistCities] = useState<Record<string, Array<{ id: string; name_ka: string; name_en: string; name_ru: string }>>>({})
 
   const supabase = createClient()
 
@@ -184,6 +191,72 @@ export default function SoloSpecialistsPage() {
       credentials_memberships_text: specialist.credentials_memberships?.join('\n') || '',
       values_how_we_work: specialist.values_how_we_work || {}
     })
+    
+    // Load specialist cities
+    loadSpecialistCities(specialist.id)
+  }
+
+  const loadSpecialistCities = async (specialistId: string) => {
+    try {
+      const { data } = await supabase
+        .from('specialist_cities')
+        .select(`
+          city_id,
+          cities (
+            id,
+            name_ka,
+            name_en,
+            name_ru
+          )
+        `)
+        .eq('specialist_id', specialistId)
+
+      if (data) {
+        const cityList = data.map((item: { cities: { id: string; name_ka: string; name_en: string; name_ru: string }[] }) => item.cities[0]).filter(Boolean)
+        
+        // Save to both selectedCities (for edit mode) and specialistCities (for view mode)
+        setSelectedCities(cityList)
+        setSelectedCityIds(cityList.map((c: { id: string }) => c.id))
+        setSpecialistCities(prev => ({
+          ...prev,
+          [specialistId]: cityList
+        }))
+      }
+    } catch (error) {
+      console.error('Error loading cities:', error)
+    }
+  }
+
+  const handleSaveCities = async (cityIds: string[]) => {
+    if (!editingSpecialistIdForCities) return
+
+    try {
+      // 1. Delete all existing cities
+      await supabase
+        .from('specialist_cities')
+        .delete()
+        .eq('specialist_id', editingSpecialistIdForCities)
+
+      // 2. Insert new cities
+      if (cityIds.length > 0) {
+        const insertData = cityIds.map(cityId => ({
+          specialist_id: editingSpecialistIdForCities,
+          city_id: cityId
+        }))
+
+        await supabase
+          .from('specialist_cities')
+          .insert(insertData)
+      }
+
+      // 3. Reload cities
+      await loadSpecialistCities(editingSpecialistIdForCities)
+      setShowCityPicker(false)
+      alert('ქალაქები წარმატებით განახლდა! ✅')
+    } catch (error) {
+      console.error('Error saving cities:', error)
+      alert('ქალაქების შენახვისას მოხდა შეცდომა')
+    }
   }
 
   const handleSaveEdit = async () => {
@@ -718,7 +791,15 @@ export default function SoloSpecialistsPage() {
 
                         <button
                           onClick={() => {
-                            setExpandedId(expandedId === specialist.id ? null : specialist.id)
+                            if (expandedId === specialist.id) {
+                              setExpandedId(null)
+                            } else {
+                              setExpandedId(specialist.id)
+                              // Load cities if not already loaded
+                              if (!specialistCities[specialist.id]) {
+                                loadSpecialistCities(specialist.id)
+                              }
+                            }
                             setShowTranslations(null)
                           }}
                           className={`rounded-lg p-2 transition-colors ${
@@ -987,6 +1068,53 @@ export default function SoloSpecialistsPage() {
                                     isEditing={true}
                                     showActions={true}
                                   />
+                                </div>
+
+                                {/* Cities Section in Edit Mode */}
+                                <div className="sm:col-span-2">
+                                  <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                    ქალაქები
+                                  </label>
+                                  <div className={`rounded-lg border p-4 ${isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/5'}`}>
+                                    <div className="flex items-center justify-between mb-3">
+                                      <span className="text-sm font-medium">არჩეული ქალაქები</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditingSpecialistIdForCities(specialist.id)
+                                          setShowCityPicker(true)
+                                        }}
+                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                          isDark 
+                                            ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' 
+                                            : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
+                                        }`}
+                                      >
+                                        <MapPin className="h-3.5 w-3.5" />
+                                        {selectedCities.length === 0 ? 'დამატება' : 'რედაქტირება'}
+                                      </button>
+                                    </div>
+                                    {selectedCities.length === 0 ? (
+                                      <p className={`text-sm ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                                        ქალაქები არ არის არჩეული
+                                      </p>
+                                    ) : (
+                                      <div className="flex flex-wrap gap-2">
+                                        {selectedCities.map(city => (
+                                          <span
+                                            key={city.id}
+                                            className={`px-3 py-1.5 rounded-lg text-sm ${
+                                              isDark 
+                                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                                                : 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
+                                            }`}
+                                          >
+                                            {city.name_ka}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
 
                                 <div className="sm:col-span-2">
@@ -1340,6 +1468,34 @@ export default function SoloSpecialistsPage() {
                                   />
                                 </div>
 
+                                {/* Cities Section in View Mode */}
+                                <div className="sm:col-span-2">
+                                  <label className={`mb-2 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                                    <MapPin className="h-4 w-4" />
+                                    ქალაქები
+                                  </label>
+                                  {specialistCities[specialist.id]?.length > 0 ? (
+                                    <div className="flex flex-wrap gap-2">
+                                      {specialistCities[specialist.id].map(city => (
+                                        <span
+                                          key={city.id}
+                                          className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
+                                            isDark 
+                                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                                              : 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30'
+                                          }`}
+                                        >
+                                          {city.name_ka}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className={`text-sm ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                                      არ არის მითითებული
+                                    </p>
+                                  )}
+                                </div>
+
                                 <div className="sm:col-span-2">
                                   <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                                     Focus Areas
@@ -1597,6 +1753,18 @@ export default function SoloSpecialistsPage() {
             {searchQuery ? 'სპეციალისტები ვერ მოიძებნა' : 'სოლო სპეციალისტები ჯერ არ არის'}
           </p>
         </div>
+      )}
+
+      {/* CityPicker Modal */}
+      {showCityPicker && (
+        <CityPicker
+          selectedCityIds={selectedCityIds}
+          onSave={handleSaveCities}
+          onClose={() => {
+            setShowCityPicker(false)
+            setEditingSpecialistIdForCities(null)
+          }}
+        />
       )}
     </div>
   )

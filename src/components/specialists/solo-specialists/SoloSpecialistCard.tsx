@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Mail, Phone } from 'lucide-react';
+import { useParams } from 'next/navigation';
 
 interface SoloSpecialist {
   id: string;
@@ -21,6 +22,8 @@ interface SoloSpecialistCardProps {
 export default function SoloSpecialistCard({ specialist }: SoloSpecialistCardProps) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const params = useParams();
+  const locale = params?.locale || 'ka';
 
   // Static contact info - same for all specialists
   const COMPANY_EMAIL = 'contact@legalsandbox.ge';
@@ -128,7 +131,7 @@ export default function SoloSpecialistCard({ specialist }: SoloSpecialistCardPro
         isDark ? 'border-white/10' : 'border-black/10'
       }`}>
         {specialist.slug ? (
-          <Link href={`/specialists/${specialist.slug}`}>
+          <Link href={`/${locale}/specialists/${specialist.slug}`}>
             <button
               className={`w-full px-6 py-3 text-xs font-medium transition-all duration-300 ${
                 isDark
