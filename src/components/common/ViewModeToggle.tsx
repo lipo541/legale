@@ -47,7 +47,7 @@ export default function ViewModeToggle({ view, onChange }: ViewModeToggleProps) 
     >
       <button
         onClick={() => onChange('grid')}
-        className={`p-2 rounded transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+        className={`p-1.5 sm:p-2 rounded transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
           view === 'grid'
             ? isDark
               ? 'bg-white text-black focus-visible:ring-white/50'
@@ -60,12 +60,12 @@ export default function ViewModeToggle({ view, onChange }: ViewModeToggleProps) 
         aria-pressed={view === 'grid'}
         title={t.grid}
       >
-        <LayoutGrid className="h-4 w-4" aria-hidden="true" />
+        <LayoutGrid className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" />
       </button>
 
       <button
         onClick={() => onChange('list')}
-        className={`p-2 rounded transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+        className={`p-1.5 sm:p-2 rounded transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
           view === 'list'
             ? isDark
               ? 'bg-white text-black focus-visible:ring-white/50'
@@ -78,7 +78,7 @@ export default function ViewModeToggle({ view, onChange }: ViewModeToggleProps) 
         aria-pressed={view === 'list'}
         title={t.list}
       >
-        <List className="h-4 w-4" aria-hidden="true" />
+        <List className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" />
       </button>
     </div>
   )

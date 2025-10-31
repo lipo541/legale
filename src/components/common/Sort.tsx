@@ -76,7 +76,7 @@ export default function Sort({ options, value, onChange }: SortProps) {
   }, [isOpen, options, value])
 
   return (
-    <div className="relative">
+    <div className="relative w-full">
       <button
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
@@ -86,7 +86,7 @@ export default function Sort({ options, value, onChange }: SortProps) {
             setIsOpen(!isOpen)
           }
         }}
-        className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border transition-all duration-300 hover:scale-[1.01] ${
+        className={`w-full flex items-center justify-center gap-1.5 sm:gap-2 px-2 py-1.5 sm:px-4 sm:py-2.5 rounded-lg border transition-all duration-300 hover:scale-[1.01] ${
           isDark
             ? 'bg-white/5 border-white/10 hover:border-white/20 text-white'
             : 'bg-white border-black/10 hover:border-black/20 text-black'
@@ -96,12 +96,12 @@ export default function Sort({ options, value, onChange }: SortProps) {
         aria-haspopup="listbox"
         aria-controls="sort-menu"
       >
-        <ArrowDownAZ className="h-4 w-4" aria-hidden="true" />
-        <span className="text-sm font-medium">
+        <ArrowDownAZ className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" aria-hidden="true" />
+        <span className="text-xs sm:text-sm font-medium whitespace-nowrap truncate">
           {selectedOption?.label}
         </span>
         <ChevronDown
-          className={`h-4 w-4 transition-transform duration-300 ${
+          className={`h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0 transition-transform duration-300 ${
             isOpen ? 'rotate-180' : ''
           }`}
           aria-hidden="true"
@@ -132,7 +132,7 @@ export default function Sort({ options, value, onChange }: SortProps) {
             id="sort-menu"
             role="listbox"
             aria-label="Sort options"
-            className={`absolute top-full right-0 mt-2 w-48 rounded-lg border shadow-xl z-20 overflow-hidden ${
+            className={`absolute top-full left-0 mt-2 w-48 rounded-lg border shadow-xl z-20 overflow-hidden max-h-48 sm:max-h-64 overflow-y-auto ${
               isDark
                 ? 'bg-black border-white/10'
                 : 'bg-white border-black/10'

@@ -1,10 +1,15 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { useParams } from 'next/navigation';
+import SpecialistsHero from './SpecialistsHero';
 import SpecialistsStatistics from './statistics/SpecialistsStatistics';
 import CompanySpecialistCard from './company-specialists/CompanySpecialistCard';
 import SoloSpecialistCard from './solo-specialists/SoloSpecialistCard';
+import SpecialistCardSkeleton from './SpecialistCardSkeleton';
+import Breadcrumb from '@/components/common/Breadcrumb';
+import { specialistsTranslations } from '@/translations/specialists';
 
 interface SoloSpecialist {
   id: string;
@@ -27,6 +32,10 @@ interface CompanySpecialist {
 }
 
 export default function SpecialistsPage() {
+  const params = useParams();
+  const locale = (params?.locale as string) || 'ka';
+  const t = specialistsTranslations[locale as keyof typeof specialistsTranslations] || specialistsTranslations.ka;
+
   const [soloSpecialists, setSoloSpecialists] = useState<SoloSpecialist[]>([]);
   const [companySpecialists, setCompanySpecialists] = useState<CompanySpecialist[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,19 +47,77 @@ export default function SpecialistsPage() {
 
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [selectedSpecialistType, setSelectedSpecialistType] = useState<string | null>(null);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
 
-  useEffect(() => {
-    fetchSpecialists();
-  }, [searchTerm, selectedCity, selectedSpecialistType, selectedServices]);
+  // View mode state - start with 'grid' to avoid hydration mismatch
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  const fetchSpecialists = async () => {
+  // Sort state - start with 'newest' to avoid hydration mismatch
+  const [sortBy, setSortBy] = useState<string>('newest');
+
+  // Debounce search term (300ms delay)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Load view mode from localStorage after mount
+  useEffect(() => {
+    const saved = localStorage.getItem('specialists-view-mode');
+    if (saved === 'list' || saved === 'grid') {
+      setViewMode(saved);
+    }
+  }, []);
+
+  // Load sort preference from localStorage after mount
+  useEffect(() => {
+    const saved = localStorage.getItem('specialists-sort-by');
+    if (saved) {
+      setSortBy(saved);
+    }
+  }, []);
+
+  // Save view mode to localStorage
+  useEffect(() => {
+    localStorage.setItem('specialists-view-mode', viewMode);
+  }, [viewMode]);
+
+  // Save sort preference to localStorage
+  useEffect(() => {
+    localStorage.setItem('specialists-sort-by', sortBy);
+  }, [sortBy]);
+
+  // Sorting function - memoized to prevent recreation on every render
+  const sortSpecialists = useCallback(<T extends { full_name: string; id: string }>(specialists: T[]): T[] => {
+    const sorted = [...specialists];
+    
+    switch (sortBy) {
+      case 'newest':
+        // Assuming newer specialists have larger IDs (created later)
+        return sorted.sort((a, b) => b.id.localeCompare(a.id));
+      case 'oldest':
+        // Older specialists have smaller IDs (created earlier)
+        return sorted.sort((a, b) => a.id.localeCompare(b.id));
+      case 'a-z':
+        return sorted.sort((a, b) => a.full_name.localeCompare(b.full_name, locale));
+      case 'z-a':
+        return sorted.sort((a, b) => b.full_name.localeCompare(a.full_name, locale));
+      default:
+        return sorted;
+    }
+  }, [sortBy, locale]);
+
+  const fetchSpecialists = useCallback(async () => {
     try {
       const supabase = createClient();
       
-      console.log('Fetching specialists with filters:', { searchTerm, selectedCity, selectedSpecialistType, selectedServices });
+      console.log('Fetching specialists with filters:', { searchTerm: debouncedSearchTerm, selectedCity, selectedSpecialistType, selectedServices });
       
       let allSpecialistIds: string[] = [];
       
@@ -91,14 +158,14 @@ export default function SpecialistsPage() {
         }
       }
       
-      // 3. Search in both profiles and translations if searchTerm exists
+      // 3. Search in both profiles and translations if debouncedSearchTerm exists
       let searchFilteredIds: string[] = [];
-      if (searchTerm) {
+      if (debouncedSearchTerm) {
         // Search in profiles table (for basic info)
         const { data: profilesData } = await supabase
           .from('profiles')
           .select('id')
-          .or(`full_name.ilike.%${searchTerm}%,role_title.ilike.%${searchTerm}%,bio.ilike.%${searchTerm}%`)
+          .or(`full_name.ilike.%${debouncedSearchTerm}%,role_title.ilike.%${debouncedSearchTerm}%,bio.ilike.%${debouncedSearchTerm}%`)
           .in('role', ['SPECIALIST', 'SOLO_SPECIALIST']);
 
         const profileIds = profilesData?.map(p => p.id) || [];
@@ -107,7 +174,7 @@ export default function SpecialistsPage() {
         const { data: translationsData } = await supabase
           .from('specialist_translations')
           .select('specialist_id')
-          .or(`full_name.ilike.%${searchTerm}%,role_title.ilike.%${searchTerm}%,bio.ilike.%${searchTerm}%,philosophy.ilike.%${searchTerm}%,teaching_writing_speaking.ilike.%${searchTerm}%`);
+          .or(`full_name.ilike.%${debouncedSearchTerm}%,role_title.ilike.%${debouncedSearchTerm}%,bio.ilike.%${debouncedSearchTerm}%,philosophy.ilike.%${debouncedSearchTerm}%,teaching_writing_speaking.ilike.%${debouncedSearchTerm}%`);
 
         const translationIds = translationsData?.map(t => t.specialist_id) || [];
 
@@ -126,7 +193,7 @@ export default function SpecialistsPage() {
         }
       }
       
-      const hasFilters = selectedCity || selectedServices.length > 0 || searchTerm;
+      const hasFilters = selectedCity || selectedServices.length > 0 || debouncedSearchTerm;
       
       // 4. Fetch solo specialists based on type filter
       if (!selectedSpecialistType || selectedSpecialistType === 'solo') {
@@ -148,7 +215,7 @@ export default function SpecialistsPage() {
           if (soloError) {
             console.error('Error fetching solo specialists:', soloError);
           } else {
-            setSoloSpecialists(soloData || []);
+            setSoloSpecialists(sortSpecialists(soloData || []));
           }
         }
       } else {
@@ -201,7 +268,7 @@ export default function SpecialistsPage() {
               };
             });
             
-            setCompanySpecialists(mappedData);
+            setCompanySpecialists(sortSpecialists(mappedData));
           } else {
             setCompanySpecialists([]);
           }
@@ -237,12 +304,20 @@ export default function SpecialistsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedSearchTerm, selectedCity, selectedSpecialistType, selectedServices, sortSpecialists]);
+
+  useEffect(() => {
+    fetchSpecialists();
+  }, [fetchSpecialists]);
 
   return (
-    <div className="min-h-screen px-4 py-6">
-      <div className="mx-auto max-w-[1200px]">
-        <h1 className="text-3xl font-bold mb-8">სპეციალისტები</h1>
+    <div className="min-h-screen px-4 py-8 md:py-12 lg:py-16">
+      <div className="mx-auto max-w-7xl">
+        {/* Breadcrumb Navigation */}
+        <Breadcrumb items={[{ label: t.breadcrumb }]} />
+        
+        {/* Hero Section */}
+        <SpecialistsHero totalSpecialists={totalSpecialists} locale={locale} />
         
         {/* Statistics Section */}
         <div className="mb-8">
@@ -254,27 +329,53 @@ export default function SpecialistsPage() {
             onCityChange={setSelectedCity}
             onSpecialistTypeChange={setSelectedSpecialistType}
             onServicesChange={setSelectedServices}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
           />
+        </div>
+
+        {/* Screen Reader Announcements */}
+        <div 
+          role="status" 
+          aria-live="polite" 
+          aria-atomic="true" 
+          className="sr-only"
+        >
+          {!loading && `${soloSpecialists.length + companySpecialists.length} ${t.specialistsFound}`}
         </div>
 
         {/* Divider */}
         <div className="mb-8 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent dark:via-white/20"></div>
 
         {/* Company Specialists Section */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">
-            კომპანიის სპეციალისტები ({companySpecialists.length})
+        <div className="mb-12">
+          <h2 className="mb-4 text-base font-semibold sm:text-lg md:text-xl">
+            {t.companySpecialists} ({companySpecialists.length})
           </h2>
           {loading ? (
-            <div className="text-center py-8">იტვირთება...</div>
+            <div className={viewMode === 'grid' 
+              ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+              : "flex flex-col gap-4"
+            }>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <SpecialistCardSkeleton key={i} viewMode={viewMode} />
+              ))}
+            </div>
           ) : companySpecialists.length > 0 ? (
-            <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className={viewMode === 'grid' 
+              ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+              : "flex flex-col gap-4"
+            }>
               {companySpecialists.map((specialist) => (
-                <CompanySpecialistCard key={specialist.id} specialist={specialist} />
+                <CompanySpecialistCard key={specialist.id} specialist={specialist} viewMode={viewMode} />
               ))}
             </div>
           ) : (
-            <div className="text-center py-8">კომპანიის სპეციალისტები არ მოიძებნა</div>
+            <div className="text-center py-12 text-base opacity-60">
+              {t.noResultsDescription}
+            </div>
           )}
         </div>
 
@@ -282,20 +383,32 @@ export default function SpecialistsPage() {
         <div className="mb-8 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent dark:via-white/20"></div>
 
         {/* Solo Specialists Section */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">
-            დამოუკიდებელი სპეციალისტები ({soloSpecialists.length})
+        <div className="mb-12">
+          <h2 className="mb-4 text-base font-semibold sm:text-lg md:text-xl">
+            {t.soloSpecialists} ({soloSpecialists.length})
           </h2>
           {loading ? (
-            <div className="text-center py-8">იტვირთება...</div>
+            <div className={viewMode === 'grid' 
+              ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+              : "flex flex-col gap-4"
+            }>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <SpecialistCardSkeleton key={i} viewMode={viewMode} />
+              ))}
+            </div>
           ) : soloSpecialists.length > 0 ? (
-            <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className={viewMode === 'grid' 
+              ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+              : "flex flex-col gap-4"
+            }>
               {soloSpecialists.map((specialist) => (
-                <SoloSpecialistCard key={specialist.id} specialist={specialist} />
+                <SoloSpecialistCard key={specialist.id} specialist={specialist} viewMode={viewMode} />
               ))}
             </div>
           ) : (
-            <div className="text-center py-8">დამოუკიდებელი სპეციალისტები არ მოიძებნა</div>
+            <div className="text-center py-12 text-base opacity-60">
+              {t.noResultsDescription}
+            </div>
           )}
         </div>
       </div>
