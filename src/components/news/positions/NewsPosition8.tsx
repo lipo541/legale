@@ -3,10 +3,15 @@
 import { useTheme } from '@/contexts/ThemeContext'
 import { motion } from 'framer-motion'
 import { Clock, ArrowRight } from 'lucide-react'
+import { newsTranslations } from '@/translations/news'
+import { useParams } from 'next/navigation'
 
 export default function NewsPosition8() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
+  const params = useParams()
+  const locale = (params?.locale as string) || 'ka'
+  const t = newsTranslations[locale as keyof typeof newsTranslations]
 
   const latestUpdates = [
     { id: 1, title: 'ახალი შესწორებები საგადასახადო კოდექსში', time: '10 წთ წინ', tag: 'ახალი' },
@@ -78,7 +83,7 @@ export default function NewsPosition8() {
             : 'bg-violet-500/10 hover:bg-violet-500/20 text-violet-700'
         }`}
       >
-        ყველას ნახვა
+        {t.viewAll}
       </motion.button>
     </motion.div>
   )

@@ -7,9 +7,8 @@ import 'swiper/css'
 import 'swiper/css/pagination'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { useParams } from 'next/navigation'
+import { newsTranslations } from '@/translations/news'
 
 interface PostTranslation {
   title: string
@@ -24,63 +23,24 @@ interface Post {
   post_translations: PostTranslation[]
 }
 
+interface Position1Props {
+  posts: Post[]
+}
+
 // Hero Slider - Main Featured News
-export default function Position1() {
+export default function Position1({ posts }: Position1Props) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
   const params = useParams()
   const locale = (params?.locale as string) || 'ka'
-  
-  const [posts, setPosts] = useState<Post[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchPosts()
-  }, [locale])
-
-  const fetchPosts = async () => {
-    const supabase = createClient()
-    setLoading(true)
-
-    try {
-      const { data, error } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          post_translations!inner (*)
-        `)
-        .eq('display_position', 1)
-        .eq('status', 'published')
-        .eq('post_translations.language', locale)
-        .order('position_order', { ascending: true })
-        .limit(5)
-
-      if (error) throw error
-
-      setPosts(data || [])
-    } catch (error) {
-      console.error('Error fetching posts:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className={`relative h-full overflow-hidden rounded-2xl flex items-center justify-center ${
-        isDark ? 'bg-white/5' : 'bg-black/5'
-      }`}>
-        <p className={`text-sm ${isDark ? 'text-white/40' : 'text-black/40'}`}>იტვირთება...</p>
-      </div>
-    )
-  }
+  const t = newsTranslations[locale as keyof typeof newsTranslations]
 
   if (posts.length === 0) {
     return (
       <div className={`relative h-full overflow-hidden rounded-2xl flex items-center justify-center ${
         isDark ? 'bg-white/5' : 'bg-black/5'
       }`}>
-        <p className={`text-sm ${isDark ? 'text-white/40' : 'text-black/40'}`}>პოზიცია 1 ზე პოსტები არ მოიძებნა</p>
+        <p className={`text-sm ${isDark ? 'text-white/40' : 'text-black/40'}`}>{t.noPostsPosition1}</p>
       </div>
     )
   }
@@ -107,8 +67,12 @@ export default function Position1() {
           
           return (
             <SwiperSlide key={post.id}>
-              <Link href={`/${locale}/news/${translation.slug}`} className="block h-full w-full">
-                <div className="relative h-full w-full">
+              <Link 
+                href={`/${locale}/news/${translation.slug}`} 
+                className="block h-full w-full focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black rounded-lg transition-shadow duration-200"
+                aria-label={`${translation.title} - ${translation.category || ''}`}
+              >
+                <div className="relative h-full w-full rounded-lg overflow-hidden">
                   {/* Background Image */}
                   {post.featured_image_url && (
                     <div className="absolute inset-0">
@@ -117,6 +81,9 @@ export default function Position1() {
                         alt={translation.title}
                         fill
                         className="object-cover"
+                        quality={90}
+                        priority
+                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       />
                       {/* LIGHTER Gradient for better image visibility */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />

@@ -1,10 +1,10 @@
 'use client'
 
 import { useTheme } from '@/contexts/ThemeContext'
-import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import { newsTranslations } from '@/translations/news'
 
 interface PostTranslation {
   title: string
@@ -21,81 +21,23 @@ interface Post {
   post_translations: PostTranslation[]
 }
 
+interface Position2Props {
+  posts: Post[]
+}
+
 // Vertical News Feed
-export default function Position2() {
+export default function Position2({ posts }: Position2Props) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
   const params = useParams()
   const locale = (params?.locale as string) || 'ka'
+  const t = newsTranslations[locale as keyof typeof newsTranslations]
   const [hoveredId, setHoveredId] = useState<string | null>(null)
-  const [posts, setPosts] = useState<Post[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchPosts()
-  }, [locale])
-
-  const fetchPosts = async () => {
-    const supabase = createClient()
-    setLoading(true)
-
-    try {
-      const { data, error } = await supabase
-        .from('posts')
-        .select(`
-          id,
-          display_position,
-          position_order,
-          status,
-          published_at,
-          created_at,
-          featured_image_url,
-          post_translations!inner (
-            language,
-            title,
-            excerpt,
-            category,
-            slug
-          )
-        `)
-        .eq('display_position', 2)
-        .eq('status', 'published')
-        .eq('post_translations.language', locale)
-        .order('position_order', { ascending: true, nullsFirst: false })
-        .order('created_at', { ascending: false })
-        .limit(3)
-
-      console.log('Position 2 - Query result:', { data, error })
-      console.log('Position 2 - Posts count:', data?.length)
-      if (data && data.length > 0) {
-        console.log('Position 2 - First post:', data[0])
-      }
-      
-      if (error) {
-        console.error('Position 2 - Supabase error:', error)
-        throw error
-      }
-      
-      setPosts(data || [])
-    } catch (error) {
-      console.error('Position 2 - Catch error:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <p className={`text-sm ${isDark ? 'text-white/40' : 'text-black/40'}`}>იტვირთება...</p>
-      </div>
-    )
-  }
 
   if (posts.length === 0) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className={`text-sm ${isDark ? 'text-white/40' : 'text-black/40'}`}>პოსტები არ მოიძებნა 2</p>
+        <p className={`text-sm ${isDark ? 'text-white/40' : 'text-black/40'}`}>{t.noPostsPosition2}</p>
       </div>
     )
   }

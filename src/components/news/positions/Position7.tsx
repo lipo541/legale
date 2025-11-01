@@ -1,12 +1,11 @@
 'use client'
 
 import { useTheme } from '@/contexts/ThemeContext'
-import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { useParams } from 'next/navigation'
 import Image from 'next/image'
 import { BookOpen } from 'lucide-react'
 import Link from 'next/link'
+import { newsTranslations } from '@/translations/news'
 
 interface PostTranslation {
   title: string
@@ -23,63 +22,19 @@ interface Post {
   post_translations: PostTranslation[]
 }
 
+interface Position7Props {
+  posts: Post[]
+}
+
 // Featured Post Card - Compact & Visual
-export default function Position7() {
+export default function Position7({ posts }: Position7Props) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
   const params = useParams()
   const locale = (params?.locale as string) || 'ka'
-  const [post, setPost] = useState<Post | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchPost()
-  }, [locale])
-
-  const fetchPost = async () => {
-    const supabase = createClient()
-    setLoading(true)
-
-    try {
-      const { data, error } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          post_translations!inner (*)
-        `)
-        .eq('display_position', 7)
-        .eq('status', 'published')
-        .eq('post_translations.language', locale)
-        .order('position_order', { ascending: true })
-        .limit(1)
-
-      if (error) {
-        console.error('Position 7 - Error fetching post:', error)
-        setPost(null)
-        return
-      }
-      
-      // Get first post from array
-      const firstPost = data && data.length > 0 ? data[0] : null
-      console.log('Position 7 - Post data:', firstPost)
-      setPost(firstPost)
-    } catch (error) {
-      console.error('Position 7 - Unexpected error:', error)
-      setPost(null)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className={`flex h-full items-center justify-center rounded-xl ${
-        isDark ? 'bg-white/5' : 'bg-black/5'
-      }`}>
-        <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent opacity-40" />
-      </div>
-    )
-  }
+  const t = newsTranslations[locale as keyof typeof newsTranslations]
+  
+  const post = posts[0] || null
 
   if (!post) {
     return (
@@ -88,7 +43,7 @@ export default function Position7() {
       }`}>
         <BookOpen className={`mb-2 h-6 w-6 ${isDark ? 'text-white/30' : 'text-black/30'}`} />
         <p className={`text-xs text-center ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-          პოზიცია 7-ზე პოსტი არ არის დაყენებული
+          {t.noPostsPosition7}
         </p>
       </div>
     )
@@ -101,7 +56,7 @@ export default function Position7() {
       <div className={`flex h-full items-center justify-center rounded-xl ${
         isDark ? 'bg-white/5' : 'bg-black/5'
       }`}>
-        <p className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>თარგმანი არ მოიძებნა</p>
+        <p className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>{t.translationNotFound}</p>
       </div>
     )
   }
@@ -121,6 +76,8 @@ export default function Position7() {
               alt={translation.title}
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-105"
+              sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              loading="lazy"
             />
             <div className={`absolute inset-0 ${
               isDark 

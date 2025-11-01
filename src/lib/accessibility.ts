@@ -113,3 +113,39 @@ export function generateAriaId(prefix: string = 'aria'): string {
   idCounter++
   return `${prefix}-${idCounter}-${Date.now()}`
 }
+
+/**
+ * Get consistent focus ring styles for interactive elements
+ * WCAG 2.1 - 2.4.7 Focus Visible (Level AA)
+ * 
+ * @param isDark - Whether dark mode is active
+ * @returns Tailwind CSS classes for focus styles
+ */
+export function getFocusStyles(isDark: boolean = false): string {
+  return [
+    'focus:outline-none',
+    'focus:ring-2',
+    'focus:ring-offset-2',
+    isDark ? 'focus:ring-white' : 'focus:ring-black',
+    isDark ? 'focus:ring-offset-black' : 'focus:ring-offset-white',
+    'transition-shadow',
+    'duration-200'
+  ].join(' ')
+}
+
+/**
+ * Get focus styles for card/container elements
+ * Softer focus for larger interactive areas
+ */
+export function getCardFocusStyles(isDark: boolean = false): string {
+  return [
+    'focus:outline-none',
+    'focus:ring-2',
+    'focus:ring-offset-2',
+    isDark ? 'focus:ring-white/50' : 'focus:ring-black/50',
+    isDark ? 'focus:ring-offset-black' : 'focus:ring-offset-white',
+    'focus-visible:ring-2',
+    'transition-all',
+    'duration-200'
+  ].join(' ')
+}

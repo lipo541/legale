@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Archive, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
+import { newsTranslations } from '@/translations/news'
 
 // Compact Archive Info Card
 export default function Position4() {
@@ -13,6 +14,7 @@ export default function Position4() {
   const isDark = theme === 'dark'
   const params = useParams()
   const locale = (params?.locale as string) || 'ka'
+  const t = newsTranslations[locale as keyof typeof newsTranslations]
   const [totalPosts, setTotalPosts] = useState<number>(0)
   const [loading, setLoading] = useState(true)
 
@@ -84,7 +86,7 @@ export default function Position4() {
             <span className={`text-xs font-medium px-2 py-1 rounded-full ${
               isDark ? 'bg-white/10 text-white/70' : 'bg-black/5 text-black/60'
             }`}>
-              სულ
+              {t.total}
             </span>
           </div>
 
@@ -108,7 +110,7 @@ export default function Position4() {
             <p className={`text-xs font-medium leading-snug ${
               isDark ? 'text-white/80' : 'text-black/80'
             }`}>
-              სამართლებრივი სტატია
+              {t.legalArticles}
             </p>
 
             {/* CTA Link */}
@@ -117,7 +119,7 @@ export default function Position4() {
                 ? 'text-blue-400 hover:text-blue-300' 
                 : 'text-blue-600 hover:text-blue-700'
             }`}>
-              <span>იხილეთ ყველა არქივში</span>
+              <span>{t.viewAllInArchive}</span>
               <ArrowRight className="h-3 w-3 transition-transform group-hover/link:translate-x-0.5" />
             </div>
           </div>
