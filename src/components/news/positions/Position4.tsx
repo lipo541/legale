@@ -89,15 +89,15 @@ export default function Position4() {
           </div>
 
           {/* Main Content */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             {/* Dynamic Number */}
             <div className="flex items-baseline gap-1">
-              <span className={`text-4xl font-bold tabular-nums ${
+              <span className={`text-2xl md:text-3xl font-bold tabular-nums ${
                 isDark ? 'text-white' : 'text-black'
               }`}>
                 {formatNumber(totalPosts)}
               </span>
-              <span className={`text-2xl font-semibold ${
+              <span className={`text-lg md:text-xl font-semibold ${
                 isDark ? 'text-white/50' : 'text-black/40'
               }`}>
                 +
@@ -105,20 +105,20 @@ export default function Position4() {
             </div>
 
             {/* Description */}
-            <p className={`text-sm font-medium leading-snug ${
+            <p className={`text-xs font-medium leading-snug ${
               isDark ? 'text-white/80' : 'text-black/80'
             }`}>
               სამართლებრივი სტატია
             </p>
 
             {/* CTA Link */}
-            <div className={`group/link inline-flex items-center gap-1.5 text-xs font-medium transition-colors ${
+            <div className={`group/link inline-flex items-center gap-1 text-[10px] font-medium transition-colors ${
               isDark 
                 ? 'text-blue-400 hover:text-blue-300' 
                 : 'text-blue-600 hover:text-blue-700'
             }`}>
               <span>იხილეთ ყველა არქივში</span>
-              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/link:translate-x-0.5" />
+              <ArrowRight className="h-3 w-3 transition-transform group-hover/link:translate-x-0.5" />
             </div>
           </div>
         </div>

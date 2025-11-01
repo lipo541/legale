@@ -65,7 +65,7 @@ export default function Position5() {
         isDark ? 'bg-white/5' : 'bg-black/5'
       }`}>
         <p className={`text-sm ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-          {loading ? 'იტვირთება...' : 'პოსტები არ მოიძებნა'}
+          {loading ? 'იტვირთება...' : '5 პოსტები არ მოიძებნა'}
         </p>
       </div>
     )
@@ -76,12 +76,12 @@ export default function Position5() {
       isDark ? 'bg-white/5' : 'bg-black/5'
     }`}>
       {/* Header */}
-      <div className="border-b p-4" style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
+      <div className="border-b p-3" style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
         <div className="flex items-center gap-2">
-          <div className={`h-2 w-2 animate-pulse rounded-full ${
+          <div className={`h-1.5 w-1.5 animate-pulse rounded-full ${
             isDark ? 'bg-white' : 'bg-black'
           }`} />
-          <span className={`text-xs font-medium uppercase tracking-wider ${
+          <span className={`text-[10px] font-medium uppercase tracking-wider ${
             isDark ? 'text-white/60' : 'text-black/60'
           }`}>
             ახალი ამბები
@@ -90,17 +90,17 @@ export default function Position5() {
       </div>
 
       {/* Vertical Slider */}
-      <div className="h-[calc(100%-4rem)] p-4">
+      <div className="h-[calc(100%-3.5rem)] p-3">
         <Swiper
           modules={[Autoplay]}
           direction="vertical"
           slidesPerView={3}
-          spaceBetween={12}
+          spaceBetween={0}
           autoplay={{ delay: 3000, disableOnInteraction: false }}
           loop={posts.length > 3}
           className="h-full"
         >
-          {posts.map((post) => {
+          {posts.map((post, index) => {
             const translation = post.post_translations[0]
             const publishedTime = post.published_at ? new Date(post.published_at).toLocaleTimeString(locale, { 
               hour: '2-digit', 
@@ -109,24 +109,31 @@ export default function Position5() {
 
             return (
               <SwiperSlide key={post.id}>
-                <div className={`cursor-pointer rounded-lg p-3 transition-colors hover:${
-                  isDark ? 'bg-white/10' : 'bg-black/10'
-                }`}>
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-                      {publishedTime}
-                    </span>
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${
-                      isDark ? 'bg-white/10 text-white/60' : 'bg-black/10 text-black/60'
-                    }`}>
-                      {translation.category}
-                    </span>
-                  </div>
-                  <p className={`text-sm leading-snug line-clamp-2 ${
-                    isDark ? 'text-white/80' : 'text-black/80'
+                <div className="py-1">
+                  <div className={`cursor-pointer rounded-lg p-2.5 transition-colors hover:${
+                    isDark ? 'bg-white/10' : 'bg-black/10'
                   }`}>
-                    {translation.title}
-                  </p>
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <span className={`text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                        {publishedTime}
+                      </span>
+                      <span className={`rounded-full px-1.5 py-0.5 text-[9px] ${
+                        isDark ? 'bg-white/10 text-white/60' : 'bg-black/10 text-black/60'
+                      }`}>
+                        {translation.category}
+                      </span>
+                    </div>
+                    <p className={`text-xs leading-snug line-clamp-2 ${
+                      isDark ? 'text-white/80' : 'text-black/80'
+                    }`}>
+                      {translation.title}
+                    </p>
+                  </div>
+                  
+                  {/* Centered divider line */}
+                  <div className="flex justify-center mt-1">
+                    <div className={`h-px w-full ${isDark ? 'bg-white/10' : 'bg-black/10'}`} />
+                  </div>
                 </div>
               </SwiperSlide>
             )

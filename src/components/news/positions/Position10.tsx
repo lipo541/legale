@@ -1,38 +1,42 @@
 'use client'
 
 import { useTheme } from '@/contexts/ThemeContext'
-import { Swiper, SwiperSlide } from 'swiper/react'
-import { Autoplay } from 'swiper/modules'
-import 'swiper/css'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useParams } from 'next/navigation'
+import Image from 'next/image'
+import { BookOpen } from 'lucide-react'
+import Link from 'next/link'
 
 interface PostTranslation {
   title: string
+  excerpt?: string
+  slug: string
+  reading_time?: number
   category?: string
 }
 
 interface Post {
   id: string
+  featured_image_url?: string
   published_at?: string
   post_translations: PostTranslation[]
 }
 
-// Horizontal Auto-scroll News Ticker
+// Featured Post Card - Same as Position 6
 export default function Position10() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
   const params = useParams()
   const locale = (params?.locale as string) || 'ka'
-  const [posts, setPosts] = useState<Post[]>([])
+  const [post, setPost] = useState<Post | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchPosts()
+    fetchPost()
   }, [locale])
 
-  const fetchPosts = async () => {
+  const fetchPost = async () => {
     const supabase = createClient()
     setLoading(true)
 
@@ -47,91 +51,103 @@ export default function Position10() {
         .eq('status', 'published')
         .eq('post_translations.language', locale)
         .order('position_order', { ascending: true })
-        .limit(10)
+        .limit(1)
 
-      if (error) throw error
-      setPosts(data || [])
+      if (error) {
+        console.error('Position 10 - Error fetching post:', error)
+        setPost(null)
+        return
+      }
+      
+      const firstPost = data && data.length > 0 ? data[0] : null
+      console.log('Position 10 - Fetched post:', firstPost)
+      console.log('Position 10 - Featured image URL:', firstPost?.featured_image_url)
+      setPost(firstPost)
     } catch (error) {
-      console.error('Error fetching posts:', error)
+      console.error('Position 10 - Unexpected error:', error)
+      setPost(null)
     } finally {
       setLoading(false)
     }
   }
 
-  if (loading || posts.length === 0) {
+  if (loading) {
     return (
-      <div className={`relative h-full overflow-hidden rounded-2xl flex items-center justify-center ${
+      <div className={`flex h-full items-center justify-center rounded-xl ${
         isDark ? 'bg-white/5' : 'bg-black/5'
       }`}>
-        <p className={`text-sm ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-          {loading ? 'იტვირთება...' : 'პოსტები არ მოიძებნა'}
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent opacity-40" />
+      </div>
+    )
+  }
+
+  if (!post) {
+    return (
+      <div className={`flex h-full flex-col items-center justify-center rounded-xl border border-dashed p-4 ${
+        isDark ? 'border-white/20 bg-white/5' : 'border-black/20 bg-black/5'
+      }`}>
+        <BookOpen className={`mb-2 h-6 w-6 ${isDark ? 'text-white/30' : 'text-black/30'}`} />
+        <p className={`text-xs text-center ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+          პოზიცია 10-ზე პოსტი არ არის დაყენებული
         </p>
       </div>
     )
   }
 
+  const translation = post.post_translations?.[0]
+  
+  if (!translation) {
+    return (
+      <div className={`flex h-full items-center justify-center rounded-xl ${
+        isDark ? 'bg-white/5' : 'bg-black/5'
+      }`}>
+        <p className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>თარგმანი არ მოიძებნა</p>
+      </div>
+    )
+  }
+
   return (
-    <div className={`relative h-full overflow-hidden rounded-2xl ${
-      isDark ? 'bg-white/5' : 'bg-black/5'
-    }`}>
-      {/* Header */}
-      <div className="border-b p-4" style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
-        <div className="flex items-center gap-2">
-          <div className={`h-2 w-2 animate-pulse rounded-full ${
-            isDark ? 'bg-white' : 'bg-black'
-          }`} />
-          <span className={`text-xs font-medium uppercase tracking-wider ${
-            isDark ? 'text-white/60' : 'text-black/60'
+    <Link href={`/${locale}/news/${translation.slug}`} className="block h-full">
+      <div className={`group relative h-full overflow-hidden rounded-xl transition-all duration-300 hover:shadow-lg ${
+        isDark 
+          ? 'bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/10 hover:border-white/20' 
+          : 'bg-gradient-to-br from-white to-gray-50 border border-black/10 hover:border-black/20'
+      }`}>
+        {/* Image Section (Top 70%) */}
+        {post.featured_image_url && (
+          <div className="relative h-[70%] w-full overflow-hidden">
+            <Image
+              src={post.featured_image_url}
+              alt={translation.title}
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+            <div className={`absolute inset-0 ${
+              isDark 
+                ? 'bg-gradient-to-t from-zinc-900 via-transparent to-transparent' 
+                : 'bg-gradient-to-t from-white via-transparent to-transparent'
+            }`} />
+            
+            {/* Category Badge on Image */}
+            <div className="absolute top-2 left-2">
+              <span className={`inline-block rounded-md px-2 py-0.5 text-[10px] font-medium backdrop-blur-sm ${
+                isDark ? 'bg-black/70 text-white' : 'bg-white/90 text-black'
+              }`}>
+                {translation.category}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Content Section (Bottom 30%) */}
+        <div className="relative flex h-[30%] flex-col justify-center p-2">
+          <h3 className={`text-[11px] md:text-xs font-semibold leading-snug line-clamp-2 ${
+            isDark ? 'text-white' : 'text-black'
           }`}>
-            ახალი ამბები
-          </span>
+            {translation.title}
+          </h3>
         </div>
       </div>
-
-      {/* Vertical Slider */}
-      <div className="h-[calc(100%-4rem)] p-4">
-        <Swiper
-          modules={[Autoplay]}
-          direction="vertical"
-          slidesPerView={3}
-          spaceBetween={12}
-          autoplay={{ delay: 3000, disableOnInteraction: false }}
-          loop={posts.length > 3}
-          className="h-full"
-        >
-          {posts.map((post) => {
-            const translation = post.post_translations[0]
-            const publishedTime = post.published_at ? new Date(post.published_at).toLocaleTimeString(locale, { 
-              hour: '2-digit', 
-              minute: '2-digit' 
-            }) : ''
-
-            return (
-              <SwiperSlide key={post.id}>
-                <div className={`cursor-pointer rounded-lg p-3 transition-colors hover:${
-                  isDark ? 'bg-white/10' : 'bg-black/10'
-                }`}>
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-                      {publishedTime}
-                    </span>
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${
-                      isDark ? 'bg-white/10 text-white/60' : 'bg-black/10 text-black/60'
-                    }`}>
-                      {translation.category}
-                    </span>
-                  </div>
-                  <p className={`text-sm leading-snug line-clamp-2 ${
-                    isDark ? 'text-white/80' : 'text-black/80'
-                  }`}>
-                    {translation.title}
-                  </p>
-                </div>
-              </SwiperSlide>
-            )
-          })}
-        </Swiper>
-      </div>
-    </div>
+    </Link>
   )
 }

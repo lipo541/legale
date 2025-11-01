@@ -95,7 +95,7 @@ export default function Position2() {
   if (posts.length === 0) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className={`text-sm ${isDark ? 'text-white/40' : 'text-black/40'}`}>პოსტები არ მოიძებნა</p>
+        <p className={`text-sm ${isDark ? 'text-white/40' : 'text-black/40'}`}>პოსტები არ მოიძებნა 2</p>
       </div>
     )
   }
@@ -133,30 +133,30 @@ export default function Position2() {
             
             <div className="relative space-y-2">
               <div className="flex items-center justify-between">
-                <span className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                <span className={`text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
                   {publishedDate}
                 </span>
-                <span className={`rounded-full px-2 py-0.5 text-xs ${
+                <span className={`rounded-full px-2 py-0.5 text-[10px] ${
                   isDark ? 'bg-white/10 text-white/60' : 'bg-black/10 text-black/60'
                 }`}>
                   {translation.category}
                 </span>
               </div>
               
-              <h3 className={`text-sm font-medium leading-snug transition-opacity ${
+              <h3 className={`text-[11px] md:text-xs font-medium leading-snug transition-opacity ${
                 isDark ? 'text-white' : 'text-black'
               } ${hoveredId === post.id ? 'opacity-60' : 'opacity-100'}`}>
                 {translation.title}
               </h3>
               
               {translation.excerpt && (
-                <p className={`text-xs leading-relaxed ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+                <p className={`text-[10px] md:text-xs leading-relaxed ${isDark ? 'text-white/50' : 'text-black/50'}`}>
                   {translation.excerpt.slice(0, 80)}...
                 </p>
               )}
               
               {/* Arrow indicator */}
-              <div className={`flex items-center gap-1 text-xs font-medium transition-all duration-300 ${
+              <div className={`flex items-center gap-1 text-[10px] font-medium transition-all duration-300 ${
                 isDark ? 'text-white/60' : 'text-black/60'
               } ${hoveredId === post.id ? 'translate-x-1' : 'translate-x-0'}`}>
                 <span>წაიკითხე</span>

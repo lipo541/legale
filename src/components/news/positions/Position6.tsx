@@ -115,7 +115,7 @@ export default function Position6() {
       }`}>
         {/* Image Section (Top Half) */}
         {post.featured_image_url && (
-          <div className="relative h-[60%] w-full overflow-hidden">
+          <div className="relative h-[70%] w-full overflow-hidden">
             <Image
               src={post.featured_image_url}
               alt={translation.title}
@@ -129,8 +129,8 @@ export default function Position6() {
             }`} />
             
             {/* Category Badge on Image */}
-            <div className="absolute top-3 left-3">
-              <span className={`inline-block rounded-md px-2.5 py-1 text-xs font-medium backdrop-blur-sm ${
+            <div className="absolute top-2 left-2">
+              <span className={`inline-block rounded-md px-2 py-0.5 text-[10px] font-medium backdrop-blur-sm ${
                 isDark ? 'bg-black/70 text-white' : 'bg-white/90 text-black'
               }`}>
                 {translation.category}
@@ -140,28 +140,12 @@ export default function Position6() {
         )}
 
         {/* Content Section (Bottom Half) */}
-        <div className="relative flex h-[40%] flex-col justify-between p-4">
-          <h3 className={`text-sm font-semibold leading-snug line-clamp-2 mb-2 ${
+        <div className="relative flex h-[30%] flex-col justify-center p-2">
+          <h3 className={`text-[11px] md:text-xs font-semibold leading-snug line-clamp-2 ${
             isDark ? 'text-white' : 'text-black'
           }`}>
             {translation.title}
           </h3>
-          
-          {/* Footer */}
-          <div className="flex items-center justify-between">
-            <span className={`text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
-              {translation.reading_time || 5} წთ
-            </span>
-            
-            <div className={`group/arrow inline-flex items-center gap-1 text-xs font-medium transition-colors ${
-              isDark 
-                ? 'text-blue-400 hover:text-blue-300' 
-                : 'text-blue-600 hover:text-blue-700'
-            }`}>
-              <span>ვრცლად</span>
-              <ArrowRight className="h-3 w-3 transition-transform group-hover/arrow:translate-x-0.5" />
-            </div>
-          </div>
         </div>
       </div>
     </Link>

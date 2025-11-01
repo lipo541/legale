@@ -5,21 +5,25 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useParams } from 'next/navigation'
 import Image from 'next/image'
+import { BookOpen } from 'lucide-react'
+import Link from 'next/link'
 
 interface PostTranslation {
   title: string
+  excerpt?: string
   slug: string
-  category?: string
   reading_time?: number
+  category?: string
 }
 
 interface Post {
   id: string
   featured_image_url?: string
+  published_at?: string
   post_translations: PostTranslation[]
 }
 
-// Single Post Card
+// Featured Post Card - Compact & Visual
 export default function Position7() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
@@ -50,15 +54,17 @@ export default function Position7() {
         .limit(1)
 
       if (error) {
-        console.error('Error fetching post:', error)
+        console.error('Position 7 - Error fetching post:', error)
         setPost(null)
         return
       }
       
       // Get first post from array
-      setPost(data && data.length > 0 ? data[0] : null)
+      const firstPost = data && data.length > 0 ? data[0] : null
+      console.log('Position 7 - Post data:', firstPost)
+      setPost(firstPost)
     } catch (error) {
-      console.error('Unexpected error:', error)
+      console.error('Position 7 - Unexpected error:', error)
       setPost(null)
     } finally {
       setLoading(false)
@@ -67,61 +73,81 @@ export default function Position7() {
 
   if (loading) {
     return (
-      <div className={`flex h-full items-center justify-center rounded-2xl ${
+      <div className={`flex h-full items-center justify-center rounded-xl ${
         isDark ? 'bg-white/5' : 'bg-black/5'
       }`}>
-        <p className={`text-sm ${isDark ? 'text-white/40' : 'text-black/40'}`}>იტვირთება...</p>
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent opacity-40" />
       </div>
     )
   }
 
   if (!post) {
     return (
-      <div className={`flex h-full items-center justify-center rounded-2xl ${
-        isDark ? 'bg-white/5' : 'bg-black/5'
+      <div className={`flex h-full flex-col items-center justify-center rounded-xl border border-dashed p-4 ${
+        isDark ? 'border-white/20 bg-white/5' : 'border-black/20 bg-black/5'
       }`}>
-        <p className={`text-sm ${isDark ? 'text-white/40' : 'text-black/40'}`}>პოსტი არ მოიძებნა</p>
+        <BookOpen className={`mb-2 h-6 w-6 ${isDark ? 'text-white/30' : 'text-black/30'}`} />
+        <p className={`text-xs text-center ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+          პოზიცია 7-ზე პოსტი არ არის დაყენებული
+        </p>
       </div>
     )
   }
 
-  const translation = post.post_translations[0]
+  const translation = post.post_translations?.[0]
+  
+  if (!translation) {
+    return (
+      <div className={`flex h-full items-center justify-center rounded-xl ${
+        isDark ? 'bg-white/5' : 'bg-black/5'
+      }`}>
+        <p className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>თარგმანი არ მოიძებნა</p>
+      </div>
+    )
+  }
 
   return (
-    <div className={`group relative h-full cursor-pointer overflow-hidden rounded-2xl p-6 transition-all ${
-      isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'
-    }`}>
-      {/* Background Image */}
-      {post.featured_image_url && (
-        <div className="absolute inset-0 z-0">
-          <Image
-            src={post.featured_image_url}
-            alt={translation.title}
-            fill
-            className="object-cover opacity-10 transition-opacity group-hover:opacity-20"
-          />
-        </div>
-      )}
-      
-      <div className="relative z-10 flex h-full flex-col justify-between">
-        <span className={`inline-block self-start rounded-full px-2.5 py-1 text-xs font-medium ${
-          isDark ? 'bg-white/10 text-white/80' : 'bg-black/10 text-black/80'
-        }`}>
-          {translation.category}
-        </span>
-        
-        <div>
-          <h3 className={`mb-2 text-lg font-semibold leading-tight line-clamp-3 ${
+    <Link href={`/${locale}/news/${translation.slug}`} className="block h-full">
+      <div className={`group relative h-full overflow-hidden rounded-xl transition-all duration-300 hover:shadow-lg ${
+        isDark 
+          ? 'bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/10 hover:border-white/20' 
+          : 'bg-gradient-to-br from-white to-gray-50 border border-black/10 hover:border-black/20'
+      }`}>
+        {/* Image Section (Top Half) */}
+        {post.featured_image_url && (
+          <div className="relative h-[70%] w-full overflow-hidden">
+            <Image
+              src={post.featured_image_url}
+              alt={translation.title}
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+            <div className={`absolute inset-0 ${
+              isDark 
+                ? 'bg-gradient-to-t from-zinc-900 via-transparent to-transparent' 
+                : 'bg-gradient-to-t from-white via-transparent to-transparent'
+            }`} />
+            
+            {/* Category Badge on Image */}
+            <div className="absolute top-2 left-2">
+              <span className={`inline-block rounded-md px-2 py-0.5 text-[10px] font-medium backdrop-blur-sm ${
+                isDark ? 'bg-black/70 text-white' : 'bg-white/90 text-black'
+              }`}>
+                {translation.category}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Content Section (Bottom Half) */}
+        <div className="relative flex h-[30%] flex-col justify-center p-2">
+          <h3 className={`text-[11px] md:text-xs font-semibold leading-snug line-clamp-2 ${
             isDark ? 'text-white' : 'text-black'
           }`}>
             {translation.title}
           </h3>
-          
-          <p className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-            {translation.reading_time} წთ წაკითხვა
-          </p>
         </div>
       </div>
-    </div>
+    </Link>
   )
 }

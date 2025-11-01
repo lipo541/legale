@@ -79,7 +79,7 @@ export default function Position3() {
       <div className={`relative h-full overflow-hidden rounded-2xl flex items-center justify-center ${
         isDark ? 'bg-white/5' : 'bg-black/5'
       }`}>
-        <p className={`text-sm ${isDark ? 'text-white/40' : 'text-black/40'}`}>პოსტები არ მოიძებნა</p>
+        <p className={`text-sm ${isDark ? 'text-white/40' : 'text-black/40'}`}>პოსტები არ მოიძებნა 3</p>
       </div>
     )
   }
@@ -111,78 +111,44 @@ export default function Position3() {
                       src={post.featured_image_url}
                       alt={translation.title}
                       fill
-                      className="object-cover opacity-20"
+                      className="object-cover opacity-70"
                     />
+                    {/* Lighter overlay for better text readability */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
                   </div>
                 )}
                 
-                {/* Category Badge */}
-                <div className={`relative z-10 inline-flex h-12 w-12 items-center justify-center rounded-xl text-2xl ${
-                  isDark ? 'bg-white/10' : 'bg-black/10'
-                }`}>
-                  📰
+                {/* Category Badge - ABSOLUTE TOP RIGHT CORNER */}
+                <div className="absolute top-3 right-3 z-10">
+                  <span className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-medium bg-white/10 text-white backdrop-blur-sm">
+                    {translation.category}
+                  </span>
                 </div>
                 
-                {/* Content */}
-                <div className="relative z-10 space-y-4">
-                  <div className="space-y-3">
-                    <h2 className={`text-4xl font-semibold leading-tight ${
-                      isDark ? 'text-white' : 'text-black'
-                    }`}>
-                      {translation.title}
-                    </h2>
-                    
-                    <p className={`text-base leading-relaxed line-clamp-3 ${
-                      isDark ? 'text-white/60' : 'text-black/60'
-                    }`}>
-                      {translation.excerpt}
-                    </p>
-                  </div>
-                  
-                  {/* Stats & CTA */}
-                  <div className="flex items-center justify-between pt-4">
-                    <div className="flex items-center gap-4">
-                      <span className={`rounded-full px-3 py-1 text-xs font-medium ${
-                        isDark ? 'bg-white/10 text-white/80' : 'bg-black/10 text-black/80'
-                      }`}>
-                        {translation.category}
-                      </span>
-                      <span className={`text-sm ${
-                        isDark ? 'text-white/40' : 'text-black/40'
-                      }`}>
-                        {translation.reading_time} წთ
-                      </span>
-                    </div>
-                    
-                    <button className={`group flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-all ${
-                      isDark 
-                        ? 'bg-white text-black hover:bg-white/90' 
-                        : 'bg-black text-white hover:bg-black/90'
-                    }`}>
-                      <span>გაეცანი</span>
-                      <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-                
-                {/* Progress indicators */}
-                <div className="relative z-10 flex gap-2">
+                {/* Progress indicators - TOP CENTER (CIRCULAR) */}
+                <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex gap-1.5">
                   {posts.map((_, index) => (
                     <div
                       key={index}
-                      className={`h-1 flex-1 rounded-full transition-all duration-500 ${
+                      className={`h-1.5 w-1.5 rounded-full transition-all duration-500 ${
                         index === activeIndex
-                          ? isDark 
-                            ? 'bg-white' 
-                            : 'bg-black'
-                          : isDark 
-                            ? 'bg-white/20' 
-                            : 'bg-black/20'
+                          ? 'bg-white w-6' 
+                          : 'bg-white/30'
                       }`}
                     />
                   ))}
+                </div>
+                
+                {/* Spacer for top */}
+                <div className="relative z-10"></div>
+                
+                {/* Content */}
+                <div className="relative z-10 space-y-3">
+                  <div className="space-y-2">
+                    <h2 className="text-lg md:text-xl lg:text-2xl font-semibold leading-tight text-white">
+                      {translation.title}
+                    </h2>
+                  </div>
                 </div>
               </div>
             </SwiperSlide>

@@ -244,11 +244,11 @@ export default function AllPostsSection() {
   return (
     <div className="mt-20">
       {/* Main Section Header */}
-      <div className="mb-12 text-center">
-        <h2 className={`text-4xl font-bold mb-3 ${isDark ? 'text-white' : 'text-black'}`}>
+      <div className="mb-10 text-center">
+        <h2 className={`text-xl md:text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
           ყველა სტატია
         </h2>
-        <p className={`text-sm ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+        <p className={`text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
           სულ {totalCount} გამოქვეყნებული სტატია • {categories.length} კატეგორია
         </p>
       </div>
@@ -262,15 +262,15 @@ export default function AllPostsSection() {
           return (
             <div key={categoryId}>
               {/* Category Header */}
-              <div className="mb-6 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`h-1 w-12 rounded-full ${
+              <div className="mb-5 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className={`h-0.5 w-10 rounded-full ${
                     isDark ? 'bg-gradient-to-r from-blue-500 to-purple-500' : 'bg-gradient-to-r from-blue-600 to-purple-600'
                   }`} />
-                  <h3 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+                  <h3 className={`text-base md:text-lg font-bold ${isDark ? 'text-white' : 'text-black'}`}>
                     {name}
                   </h3>
-                  <span className={`ml-2 rounded-full px-3 py-1 text-xs font-medium ${
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
                     isDark ? 'bg-white/10 text-white/70' : 'bg-black/10 text-black/70'
                   }`}>
                     {posts.length}
@@ -279,12 +279,12 @@ export default function AllPostsSection() {
                 
                 <Link 
                   href={`/${locale}/news/category/${slug}`}
-                  className={`group flex items-center gap-1.5 text-sm font-medium transition-colors ${
+                  className={`group flex items-center gap-1 text-xs font-medium transition-colors ${
                     isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
                   }`}
                 >
                   <span>ყველას ნახვა</span>
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                 </Link>
               </div>
 
@@ -322,45 +322,45 @@ export default function AllPostsSection() {
                       </div>
 
                       {/* Content */}
-                      <div className="p-5">
+                      <div className="p-4">
                         {/* Meta info */}
-                        <div className="mb-3 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <span className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                        <div className="mb-2 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
                               {formatDate(post.published_at)}
                             </span>
                             {post.author?.full_name && (
-                              <span className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                              <span className={`text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
                                 {post.author.full_name}
                               </span>
                             )}
                           </div>
-                          <span className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-                            {translation?.reading_time ?? '-'} წთ წაკითხვა
+                          <span className={`text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                            {translation?.reading_time ?? '-'} წთ
                           </span>
                         </div>
 
                         {/* Title */}
-                        <h3 className={`mb-2 text-lg font-semibold leading-tight line-clamp-2 transition-opacity group-hover:opacity-60 ${
+                        <h3 className={`mb-1.5 text-xs md:text-sm font-semibold leading-tight line-clamp-2 transition-opacity group-hover:opacity-60 ${
                           isDark ? 'text-white' : 'text-black'
                         }`}>
                           {translation.title}
                         </h3>
 
                         {/* Excerpt */}
-                        <p className={`mb-4 line-clamp-2 text-sm leading-relaxed ${
+                        <p className={`mb-3 line-clamp-2 text-xs leading-relaxed ${
                           isDark ? 'text-white/60' : 'text-black/60'
                         }`}>
                           {translation.excerpt}
                         </p>
 
                         {/* Action */}
-                        <div className="flex justify-end pt-3 border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}>
-                          <button className={`flex items-center gap-1 text-xs font-medium transition-all group-hover:translate-x-1 ${
+                        <div className="flex justify-end pt-2 border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}>
+                          <button className={`flex items-center gap-0.5 text-[10px] font-medium transition-all group-hover:translate-x-1 ${
                             isDark ? 'text-white/60 hover:text-white' : 'text-black/60 hover:text-black'
                           }`}>
                             <span>ვრცლად</span>
-                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                             </svg>
                           </button>

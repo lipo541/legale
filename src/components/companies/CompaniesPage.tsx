@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Building2, Search, SlidersHorizontal } from 'lucide-react';
 import CompanyCard from './companycard/CompanyCard';
 import CompanyCardSkeleton from './CompanyCardSkeleton';
+import CompanySearch from './companysearch/CompanySearch';
 import CompanyFilters from './companyfilters/CompanyFilters';
 import InfoCards from './infocards/InfoCards';
 import CompaniesHero from './CompaniesHero';

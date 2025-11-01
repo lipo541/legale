@@ -80,7 +80,7 @@ export default function Position1() {
       <div className={`relative h-full overflow-hidden rounded-2xl flex items-center justify-center ${
         isDark ? 'bg-white/5' : 'bg-black/5'
       }`}>
-        <p className={`text-sm ${isDark ? 'text-white/40' : 'text-black/40'}`}>პოსტები არ მოიძებნა</p>
+        <p className={`text-sm ${isDark ? 'text-white/40' : 'text-black/40'}`}>პოზიცია 1 ზე პოსტები არ მოიძებნა</p>
       </div>
     )
   }
@@ -118,43 +118,25 @@ export default function Position1() {
                         fill
                         className="object-cover"
                       />
-                      <div className={`absolute inset-0 ${
-                        isDark 
-                          ? 'bg-gradient-to-t from-black/90 via-black/50 to-black/20' 
-                          : 'bg-gradient-to-t from-black/70 via-black/30 to-black/10'
-                      }`} />
+                      {/* LIGHTER Gradient for better image visibility */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
                     </div>
                   )}
                   
-                  {/* Content */}
-                  <div className="relative z-10 flex h-full flex-col justify-end p-8">
-                    <div className="space-y-2">
-                      <span className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${
-                        isDark ? 'bg-white/10 text-white' : 'bg-white/90 text-black'
-                      }`}>
-                        {translation.category}
-                      </span>
+                  {/* Content - LEFT ALIGNED, BOTTOM */}
+                  <div className="relative z-10 flex h-full flex-col justify-end p-6 md:p-8 lg:p-10">
+                    <div className="max-w-2xl space-y-3">
+                      {/* Category Badge */}
+                      {translation.category && (
+                        <span className="inline-block rounded-lg px-2 py-0.5 text-[8px] md:text-[9px] font-bold uppercase bg-white/20 text-white backdrop-blur-sm">
+                          {translation.category}
+                        </span>
+                      )}
                       
-                      <h2 className={`text-3xl font-semibold leading-tight ${
-                        isDark ? 'text-white' : 'text-white'
-                      }`}>
+                      {/* Title */}
+                      <h2 className="text-sm md:text-base lg:text-lg font-bold leading-tight text-white">
                         {translation.title}
                       </h2>
-                      
-                      <p className={`text-sm ${
-                        isDark ? 'text-white/60' : 'text-white/80'
-                      }`}>
-                        {translation.excerpt}
-                      </p>
-                      
-                      <div className={`mt-4 inline-flex items-center text-sm font-medium transition-opacity hover:opacity-60 ${
-                        isDark ? 'text-white' : 'text-white'
-                      }`}>
-                        ვრცლად
-                        <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </div>
                     </div>
                   </div>
                 </div>
