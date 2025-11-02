@@ -38,9 +38,9 @@ export default function Position6({ posts }: Position6Props) {
   if (!post) {
     return (
       <div className={`relative h-full overflow-hidden rounded-2xl flex items-center justify-center ${
-        isDark ? 'bg-white/5' : 'bg-black/5'
+        isDark ? 'bg-white/5' : 'bg-black'
       }`}>
-        <p className={`text-sm ${isDark ? 'text-white/40' : 'text-black/40'}`}>{t.noPostsPosition6}</p>
+        <p className={`text-sm ${isDark ? 'text-white/40' : 'text-white/60'}`}>{t.noPostsPosition6}</p>
       </div>
     )
   }
@@ -52,7 +52,7 @@ export default function Position6({ posts }: Position6Props) {
       <div className={`group relative h-full overflow-hidden rounded-xl transition-all duration-300 hover:shadow-lg ${
         isDark 
           ? 'bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/10 hover:border-white/20' 
-          : 'bg-gradient-to-br from-white to-gray-50 border border-black/10 hover:border-black/20'
+          : 'bg-black border border-gray-800 hover:border-gray-700'
       }`}>
         {/* Image Section (Top Half) */}
         {post.featured_image_url && (
@@ -68,13 +68,13 @@ export default function Position6({ posts }: Position6Props) {
             <div className={`absolute inset-0 ${
               isDark 
                 ? 'bg-gradient-to-t from-zinc-900 via-transparent to-transparent' 
-                : 'bg-gradient-to-t from-white via-transparent to-transparent'
+                : 'bg-gradient-to-t from-black via-transparent to-transparent'
             }`} />
             
             {/* Category Badge on Image */}
             <div className="absolute top-2 left-2">
               <span className={`inline-block rounded-md px-2 py-0.5 text-[10px] font-medium backdrop-blur-sm ${
-                isDark ? 'bg-black/70 text-white' : 'bg-white/90 text-black'
+                isDark ? 'bg-black/70 text-white' : 'bg-white/30 text-white'
               }`}>
                 {translation.category}
               </span>
@@ -85,7 +85,7 @@ export default function Position6({ posts }: Position6Props) {
         {/* Content Section (Bottom Half) */}
         <div className="relative flex h-[30%] flex-col justify-center p-2">
           <h3 className={`text-[11px] md:text-xs font-semibold leading-snug line-clamp-2 ${
-            isDark ? 'text-white' : 'text-black'
+            isDark ? 'text-white' : 'text-white'
           }`}>
             {translation.title}
           </h3>

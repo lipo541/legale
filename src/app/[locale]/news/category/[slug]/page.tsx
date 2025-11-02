@@ -34,19 +34,43 @@ export default async function CategoryPage({ params }: PageProps) {
     .select('*')
     .eq('category_id', categoryData.category.id)
 
-  // Find all subcategories of this category
-  const { data: subcategories } = await supabase
+  // Fetch ALL categories to build hierarchy
+  const { data: allCategories } = await supabase
     .from('post_categories')
-    .select('id')
-    .eq('parent_id', categoryData.category.id)
+    .select('id, parent_id')
 
-  // Create array of category IDs to search: main category + all subcategories
+  // Recursive function to find all descendant categories
+  const findAllDescendants = (parentId: string, categoriesMap: Map<string, string | null>): string[] => {
+    const descendants: string[] = []
+    
+    // Find all direct children
+    categoriesMap.forEach((parent, categoryId) => {
+      if (parent === parentId) {
+        descendants.push(categoryId)
+        // Recursively find children of this child
+        descendants.push(...findAllDescendants(categoryId, categoriesMap))
+      }
+    })
+    
+    return descendants
+  }
+
+  // Build category hierarchy map
+  const categoryHierarchyMap = new Map<string, string | null>()
+  allCategories?.forEach((cat) => {
+    categoryHierarchyMap.set(cat.id, cat.parent_id)
+  })
+
+  // Find all descendants (subcategories, sub-subcategories, etc.)
+  const allDescendantIds = findAllDescendants(categoryData.category.id, categoryHierarchyMap)
+
+  // Create array of category IDs to search: main category + all descendants
   const categoryIdsToSearch = [
     categoryData.category.id,
-    ...(subcategories?.map(sub => sub.id) || [])
+    ...allDescendantIds
   ]
 
-  // Fetch posts in this category AND all its subcategories
+  // Fetch posts in this category AND all its descendants (recursively)
   const { data: posts, error: postsError } = await supabase
     .from('posts')
     .select(`

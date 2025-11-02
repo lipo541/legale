@@ -61,7 +61,7 @@ export default function Position2({ posts }: Position2Props) {
             className={`group relative block cursor-pointer rounded-xl p-4 transition-all duration-300 ${
               isDark 
                 ? 'bg-white/5 hover:bg-white/10' 
-                : 'bg-black/5 hover:bg-black/10'
+                : 'bg-black hover:bg-gray-900'
             }`}
           >
             {/* Animated border */}
@@ -75,31 +75,31 @@ export default function Position2({ posts }: Position2Props) {
             
             <div className="relative space-y-2">
               <div className="flex items-center justify-between">
-                <span className={`text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                <span className={`text-[10px] ${isDark ? 'text-white/40' : 'text-white/60'}`}>
                   {publishedDate}
                 </span>
                 <span className={`rounded-full px-2 py-0.5 text-[10px] ${
-                  isDark ? 'bg-white/10 text-white/60' : 'bg-black/10 text-black/60'
+                  isDark ? 'bg-white/10 text-white/60' : 'bg-white/20 text-white/80'
                 }`}>
                   {translation.category}
                 </span>
               </div>
               
               <h3 className={`text-[11px] md:text-xs font-medium leading-snug transition-opacity ${
-                isDark ? 'text-white' : 'text-black'
+                isDark ? 'text-white' : 'text-white'
               } ${hoveredId === post.id ? 'opacity-60' : 'opacity-100'}`}>
                 {translation.title}
               </h3>
               
               {translation.excerpt && (
-                <p className={`text-[10px] md:text-xs leading-relaxed ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+                <p className={`text-[10px] md:text-xs leading-relaxed ${isDark ? 'text-white/50' : 'text-white/70'}`}>
                   {translation.excerpt.slice(0, 80)}...
                 </p>
               )}
               
               {/* Arrow indicator */}
               <div className={`flex items-center gap-1 text-[10px] font-medium transition-all duration-300 ${
-                isDark ? 'text-white/60' : 'text-black/60'
+                isDark ? 'text-white/60' : 'text-white/80'
               } ${hoveredId === post.id ? 'translate-x-1' : 'translate-x-0'}`}>
                 <span>წაიკითხე</span>
                 <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">

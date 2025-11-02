@@ -124,13 +124,13 @@ export default function PostPageClient({ post, author, category, relatedPosts, l
         )}
 
         {/* Title */}
-        <h1 className={`text-4xl md:text-5xl font-bold mb-4 leading-tight ${isDark ? 'text-white' : 'text-black'}`}>
+        <h1 className={`text-[30px] font-bold mb-4 leading-tight ${isDark ? 'text-white' : 'text-black'}`}>
           {post.title}
         </h1>
 
         {/* Excerpt */}
         {post.excerpt && (
-          <p className={`text-xl mb-6 leading-relaxed ${isDark ? 'text-white/70' : 'text-black/70'}`}>
+          <p className={`text-[18px] mb-6 leading-relaxed ${isDark ? 'text-white/70' : 'text-black/70'}`}>
             {post.excerpt}
           </p>
         )}

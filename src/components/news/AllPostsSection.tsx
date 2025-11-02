@@ -450,12 +450,12 @@ export default function AllPostsSection() {
                 </Link>
               </div>
 
-              {/* Posts Grid */}
-              <div className={`grid gap-3 md:gap-4 ${
+              {/* Posts Horizontal Scroll */}
+              <div className={`${
                 viewMode === 'grid' 
-                  ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
-                  : 'grid-cols-1'
-              }`}>
+                  ? 'flex gap-3 md:gap-4 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-thin' 
+                  : 'grid grid-cols-1 gap-3 md:gap-4'
+              } ${isDark ? 'scrollbar-thumb-white/20 scrollbar-track-white/5' : 'scrollbar-thumb-black/20 scrollbar-track-black/5'}`}>
                 {posts.map((post) => {
                   const translation = post.post_translations?.find((t) => t.language === locale) || post.post_translations?.[0]
                   
@@ -465,7 +465,7 @@ export default function AllPostsSection() {
                       href={`/${locale}/news/${translation.slug}`}
                       className={`group cursor-pointer overflow-hidden rounded-2xl transition-all duration-300 hover:scale-[0.98] ${
                         viewMode === 'grid' 
-                          ? 'flex flex-col' 
+                          ? 'flex flex-col flex-shrink-0 w-72 md:w-80 snap-start' 
                           : 'flex flex-row'
                       } ${
                         isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'

@@ -41,16 +41,16 @@ export default function Position3({ posts }: Position3Props) {
   if (posts.length === 0) {
     return (
       <div className={`relative h-full overflow-hidden rounded-2xl flex items-center justify-center ${
-        isDark ? 'bg-white/5' : 'bg-black/5'
+        isDark ? 'bg-white/5' : 'bg-black'
       }`}>
-        <p className={`text-sm ${isDark ? 'text-white/40' : 'text-black/40'}`}>{t.noPostsPosition3}</p>
+        <p className={`text-sm ${isDark ? 'text-white/40' : 'text-white/60'}`}>{t.noPostsPosition3}</p>
       </div>
     )
   }
 
   return (
     <div className={`relative h-full overflow-hidden rounded-2xl ${
-      isDark ? 'bg-white/5' : 'bg-black/5'
+      isDark ? 'bg-white/5' : 'bg-black'
     }`}>
       <Swiper
         modules={[Autoplay, EffectFade]}

@@ -1,15 +1,11 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
 import Header from "@/components/header/Header";
 import { Providers } from "@/components/providers/Providers";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin", "cyrillic"],
-  display: 'swap',
-});
+const geistSans = GeistSans;
 
 export const metadata: Metadata = {
   title: "LegalGE - იურიდიული სერვისების პლატფორმა",
@@ -24,7 +20,7 @@ export default function RootLayout({
   return (
     <html lang="ka" suppressHydrationWarning>
       <body
-        className={`${inter.variable} antialiased`}
+        className={`${geistSans.variable} antialiased`}
       >
         <Providers>
           <Header />
