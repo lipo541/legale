@@ -87,7 +87,7 @@ export default function Filter({ options, value, onChange, placeholder }: Filter
             setIsOpen(!isOpen)
           }
         }}
-        className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border transition-all duration-300 hover:scale-[1.01] ${
+        className={`flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg border transition-all duration-300 hover:scale-[1.01] w-auto max-w-[180px] sm:max-w-[200px] ${
           isDark
             ? 'bg-white/5 border-white/10 hover:border-white/20 text-white'
             : 'bg-white border-black/10 hover:border-black/20 text-black'
@@ -97,12 +97,12 @@ export default function Filter({ options, value, onChange, placeholder }: Filter
         aria-haspopup="listbox"
         aria-controls="filter-menu"
       >
-        <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
-        <span className="text-sm font-medium">
+        <SlidersHorizontal className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
+        <span className="text-sm font-medium truncate min-w-0 hidden sm:inline">
           {selectedOption?.label || placeholder}
         </span>
         <ChevronDown
-          className={`h-4 w-4 transition-transform duration-300 ${
+          className={`h-4 w-4 flex-shrink-0 transition-transform duration-300 ${
             isOpen ? 'rotate-180' : ''
           }`}
           aria-hidden="true"
@@ -133,7 +133,7 @@ export default function Filter({ options, value, onChange, placeholder }: Filter
             id="filter-menu"
             role="listbox"
             aria-label="Filter options"
-            className={`absolute top-full left-0 mt-2 w-56 rounded-lg border shadow-xl z-20 overflow-hidden ${
+            className={`absolute top-full left-0 mt-2 min-w-full w-max max-w-xs rounded-lg border shadow-xl z-20 overflow-hidden ${
               isDark
                 ? 'bg-black border-white/10'
                 : 'bg-white border-black/10'

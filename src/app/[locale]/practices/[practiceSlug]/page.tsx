@@ -183,15 +183,11 @@ export default async function PracticePage({ params }: Props) {
     ogImageUrl: translation.og_image_url,
   }
 
-  // TODO: Fetch related practices (optional - can add later)
-  const relatedPractices: { id: string; title: string; slug: string; heroImageUrl: string; heroImageAlt: string; readingTime: number }[] = []
-
   return (
     <PracticeDetail
       practice={practice}
       translation={translationData}
       locale={locale}
-      relatedPractices={relatedPractices}
     />
   )
 }

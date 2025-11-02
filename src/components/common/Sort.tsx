@@ -86,7 +86,7 @@ export default function Sort({ options, value, onChange }: SortProps) {
             setIsOpen(!isOpen)
           }
         }}
-        className={`w-full flex items-center justify-center gap-1.5 sm:gap-2 px-2 py-1.5 sm:px-4 sm:py-2.5 rounded-lg border transition-all duration-300 hover:scale-[1.01] ${
+        className={`w-full flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 rounded-lg border transition-all duration-300 hover:scale-[1.01] ${
           isDark
             ? 'bg-white/5 border-white/10 hover:border-white/20 text-white'
             : 'bg-white border-black/10 hover:border-black/20 text-black'

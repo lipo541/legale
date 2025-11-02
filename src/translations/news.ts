@@ -159,6 +159,13 @@ export const newsTranslations = {
     // Section Titles
     newsTitle: 'ახალი ამბები',
     translationNotFound: 'თარგმანი არ მოიძებნა',
+    
+    // Archive Page Specific
+    backToBlog: 'უკან ბლოგზე',
+    archiveTitle: 'არქივი',
+    posts: 'სტატია',
+    allPosts: 'ყველა სტატია',
+    categories: 'კატეგორიები',
   },
 
   en: {
@@ -315,6 +322,13 @@ export const newsTranslations = {
     // Section Titles
     newsTitle: 'Latest News',
     translationNotFound: 'Translation not found',
+    
+    // Archive Page Specific
+    backToBlog: 'Back to Blog',
+    archiveTitle: 'Archive',
+    posts: 'Posts',
+    allPosts: 'All Posts',
+    categories: 'Categories',
   },
 
   ru: {
@@ -471,6 +485,13 @@ export const newsTranslations = {
     // Section Titles
     newsTitle: 'Последние новости',
     translationNotFound: 'Перевод не найден',
+    
+    // Archive Page Specific
+    backToBlog: 'Назад к блогу',
+    archiveTitle: 'Архив',
+    posts: 'Статьи',
+    allPosts: 'Все статьи',
+    categories: 'Категории',
   },
 } as const
 

@@ -2,13 +2,14 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createBrowserClient } from '@/lib/supabase/client'
+import { Locale } from '@/lib/enums'
 import ServiceDetail from '@/components/service/ServiceDetail'
 
 export const revalidate = 0
 
 type Props = {
   params: Promise<{
-    locale: 'ka' | 'en' | 'ru'
+    locale: Locale
     practiceSlug: string
     serviceSlug: string
   }>

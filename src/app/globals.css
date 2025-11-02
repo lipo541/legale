@@ -88,3 +88,16 @@ body {
   outline-offset: 2px;
 }
 
+/* Custom Scrollbar Styles for Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.dark * {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+body:not(.dark) * {
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}

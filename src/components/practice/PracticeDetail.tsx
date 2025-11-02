@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import Image from 'next/image'
 import Link from 'next/link'
-import { IoTimeOutline, IoCalendarOutline, IoShareSocialOutline, IoArrowBack, IoEyeOutline, IoDocumentTextOutline, IoChevronForward, IoBriefcaseOutline } from 'react-icons/io5'
+import { IoTimeOutline, IoCalendarOutline, IoArrowBack, IoDocumentTextOutline, IoChevronForward, IoBriefcaseOutline, IoLogoFacebook, IoLogoLinkedin, IoLogoTwitter } from 'react-icons/io5'
 import { createClient } from '@/lib/supabase/client'
 
 interface Service {
@@ -38,21 +38,12 @@ interface PracticeDetailProps {
     ogImageUrl: string | null
   }
   locale: 'ka' | 'en' | 'ru'
-  relatedPractices?: Array<{
-    id: string
-    title: string
-    slug: string
-    heroImageUrl: string
-    heroImageAlt: string
-    readingTime: number
-  }>
 }
 
 export default function PracticeDetail({ 
   practice, 
   translation, 
-  locale,
-  relatedPractices = []
+  locale
 }: PracticeDetailProps) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
@@ -149,26 +140,17 @@ export default function PracticeDetail({
   }, [practice.createdAt, practice.updatedAt, locale])
 
   // Share functionality
-  const handleShare = async () => {
-    const shareData = {
-      title: translation.ogTitle || translation.metaTitle || translation.title,
-      text: translation.ogDescription || translation.metaDescription || '',
-      url: window.location.href
+  const handleShare = (platform: 'facebook' | 'linkedin' | 'twitter') => {
+    const url = encodeURIComponent(window.location.href)
+    const title = encodeURIComponent(translation.ogTitle || translation.metaTitle || translation.title)
+
+    const shareUrls = {
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
+      twitter: `https://twitter.com/intent/tweet?url=${url}&text=${title}`
     }
 
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData)
-      } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          console.error('Share failed:', err)
-        }
-      }
-    } else {
-      // Fallback: Copy to clipboard
-      await navigator.clipboard.writeText(window.location.href)
-      alert(locale === 'ka' ? 'ბმული დაკოპირდა!' : locale === 'en' ? 'Link copied!' : 'Ссылка скопирована!')
-    }
+    window.open(shareUrls[platform], '_blank', 'noopener,noreferrer')
   }
 
   // Localized text
@@ -294,18 +276,41 @@ export default function PracticeDetail({
 
           {/* RIGHT CONTENT - Practice Details (Dynamic) */}
           <main className="lg:col-span-8 xl:col-span-9">
-            {/* Title Card */}
+            {/* Title */}
+            <div className={`rounded-2xl p-4 md:p-6 mb-6 border ${
+              isDark 
+                ? 'border-white/10' 
+                : 'border-gray-200'
+            }`}>
+              <h1 className="text-xl md:text-2xl lg:text-3xl font-bold leading-tight">
+                {translation.title}
+              </h1>
+            </div>
+
+            {/* Hero Image */}
+            <div className={`relative rounded-2xl overflow-hidden mb-6 ${
+              isDark ? 'border border-white/10' : 'border border-gray-200'
+            }`}>
+              <div className="relative w-full h-[300px] md:h-[400px] lg:h-[500px]">
+                <Image
+                  src={practice.pageHeroImageUrl}
+                  alt={translation.pageHeroImageAlt}
+                  fill
+                  priority
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 66vw, 60vw"
+                  quality={90}
+                />
+              </div>
+            </div>
+
+            {/* Meta Information */}
             <div className={`rounded-2xl p-4 md:p-6 mb-8 border ${
               isDark 
                 ? 'border-white/10' 
                 : 'border-gray-200'
             }`}>
-              <h1 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4 leading-tight">
-                {translation.title}
-              </h1>
-
-              {/* Meta Information */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="flex items-center justify-between gap-4">
                 {/* Reading Time */}
                 <div className="flex items-center gap-2">
                   <div className={`p-2 rounded-lg ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
@@ -336,52 +341,42 @@ export default function PracticeDetail({
                   </div>
                 </div>
 
-                {/* Word Count */}
+                {/* Share Buttons */}
                 <div className="flex items-center gap-2">
-                  <div className={`p-2 rounded-lg ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
-                    <IoEyeOutline className={`h-4 w-4 ${isDark ? 'text-white' : 'text-black'}`} />
-                  </div>
-                  <div>
-                    <p className={`text-xs ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
-                      {text.wordCount}
-                    </p>
-                    <p className="text-xs font-semibold">
-                      {translation.wordCount.toLocaleString()}
-                    </p>
-                  </div>
+                  <button
+                    onClick={() => handleShare('facebook')}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                      isDark 
+                        ? 'bg-white/5 hover:bg-white/10 text-white border border-white/10' 
+                        : 'bg-black/5 hover:bg-black/10 text-black border border-black/10'
+                    }`}
+                  >
+                    <IoLogoFacebook className="h-4 w-4" />
+                    <span className="hidden sm:inline">Facebook</span>
+                  </button>
+                  <button
+                    onClick={() => handleShare('linkedin')}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                      isDark 
+                        ? 'bg-white/5 hover:bg-white/10 text-white border border-white/10' 
+                        : 'bg-black/5 hover:bg-black/10 text-black border border-black/10'
+                    }`}
+                  >
+                    <IoLogoLinkedin className="h-4 w-4" />
+                    <span className="hidden sm:inline">LinkedIn</span>
+                  </button>
+                  <button
+                    onClick={() => handleShare('twitter')}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                      isDark 
+                        ? 'bg-white/5 hover:bg-white/10 text-white border border-white/10' 
+                        : 'bg-black/5 hover:bg-black/10 text-black border border-black/10'
+                    }`}
+                  >
+                    <IoLogoTwitter className="h-4 w-4" />
+                    <span className="hidden sm:inline">Twitter</span>
+                  </button>
                 </div>
-              </div>
-
-              {/* Share Button */}
-              <div className={`mt-4 pt-4 border-t ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
-                <button
-                  onClick={handleShare}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    isDark 
-                      ? 'bg-white/5 hover:bg-white/10 text-white' 
-                      : 'bg-black/5 hover:bg-black/10 text-black'
-                  }`}
-                >
-                  <IoShareSocialOutline className="h-3.5 w-3.5" />
-                  {text.share}
-                </button>
-              </div>
-            </div>
-
-            {/* Hero Image */}
-            <div className={`relative rounded-2xl overflow-hidden mb-8 ${
-              isDark ? 'border border-white/10' : 'border border-gray-200'
-            }`}>
-              <div className="relative w-full h-[300px] md:h-[400px] lg:h-[500px]">
-                <Image
-                  src={practice.pageHeroImageUrl}
-                  alt={translation.pageHeroImageAlt}
-                  fill
-                  priority
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 66vw, 60vw"
-                  quality={90}
-                />
               </div>
             </div>
 

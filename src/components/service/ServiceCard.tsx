@@ -23,7 +23,6 @@ interface ServiceCardProps {
 }
 
 export default function ServiceCard({
-  id,
   image_url,
   translation,
   locale,
