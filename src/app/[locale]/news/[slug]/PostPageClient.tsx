@@ -199,6 +199,12 @@ export default function PostPageClient({ post, author, category, relatedPosts, l
               fill
               className="object-cover"
               priority
+              unoptimized
+              onError={(e) => {
+                // Fallback to placeholder if image fails to load
+                const target = e.target as HTMLImageElement;
+                target.src = '/images/placeholder-news.svg';
+              }}
             />
           </div>
         )}
@@ -237,6 +243,11 @@ export default function PostPageClient({ post, author, category, relatedPosts, l
                           alt={translation.title}
                           fill
                           className="object-cover transition-transform group-hover:scale-105"
+                          unoptimized
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = '/images/placeholder-news.svg';
+                          }}
                         />
                       </div>
                     )}

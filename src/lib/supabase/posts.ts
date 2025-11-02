@@ -55,15 +55,18 @@ export async function uploadPostImage(
     if (typeof file === 'string') {
       const response = await fetch(file)
       const blob = await response.blob()
-      const filename = `${postId}-${Date.now()}.jpg`
+      // Use proper timestamp (in seconds, not milliseconds to avoid overflow)
+      const timestamp = Math.floor(Date.now() / 1000)
+      const filename = `${postId}-${timestamp}.jpg`
       fileToUpload = new File([blob], filename, { type: blob.type })
     } else {
       fileToUpload = file
     }
 
-    // Generate unique filename
+    // Generate unique filename with proper timestamp
     const fileExt = fileToUpload.name.split('.').pop()
-    const fileName = `${postId}/${Date.now()}.${fileExt}`
+    const timestamp = Math.floor(Date.now() / 1000)
+    const fileName = `${postId}/${timestamp}.${fileExt}`
 
     // Upload to post-images bucket
     const { data, error } = await supabase.storage
