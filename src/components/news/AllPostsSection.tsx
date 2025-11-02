@@ -102,103 +102,87 @@ export default function AllPostsSection() {
         return
       }
 
-      // Fetch category translations AND parent info
-      const { data: categoriesData, error: categoriesError } = await supabase
-        .from('post_category_translations')
-        .select(`
-          category_id, 
-          name, 
-          slug, 
-          language,
-          post_categories!inner(parent_id)
-        `)
-        .in('category_id', categoryIds)
-        .eq('language', locale)
+      // Fetch ALL categories with parent info (to build complete hierarchy)
+      const { data: allCategoriesData, error: allCategoriesError } = await supabase
+        .from('post_categories')
+        .select('id, parent_id')
 
-      if (categoriesError) {
-        console.error('Categories query error:', categoriesError)
-        throw categoriesError
+      if (allCategoriesError) {
+        console.error('All categories query error:', allCategoriesError)
+        throw allCategoriesError
       }
 
-      // Get all parent category IDs
-      interface CategoryRecord {
-        parent_id?: string
+      // Create parent hierarchy map
+      interface CategoryHierarchy {
+        id: string
+        parent_id: string | null
       }
 
-      const parentIds = [...new Set(
-        categoriesData
-          ?.map(cat => {
-            const categoryRecord = Array.isArray(cat.post_categories) 
-              ? cat.post_categories[0] 
-              : cat.post_categories
-            return (categoryRecord as CategoryRecord)?.parent_id
-          })
-          .filter(Boolean) as string[]
+      const categoryHierarchyMap = new Map<string, string | null>()
+      allCategoriesData?.forEach((cat: CategoryHierarchy) => {
+        categoryHierarchyMap.set(cat.id, cat.parent_id)
+      })
+
+      // Function to find root parent category recursively
+      const findRootCategory = (categoryId: string): string => {
+        const parentId = categoryHierarchyMap.get(categoryId)
+        if (!parentId) {
+          // No parent, this is the root
+          return categoryId
+        }
+        // Recursively find the root
+        return findRootCategory(parentId)
+      }
+
+      // Get all unique root category IDs
+      const rootCategoryIds = [...new Set(
+        categoryIds.map(catId => findRootCategory(catId))
       )]
 
-      // Fetch parent category translations
-      interface ParentCategoryData {
+      // Fetch root category translations
+      const { data: rootCategoriesData, error: rootCategoriesError } = await supabase
+        .from('post_category_translations')
+        .select('category_id, name, slug, language')
+        .in('category_id', rootCategoryIds)
+        .eq('language', locale)
+
+      if (rootCategoriesError) {
+        console.error('Root categories query error:', rootCategoriesError)
+        throw rootCategoriesError
+      }
+
+      // Create root category map
+      interface RootCategoryData {
         category_id: string
         name: string
         slug: string
-        language: string
       }
 
-      let parentCategoriesData: ParentCategoryData[] = []
-      if (parentIds.length > 0) {
-        const { data: parentsData } = await supabase
-          .from('post_category_translations')
-          .select('category_id, name, slug, language')
-          .in('category_id', parentIds)
-          .eq('language', locale)
-        
-        parentCategoriesData = parentsData || []
-      }
-
-      // Create category map with parent info
-      const categoryMap = new Map()
-      categoriesData?.forEach(cat => {
-        const categoryRecord = Array.isArray(cat.post_categories) 
-          ? cat.post_categories[0] 
-          : cat.post_categories
-        const parentId = categoryRecord?.parent_id
-        
-        categoryMap.set(cat.category_id, {
+      const rootCategoryMap = new Map<string, RootCategoryData>()
+      rootCategoriesData?.forEach((cat: RootCategoryData) => {
+        rootCategoryMap.set(cat.category_id, {
+          category_id: cat.category_id,
           name: cat.name,
-          slug: cat.slug,
-          parentId: parentId || null
+          slug: cat.slug
         })
       })
 
-      // Create parent category map
-      const parentCategoryMap = new Map()
-      parentCategoriesData.forEach(parent => {
-        parentCategoryMap.set(parent.category_id, {
-          name: parent.name,
-          slug: parent.slug
-        })
-      })
-
-      // Group posts by PARENT category (or by category if no parent)
+      // Group posts by ROOT category
       const grouped: GroupedPosts = {}
       uniquePosts.forEach((post) => {
         if (post.category_id) {
-          const categoryInfo = categoryMap.get(post.category_id)
+          // Find the root category for this post's category
+          const rootCategoryId = findRootCategory(post.category_id)
+          const rootCategoryInfo = rootCategoryMap.get(rootCategoryId)
           
-          // Use parent category for grouping if exists, otherwise use the category itself
-          const groupByCategoryId = categoryInfo?.parentId || post.category_id
-          const groupByInfo = categoryInfo?.parentId 
-            ? parentCategoryMap.get(categoryInfo.parentId)
-            : categoryInfo
-          
-          if (!grouped[groupByCategoryId]) {
-            grouped[groupByCategoryId] = {
-              name: groupByInfo?.name || t.uncategorized,
-              slug: groupByInfo?.slug || 'uncategorized',
+          if (!grouped[rootCategoryId]) {
+            grouped[rootCategoryId] = {
+              name: rootCategoryInfo?.name || t.uncategorized,
+              slug: rootCategoryInfo?.slug || 'uncategorized',
               posts: []
             }
           }
-          grouped[groupByCategoryId].posts.push(post)
+          grouped[rootCategoryId].posts.push(post)
         }
       })
 
