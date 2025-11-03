@@ -63,6 +63,10 @@ export default function PracticePage() {
   // Get translations for current locale
   const t = practiceTranslations[locale]
 
+  if (!t) {
+    return null // or a loading indicator
+  }
+
   // Initialize state from URL params or defaults
   const [practices, setPractices] = useState<PracticeData[]>([])
   const [services, setServices] = useState<ServiceData[]>([])

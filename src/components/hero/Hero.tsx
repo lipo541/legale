@@ -4,10 +4,13 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowRight, Phone } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useParams } from 'next/navigation'
 
 export default function Hero() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
+  const params = useParams()
+  const locale = (params?.locale as 'ka' | 'en' | 'ru') || 'ka'
 
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden -mt-16 pt-16">
@@ -62,7 +65,7 @@ export default function Hero() {
           <div className="flex flex-col sm:flex-row gap-3">
             {/* დაგვიკავშირდით Button */}
             <Link
-              href="/contact"
+              href={`/${locale}/contact`}
               style={{
                 backgroundColor: isDark ? '#FFFFFF' : '#000000',
                 borderColor: isDark ? '#FFFFFF' : '#000000',
@@ -98,7 +101,7 @@ export default function Hero() {
 
             {/* იხილეთ პრაქტიკა Button */}
             <Link
-              href="/practice-areas"
+              href={`/${locale}/practices`}
               style={{
                 backgroundColor: 'transparent',
                 borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
