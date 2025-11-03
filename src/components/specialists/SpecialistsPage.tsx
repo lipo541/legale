@@ -311,8 +311,8 @@ export default function SpecialistsPage() {
   }, [fetchSpecialists]);
 
   return (
-    <div className="min-h-screen px-4 py-8 md:py-12 lg:py-16">
-      <div className="mx-auto max-w-7xl">
+    <div className="min-h-screen py-8 md:py-12 lg:py-16">
+      <div className="mx-auto max-w-[1200px]">
         {/* Breadcrumb Navigation */}
         <Breadcrumb items={[{ label: t.breadcrumb }]} />
         

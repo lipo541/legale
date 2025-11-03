@@ -20,8 +20,8 @@ body {
 
 /* Light Mode (Default - no .dark class) */
 body {
-  background-color: #E8E8E8;
-  color: #1F1F1F;
+  background-color: #FFFFFF;
+  color: #000000;
 }
 
 /* Dark Mode (.dark class on <html>) */

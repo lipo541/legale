@@ -377,7 +377,7 @@ export default function PracticePage() {
       {/* Skip to Main Content Link */}
       <SkipLink target="#main-content" />
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-[1200px]">
         {/* Breadcrumb */}
         <Breadcrumb items={[{ label: t.breadcrumb }]} />
 

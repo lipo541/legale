@@ -3,6 +3,7 @@ import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
 import Header from "@/components/header/Header";
+import Footer from "@/components/footer/Footer";
 import { Providers } from "@/components/providers/Providers";
 
 const geistSans = GeistSans;
@@ -20,13 +21,14 @@ export default function RootLayout({
   return (
     <html lang="ka" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} antialiased`}
+        className={`${geistSans.variable} antialiased flex flex-col min-h-screen`}
       >
         <Providers>
           <Header />
-          <main>
+          <main className="flex-1">
             {children}
           </main>
+          <Footer />
         </Providers>
       </body>
     </html>
