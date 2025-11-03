@@ -27,7 +27,7 @@ import { useRouter } from 'next/navigation'
 
 interface CompanyTranslation {
   language: string
-  full_name: string
+  company_name: string
   company_overview: string
   summary: string
   mission_statement: string
@@ -75,31 +75,124 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
   const [company, setCompany] = useState<Company | null>(null)
   const [cities, setCities] = useState<Array<{ id: string; name_ka: string; name_en: string; name_ru: string }>>([])
   const [loading, setLoading] = useState(true)
+  const [slugsByLocale, setSlugsByLocale] = useState<Record<string, string>>({})
 
   useEffect(() => {
     const fetchCompany = async () => {
       setLoading(true)
       try {
-        // Fetch company profile
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('company_slug', slug)
-          .eq('role', 'COMPANY')
+        // First, try to find company by slug in translations table (en/ru)
+        const { data: translationData } = await supabase
+          .from('company_translations')
+          .select('company_id')
+          .eq('slug', slug)
+          .eq('language', locale)
           .single()
+        
+        let profileData, profileError
+        
+        if (translationData?.company_id) {
+          // Found via translation slug - perfect match
+          const result = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', translationData.company_id)
+            .eq('role', 'COMPANY')
+            .single()
+          
+          profileData = result.data
+          profileError = result.error
+        } else {
+          // Fallback: try ANY language in translations, then redirect if needed
+          const { data: anyLangSlug } = await supabase
+            .from('company_translations')
+            .select('company_id, language, slug')
+            .eq('slug', slug)
+            .limit(1)
+            .single()
+
+          if (anyLangSlug) {
+            // Get the correct slug for current locale
+            const { data: correctSlugData } = await supabase
+              .from('company_translations')
+              .select('slug')
+              .eq('company_id', anyLangSlug.company_id)
+              .eq('language', locale)
+              .single()
+
+            if (correctSlugData?.slug && correctSlugData.slug !== slug) {
+              router.replace(`/${locale}/companies/${correctSlugData.slug}`)
+              return
+            }
+
+            // Fetch the profile
+            const result = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', anyLangSlug.company_id)
+              .eq('role', 'COMPANY')
+              .single()
+            
+            profileData = result.data
+            profileError = result.error
+          } else {
+            // Last resort: try company_slug in profiles table (for Georgian/ka)
+            const result = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('company_slug', slug)
+              .eq('role', 'COMPANY')
+              .single()
+            
+            profileData = result.data
+            profileError = result.error
+          }
+        }
 
         if (profileError || !profileData) {
-          console.error('Error fetching company:', profileError)
           setCompany(null)
           setLoading(false)
           return
         }
 
-        // Fetch company translations
+        // Fetch company translations for all languages
         const { data: translationsData } = await supabase
           .from('company_translations')
           .select('*')
           .eq('company_id', profileData.id)
+          .in('language', ['en', 'ru'])
+
+        // Build Georgian translation from profiles table
+        const georgianTranslation: CompanyTranslation = {
+          language: 'ka',
+          company_name: profileData.full_name || '',
+          company_overview: profileData.company_overview || '',
+          summary: profileData.summary || '',
+          mission_statement: profileData.mission_statement || '',
+          vision_values: profileData.vision_values || '',
+          history: profileData.history || '',
+          how_we_work: profileData.how_we_work || ''
+        }
+
+        // Combine Georgian with en/ru translations
+        const allTranslations = [georgianTranslation, ...(translationsData || [])]
+
+        // Build slugs map for language switching
+        const slugsMap: Record<string, string> = {
+          ka: profileData.company_slug || slug, // Georgian always from profiles
+          en: profileData.company_slug || slug,
+          ru: profileData.company_slug || slug
+        }
+
+        if (translationsData && translationsData.length > 0) {
+          translationsData.forEach((trans: { slug?: string; language: string }) => {
+            if (trans.slug) {
+              slugsMap[trans.language] = trans.slug
+            }
+          })
+        }
+
+        setSlugsByLocale(slugsMap)
 
         // Fetch company specialists
         const { data: specialistsData } = await supabase
@@ -112,7 +205,7 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
         // Combine all data
         const company = {
           ...profileData,
-          company_translations: translationsData || [],
+          company_translations: allTranslations,
           specialists: specialistsData || []
         }
 
@@ -146,6 +239,13 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
 
     fetchCompany()
   }, [slug, supabase])
+
+  // Redirect to correct slug when locale changes
+  useEffect(() => {
+    if (slugsByLocale[locale] && slugsByLocale[locale] !== slug) {
+      router.replace(`/${locale}/companies/${slugsByLocale[locale]}`)
+    }
+  }, [locale, slug, slugsByLocale, router])
 
   if (loading) {
     return (
@@ -184,354 +284,371 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
   const translation = company.company_translations?.find(t => t.language === locale) || company.company_translations?.[0]
 
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-black text-white' : 'bg-white text-black'}`}>
-      {/* Header with Back Button */}
-      <div className={`border-b ${isDark ? 'border-white/10' : 'border-black/10'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div className={`min-h-screen transition-colors duration-300 ${
+      isDark ? 'bg-black text-white' : 'bg-white text-black'
+    }`}>
+      {/* Header Section - Clean & Minimal */}
+      <div className={`border-b ${isDark ? 'border-white/[0.08]' : 'border-black/[0.08]'}`}>
+        <div className="mx-auto max-w-[1200px] px-6 sm:px-8 lg:px-10 py-8 sm:py-12">
+          {/* Back Button */}
           <button
             onClick={() => router.push(`/${locale}/companies`)}
-            className={`flex items-center gap-2 text-sm transition-colors ${
-              isDark ? 'text-white/70 hover:text-white' : 'text-black/70 hover:text-black'
+            className={`group flex items-center gap-2 mb-8 text-sm font-light transition-colors ${
+              isDark ? 'text-white/50 hover:text-white/80' : 'text-black/50 hover:text-black/80'
             }`}
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
             {t.backButton}
           </button>
-        </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Left Sidebar - Company Info */}
-          <div className="lg:col-span-1">
-            <div className={`sticky top-8 rounded-xl border p-6 sm:p-8 ${
-              isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-white shadow-lg'
-            }`}>
-              {/* Company Logo */}
-              {company.logo_url && (
-                <div className="mb-6 flex justify-center">
-                  <img
-                    src={company.logo_url}
-                    alt={translation?.full_name || company.company_slug}
-                    className="h-24 w-24 sm:h-32 sm:w-32 rounded-lg object-cover"
-                  />
+          <div className="flex flex-col items-center text-center">
+            {/* Company Logo - Large, Centered */}
+            <div className="mb-6">
+              {company.logo_url ? (
+                <img
+                  src={company.logo_url}
+                  alt={translation?.company_name || company.company_slug}
+                  className={`w-32 h-32 sm:w-40 sm:h-40 rounded-2xl object-cover ring-1 ${
+                    isDark ? 'ring-white/10' : 'ring-black/10'
+                  }`}
+                />
+              ) : (
+                <div className={`w-32 h-32 sm:w-40 sm:h-40 rounded-2xl flex items-center justify-center ring-1 ${
+                  isDark ? 'bg-white/5 ring-white/10' : 'bg-black/5 ring-black/10'
+                }`}>
+                  <Building2 className="h-16 w-16 sm:h-20 sm:w-20 opacity-20" />
                 </div>
               )}
+            </div>
 
-              {/* Company Name */}
-              <h1 className={`text-2xl sm:text-3xl font-bold text-center mb-2 ${
-                isDark ? 'text-white' : 'text-black'
+            {/* Company Name - Large, Light Font */}
+            <h1 className="text-4xl sm:text-5xl font-extralight tracking-tight mb-3">
+              {translation?.company_name || company.company_slug}
+            </h1>
+            
+            {/* Summary */}
+            {translation?.summary && (
+              <p className={`text-lg sm:text-xl font-light max-w-2xl mb-8 ${
+                isDark ? 'text-white/60' : 'text-black/60'
               }`}>
-                {translation?.full_name || company.company_slug}
-              </h1>
+                {translation.summary}
+              </p>
+            )}
 
-              {/* Summary */}
-              {translation?.summary && (
-                <p className={`text-center text-sm sm:text-base mb-6 ${
-                  isDark ? 'text-white/70' : 'text-black/70'
-                }`}>
-                  {translation.summary}
-                </p>
+            {/* Contact Info - Horizontal Pills */}
+            <div className="flex flex-wrap justify-center gap-3 mb-6">
+              {company.email && (
+                <a
+                  href={`mailto:${company.email}`}
+                  className={`group flex items-center gap-2 px-4 py-2 rounded-full text-sm font-light transition-all ${
+                    isDark 
+                      ? 'bg-white/5 hover:bg-white/10 ring-1 ring-white/10' 
+                      : 'bg-black/5 hover:bg-black/10 ring-1 ring-black/10'
+                  }`}
+                >
+                  <Mail className="h-4 w-4 opacity-50" />
+                  <span className="max-w-[200px] truncate">{company.email}</span>
+                </a>
               )}
+              {company.phone_number && (
+                <a
+                  href={`tel:${company.phone_number}`}
+                  className={`group flex items-center gap-2 px-4 py-2 rounded-full text-sm font-light transition-all ${
+                    isDark 
+                      ? 'bg-white/5 hover:bg-white/10 ring-1 ring-white/10' 
+                      : 'bg-black/5 hover:bg-black/10 ring-1 ring-black/10'
+                  }`}
+                >
+                  <Phone className="h-4 w-4 opacity-50" />
+                  {company.phone_number}
+                </a>
+              )}
+              {company.website && (
+                <a
+                  href={company.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`group flex items-center gap-2 px-4 py-2 rounded-full text-sm font-light transition-all ${
+                    isDark 
+                      ? 'bg-white/5 hover:bg-white/10 ring-1 ring-white/10' 
+                      : 'bg-black/5 hover:bg-black/10 ring-1 ring-black/10'
+                  }`}
+                >
+                  <Globe className="h-4 w-4 opacity-50" />
+                  <span className="max-w-[200px] truncate">{company.website}</span>
+                </a>
+              )}
+            </div>
 
-              {/* Contact Info */}
-              <div className="space-y-3 mb-6">
-                {company.email && (
-                  <a
-                    href={`mailto:${company.email}`}
-                    className={`flex items-center gap-3 text-sm sm:text-base transition-colors justify-center lg:justify-start ${
-                      isDark ? 'text-white/70 hover:text-white' : 'text-black/70 hover:text-black'
-                    }`}
-                  >
-                    <Mail className="h-4 w-4 sm:h-5 sm:w-5" />
-                    <span className="break-all">{company.email}</span>
-                  </a>
-                )}
-                {company.phone_number && (
-                  <a
-                    href={`tel:${company.phone_number}`}
-                    className={`flex items-center gap-3 text-sm sm:text-base transition-colors justify-center lg:justify-start ${
-                      isDark ? 'text-white/70 hover:text-white' : 'text-black/70 hover:text-black'
-                    }`}
-                  >
-                    <Phone className="h-4 w-4 sm:h-5 sm:w-5" />
-                    {company.phone_number}
-                  </a>
-                )}
-                {company.website && (
-                  <a
-                    href={company.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`flex items-center gap-3 text-sm sm:text-base transition-colors justify-center lg:justify-start ${
-                      isDark ? 'text-white/70 hover:text-white' : 'text-black/70 hover:text-black'
-                    }`}
-                  >
-                    <Globe className="h-4 w-4 sm:h-5 sm:w-5" />
-                    <span className="break-all">{company.website}</span>
-                  </a>
-                )}
+            {/* Address & Cities */}
+            {(company.address || cities.length > 0) && (
+              <div className="flex flex-col gap-3 mb-6">
                 {company.address && (
-                  <div className={`flex items-center gap-3 text-sm sm:text-base justify-center lg:justify-start ${
-                    isDark ? 'text-white/70' : 'text-black/70'
+                  <div className={`flex items-center justify-center gap-2 text-sm font-light ${
+                    isDark ? 'text-white/50' : 'text-black/50'
                   }`}>
-                    <MapPin className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <MapPin className="h-4 w-4" />
                     <span>{company.address}</span>
                   </div>
                 )}
                 {cities.length > 0 && (
-                  <div className="flex flex-col gap-2 justify-center lg:justify-start">
-                    <div className={`flex items-center gap-2 text-sm sm:text-base ${
-                      isDark ? 'text-white/70' : 'text-black/70'
-                    }`}>
-                      <MapPin className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                      <span className="font-medium">
-                        {locale === 'ka' ? 'მუშაობს ქალაქებში:' : locale === 'en' ? 'Works in cities:' : 'Работает в городах:'}
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {cities.map(city => (
+                      <span
+                        key={city.id}
+                        className={`px-3 py-1 rounded-full text-xs font-light ${
+                          isDark 
+                            ? 'bg-white/5 ring-1 ring-white/10' 
+                            : 'bg-black/5 ring-1 ring-black/10'
+                        }`}
+                      >
+                        {locale === 'ka' ? city.name_ka : locale === 'en' ? city.name_en : city.name_ru}
                       </span>
-                    </div>
-                    <div className="flex flex-wrap gap-2 pl-7 lg:pl-7">
-                      {cities.map(city => (
-                        <span
-                          key={city.id}
-                          className={`px-3 py-1.5 rounded-lg text-sm sm:text-base font-medium ${
-                            isDark 
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                              : 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
-                          }`}
-                        >
-                          {locale === 'ka' ? city.name_ka : locale === 'en' ? city.name_en : city.name_ru}
-                        </span>
-                      ))}
-                    </div>
+                    ))}
                   </div>
                 )}
               </div>
-
-              {/* Social Links */}
-              {(company.facebook_link || company.instagram_link || company.linkedin_link || company.twitter_link) && (
-                <div className="mb-4 sm:mb-6">
-                  <p className={`text-xs sm:text-sm mb-3 text-center lg:text-left ${
-                    isDark ? 'text-white/60' : 'text-black/60'
-                  }`}>
-                    გაზიარება:
-                  </p>
-                  <div className="flex flex-wrap gap-2 sm:gap-3 justify-center lg:justify-start">
-                    {company.facebook_link && (
-                      <a
-                        href={company.facebook_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
-                          isDark 
-                            ? 'bg-white/5 hover:bg-white/10 border border-white/10' 
-                            : 'bg-black/5 hover:bg-black/10 border border-black/10'
-                        }`}
-                      >
-                        <Facebook className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        Facebook
-                      </a>
-                    )}
-                    {company.instagram_link && (
-                      <a
-                        href={company.instagram_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
-                          isDark 
-                            ? 'bg-white/5 hover:bg-white/10 border border-white/10' 
-                            : 'bg-black/5 hover:bg-black/10 border border-black/10'
-                        }`}
-                      >
-                        <Instagram className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        Instagram
-                      </a>
-                    )}
-                    {company.linkedin_link && (
-                      <a
-                        href={company.linkedin_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
-                          isDark 
-                            ? 'bg-white/5 hover:bg-white/10 border border-white/10' 
-                            : 'bg-black/5 hover:bg-black/10 border border-black/10'
-                        }`}
-                      >
-                        <Linkedin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        LinkedIn
-                      </a>
-                    )}
-                    {company.twitter_link && (
-                      <a
-                        href={company.twitter_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
-                          isDark 
-                            ? 'bg-white/5 hover:bg-white/10 border border-white/10' 
-                            : 'bg-black/5 hover:bg-black/10 border border-black/10'
-                        }`}
-                      >
-                        <Twitter className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        Twitter
-                      </a>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right Content - Company Details */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Company Overview */}
-            {translation?.company_overview && (
-              <section className={`rounded-xl border p-6 sm:p-8 ${
-                isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-white shadow-lg'
-              }`}>
-                <div className="flex items-center gap-3 mb-4">
-                  <Building2 className={`h-6 w-6 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                  <h2 className="text-xl sm:text-2xl font-bold">
-                    {locale === 'ka' ? 'კომპანიის შესახებ' : locale === 'en' ? 'About Company' : 'О компании'}
-                  </h2>
-                </div>
-                <p className={`whitespace-pre-wrap text-sm sm:text-base leading-relaxed ${
-                  isDark ? 'text-white/80' : 'text-black/80'
-                }`}>
-                  {translation.company_overview}
-                </p>
-              </section>
             )}
 
-            {/* Mission Statement */}
-            {translation?.mission_statement && (
-              <section className={`rounded-xl border p-6 sm:p-8 ${
-                isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-white shadow-lg'
-              }`}>
-                <div className="flex items-center gap-3 mb-4">
-                  <Target className={`h-6 w-6 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                  <h2 className="text-xl sm:text-2xl font-bold">
-                    {locale === 'ka' ? 'მისია' : locale === 'en' ? 'Mission' : 'Миссия'}
-                  </h2>
-                </div>
-                <p className={`whitespace-pre-wrap text-sm sm:text-base leading-relaxed ${
-                  isDark ? 'text-white/80' : 'text-black/80'
-                }`}>
-                  {translation.mission_statement}
-                </p>
-              </section>
-            )}
-
-            {/* Vision & Values */}
-            {translation?.vision_values && (
-              <section className={`rounded-xl border p-6 sm:p-8 ${
-                isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-white shadow-lg'
-              }`}>
-                <div className="flex items-center gap-3 mb-4">
-                  <Lightbulb className={`h-6 w-6 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                  <h2 className="text-xl sm:text-2xl font-bold">
-                    {locale === 'ka' ? 'ხედვა და ღირებულებები' : locale === 'en' ? 'Vision & Values' : 'Видение и ценности'}
-                  </h2>
-                </div>
-                <p className={`whitespace-pre-wrap text-sm sm:text-base leading-relaxed ${
-                  isDark ? 'text-white/80' : 'text-black/80'
-                }`}>
-                  {translation.vision_values}
-                </p>
-              </section>
-            )}
-
-            {/* History */}
-            {translation?.history && (
-              <section className={`rounded-xl border p-6 sm:p-8 ${
-                isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-white shadow-lg'
-              }`}>
-                <div className="flex items-center gap-3 mb-4">
-                  <History className={`h-6 w-6 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                  <h2 className="text-xl sm:text-2xl font-bold">
-                    {locale === 'ka' ? 'ისტორია' : locale === 'en' ? 'History' : 'История'}
-                  </h2>
-                </div>
-                <p className={`whitespace-pre-wrap text-sm sm:text-base leading-relaxed ${
-                  isDark ? 'text-white/80' : 'text-black/80'
-                }`}>
-                  {translation.history}
-                </p>
-              </section>
-            )}
-
-            {/* How We Work */}
-            {translation?.how_we_work && (
-              <section className={`rounded-xl border p-6 sm:p-8 ${
-                isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-white shadow-lg'
-              }`}>
-                <div className="flex items-center gap-3 mb-4">
-                  <FileText className={`h-6 w-6 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                  <h2 className="text-xl sm:text-2xl font-bold">
-                    {locale === 'ka' ? 'როგორ ვმუშაობთ' : locale === 'en' ? 'How We Work' : 'Как мы работаем'}
-                  </h2>
-                </div>
-                <p className={`whitespace-pre-wrap text-sm sm:text-base leading-relaxed ${
-                  isDark ? 'text-white/80' : 'text-black/80'
-                }`}>
-                  {translation.how_we_work}
-                </p>
-              </section>
-            )}
-
-            {/* Company Specialists */}
-            {company.specialists && company.specialists.length > 0 && (
-              <section className={`rounded-xl border p-6 sm:p-8 ${
-                isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-white shadow-lg'
-              }`}>
-                <div className="flex items-center gap-3 mb-6">
-                  <Users className={`h-6 w-6 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                  <h2 className="text-xl sm:text-2xl font-bold">
-                    {locale === 'ka' ? 'ჩვენი სპეციალისტები' : locale === 'en' ? 'Our Specialists' : 'Наши специалисты'}
-                  </h2>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {company.specialists.map((specialist) => (
-                    <button
-                      key={specialist.id}
-                      onClick={() => router.push(`/${locale}/specialists/${specialist.slug}`)}
-                      className={`flex items-center gap-4 p-4 rounded-lg border transition-all text-left ${
-                        isDark 
-                          ? 'border-white/10 bg-white/5 hover:bg-white/10' 
-                          : 'border-black/10 bg-white hover:bg-gray-50 shadow'
-                      }`}
-                    >
-                      {specialist.avatar_url && (
-                        <img
-                          src={specialist.avatar_url}
-                          alt={specialist.full_name}
-                          className="h-16 w-16 rounded-full object-cover"
-                        />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <h3 className={`font-semibold truncate ${
-                          isDark ? 'text-white' : 'text-black'
-                        }`}>
-                          {specialist.full_name}
-                        </h3>
-                        {specialist.role_title && (
-                          <p className={`text-sm truncate ${
-                            isDark ? 'text-white/60' : 'text-black/60'
-                          }`}>
-                            {specialist.role_title}
-                          </p>
-                        )}
-                      </div>
-                      <Briefcase className={`h-5 w-5 flex-shrink-0 ${
-                        isDark ? 'text-white/40' : 'text-black/40'
-                      }`} />
-                    </button>
-                  ))}
-                </div>
-              </section>
+            {/* Social Links - Minimal Icons */}
+            {(company.facebook_link || company.instagram_link || company.linkedin_link || company.twitter_link) && (
+              <div className="flex gap-3">
+                {company.facebook_link && (
+                  <a
+                    href={company.facebook_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`p-2 rounded-full transition-all ${
+                      isDark 
+                        ? 'bg-white/5 hover:bg-white/10 ring-1 ring-white/10' 
+                        : 'bg-black/5 hover:bg-black/10 ring-1 ring-black/10'
+                    }`}
+                  >
+                    <Facebook className="h-4 w-4 opacity-50" />
+                  </a>
+                )}
+                {company.instagram_link && (
+                  <a
+                    href={company.instagram_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`p-2 rounded-full transition-all ${
+                      isDark 
+                        ? 'bg-white/5 hover:bg-white/10 ring-1 ring-white/10' 
+                        : 'bg-black/5 hover:bg-black/10 ring-1 ring-black/10'
+                    }`}
+                  >
+                    <Instagram className="h-4 w-4 opacity-50" />
+                  </a>
+                )}
+                {company.linkedin_link && (
+                  <a
+                    href={company.linkedin_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`p-2 rounded-full transition-all ${
+                      isDark 
+                        ? 'bg-white/5 hover:bg-white/10 ring-1 ring-white/10' 
+                        : 'bg-black/5 hover:bg-black/10 ring-1 ring-black/10'
+                    }`}
+                  >
+                    <Linkedin className="h-4 w-4 opacity-50" />
+                  </a>
+                )}
+                {company.twitter_link && (
+                  <a
+                    href={company.twitter_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`p-2 rounded-full transition-all ${
+                      isDark 
+                        ? 'bg-white/5 hover:bg-white/10 ring-1 ring-white/10' 
+                        : 'bg-black/5 hover:bg-black/10 ring-1 ring-black/10'
+                    }`}
+                  >
+                    <Twitter className="h-4 w-4 opacity-50" />
+                  </a>
+                )}
+              </div>
             )}
           </div>
         </div>
+      </div>
+
+      {/* Main Content - Centered */}
+      <div className="mx-auto max-w-[1200px] px-6 sm:px-8 lg:px-10 py-12 sm:py-16 space-y-12">
+        {/* Company Overview */}
+        {translation?.company_overview && (
+          <section className={`p-8 sm:p-10 rounded-2xl ring-1 ${
+            isDark ? 'bg-white/[0.02] ring-white/[0.08]' : 'bg-black/[0.02] ring-black/[0.08]'
+          }`}>
+            <div className="flex items-center gap-3 mb-6">
+              <div className={`p-2 rounded-xl ${
+                isDark ? 'bg-white/5' : 'bg-black/5'
+              }`}>
+                <Building2 className="h-5 w-5 opacity-50" />
+              </div>
+              <h2 className="text-2xl font-extralight tracking-tight">
+                {locale === 'ka' ? 'კომპანიის შესახებ' : locale === 'en' ? 'About Company' : 'О компании'}
+              </h2>
+            </div>
+            <p className={`text-[15px] leading-relaxed font-light whitespace-pre-wrap ${
+              isDark ? 'text-white/70' : 'text-black/70'
+            }`}>
+              {translation.company_overview}
+            </p>
+          </section>
+        )}
+
+        {/* Mission Statement */}
+        {translation?.mission_statement && (
+          <section className={`p-8 sm:p-10 rounded-2xl ring-1 ${
+            isDark ? 'bg-white/[0.02] ring-white/[0.08]' : 'bg-black/[0.02] ring-black/[0.08]'
+          }`}>
+            <div className="flex items-center gap-3 mb-6">
+              <div className={`p-2 rounded-xl ${
+                isDark ? 'bg-white/5' : 'bg-black/5'
+              }`}>
+                <Target className="h-5 w-5 opacity-50" />
+              </div>
+              <h2 className="text-2xl font-extralight tracking-tight">
+                {locale === 'ka' ? 'მისია' : locale === 'en' ? 'Mission' : 'Миссия'}
+              </h2>
+            </div>
+            <p className={`text-[15px] leading-relaxed font-light whitespace-pre-wrap ${
+              isDark ? 'text-white/70' : 'text-black/70'
+            }`}>
+              {translation.mission_statement}
+            </p>
+          </section>
+        )}
+
+        {/* Vision & Values */}
+        {translation?.vision_values && (
+          <section className={`p-8 sm:p-10 rounded-2xl ring-1 ${
+            isDark ? 'bg-white/[0.02] ring-white/[0.08]' : 'bg-black/[0.02] ring-black/[0.08]'
+          }`}>
+            <div className="flex items-center gap-3 mb-6">
+              <div className={`p-2 rounded-xl ${
+                isDark ? 'bg-white/5' : 'bg-black/5'
+              }`}>
+                <Lightbulb className="h-5 w-5 opacity-50" />
+              </div>
+              <h2 className="text-2xl font-extralight tracking-tight">
+                {locale === 'ka' ? 'ხედვა და ღირებულებები' : locale === 'en' ? 'Vision & Values' : 'Видение и ценности'}
+              </h2>
+            </div>
+            <p className={`text-[15px] leading-relaxed font-light whitespace-pre-wrap ${
+              isDark ? 'text-white/70' : 'text-black/70'
+            }`}>
+              {translation.vision_values}
+            </p>
+          </section>
+        )}
+
+        {/* History */}
+        {translation?.history && (
+          <section className={`p-8 sm:p-10 rounded-2xl ring-1 ${
+            isDark ? 'bg-white/[0.02] ring-white/[0.08]' : 'bg-black/[0.02] ring-black/[0.08]'
+          }`}>
+            <div className="flex items-center gap-3 mb-6">
+              <div className={`p-2 rounded-xl ${
+                isDark ? 'bg-white/5' : 'bg-black/5'
+              }`}>
+                <History className="h-5 w-5 opacity-50" />
+              </div>
+              <h2 className="text-2xl font-extralight tracking-tight">
+                {locale === 'ka' ? 'ისტორია' : locale === 'en' ? 'History' : 'История'}
+              </h2>
+            </div>
+            <p className={`text-[15px] leading-relaxed font-light whitespace-pre-wrap ${
+              isDark ? 'text-white/70' : 'text-black/70'
+            }`}>
+              {translation.history}
+            </p>
+          </section>
+        )}
+
+        {/* How We Work */}
+        {translation?.how_we_work && (
+          <section className={`p-8 sm:p-10 rounded-2xl ring-1 ${
+            isDark ? 'bg-white/[0.02] ring-white/[0.08]' : 'bg-black/[0.02] ring-black/[0.08]'
+          }`}>
+            <div className="flex items-center gap-3 mb-6">
+              <div className={`p-2 rounded-xl ${
+                isDark ? 'bg-white/5' : 'bg-black/5'
+              }`}>
+                <FileText className="h-5 w-5 opacity-50" />
+              </div>
+              <h2 className="text-2xl font-extralight tracking-tight">
+                {locale === 'ka' ? 'როგორ ვმუშაობთ' : locale === 'en' ? 'How We Work' : 'Как мы работаем'}
+              </h2>
+            </div>
+            <p className={`text-[15px] leading-relaxed font-light whitespace-pre-wrap ${
+              isDark ? 'text-white/70' : 'text-black/70'
+            }`}>
+              {translation.how_we_work}
+            </p>
+          </section>
+        )}
+
+        {/* Company Specialists */}
+        {company.specialists && company.specialists.length > 0 && (
+          <section className={`p-8 sm:p-10 rounded-2xl ring-1 ${
+            isDark ? 'bg-white/[0.02] ring-white/[0.08]' : 'bg-black/[0.02] ring-black/[0.08]'
+          }`}>
+            <div className="flex items-center gap-3 mb-6">
+              <div className={`p-2 rounded-xl ${
+                isDark ? 'bg-white/5' : 'bg-black/5'
+              }`}>
+                <Users className="h-5 w-5 opacity-50" />
+              </div>
+              <h2 className="text-2xl font-extralight tracking-tight">
+                {locale === 'ka' ? 'ჩვენი სპეციალისტები' : locale === 'en' ? 'Our Specialists' : 'Наши специалисты'}
+              </h2>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {company.specialists.map((specialist) => (
+                <button
+                  key={specialist.id}
+                  onClick={() => router.push(`/${locale}/specialists/${specialist.slug}`)}
+                  className={`group flex items-center gap-4 p-4 rounded-xl transition-all text-left ring-1 ${
+                    isDark 
+                      ? 'bg-white/[0.02] hover:bg-white/[0.05] ring-white/[0.08]' 
+                      : 'bg-black/[0.02] hover:bg-black/[0.05] ring-black/[0.08]'
+                  }`}
+                >
+                  {specialist.avatar_url ? (
+                    <img
+                      src={specialist.avatar_url}
+                      alt={specialist.full_name}
+                      className="h-14 w-14 rounded-full object-cover ring-1 ring-black/5"
+                    />
+                  ) : (
+                    <div className={`h-14 w-14 rounded-full flex items-center justify-center ${
+                      isDark ? 'bg-white/5' : 'bg-black/5'
+                    }`}>
+                      <Users className="h-6 w-6 opacity-20" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-light text-base truncate mb-0.5">
+                      {specialist.full_name}
+                    </h3>
+                    {specialist.role_title && (
+                      <p className={`text-sm font-light truncate ${
+                        isDark ? 'text-white/50' : 'text-black/50'
+                      }`}>
+                        {specialist.role_title}
+                      </p>
+                    )}
+                  </div>
+                  <Briefcase className={`h-4 w-4 flex-shrink-0 opacity-30 group-hover:opacity-50 transition-opacity`} />
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   )

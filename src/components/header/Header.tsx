@@ -10,6 +10,7 @@ import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { LanguageSwitcher } from '@/components/language/LanguageSwitcher'
 import type { Locale } from '@/lib/i18n/config'
 import { createClient } from '@/lib/supabase/client'
+import { headerTranslations } from '@/translations/header'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -29,6 +30,7 @@ export default function Header() {
 
   // Extract current locale from pathname
   const currentLocale = (pathname.split('/')[1] as Locale) || 'ka'
+  const t = headerTranslations[currentLocale] || headerTranslations.ka
 
   // Check authentication status
   useEffect(() => {
@@ -97,25 +99,25 @@ export default function Header() {
   }
 
   const navLinks = [
-    { href: `/${currentLocale}/practices`, label: 'პრაქტიკა' },
-    { href: `/${currentLocale}/specialists`, label: 'სპეციალისტები' },
-    { href: `/${currentLocale}/companies`, label: 'კომპანიები' },
-    { href: `/${currentLocale}/news`, label: 'ბლოგი' },
-    { href: `/${currentLocale}/contact`, label: 'კონტაქტი' },
+    { href: `/${currentLocale}/practices`, label: t.practices },
+    { href: `/${currentLocale}/specialists`, label: t.specialists },
+    { href: `/${currentLocale}/companies`, label: t.companies },
+    { href: `/${currentLocale}/news`, label: t.news },
+    { href: `/${currentLocale}/contact`, label: t.contact },
   ]
 
   return (
     <header className={`sticky top-0 z-50 backdrop-blur-2xl backdrop-saturate-150 border-b transition-colors duration-150 ${isDark ? 'bg-black/20 border-white/10' : 'bg-white/20 border-black/10'}`}>
-      <div className="mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1200px] px-6 sm:px-8 lg:px-10">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
+          <Link href="/" className="flex items-center">
             <Image
               src={isDark ? "/asset/Legal.ge.png" : "/asset/legal.ge.black.png"}
               alt="LegalGE"
               width={140}
               height={40}
-              className="object-contain h-8 sm:h-9"
+              className="object-contain object-left h-8 sm:h-9"
               priority
             />
             {/* Visible text for screen-readers only (keeps semantic branding) */}
@@ -179,7 +181,7 @@ export default function Header() {
                         className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                       >
                         <LayoutDashboard className="w-4 h-4" />
-                        Admin Dashboard
+                        {t.adminDashboard}
                       </Link>
                     )}
 
@@ -207,7 +209,7 @@ export default function Header() {
                         className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                       >
                         <LayoutDashboard className="w-4 h-4" />
-                        Admin Panel
+                        {t.dashboard}
                       </Link>
                     )}
 
@@ -235,7 +237,7 @@ export default function Header() {
                         className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                       >
                         <LayoutDashboard className="w-4 h-4" />
-                        Moderator Panel
+                        {t.dashboard}
                       </Link>
                     )}
 
@@ -263,7 +265,7 @@ export default function Header() {
                         className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                       >
                         <LayoutDashboard className="w-4 h-4" />
-                        Company Dashboard
+                        {t.dashboard}
                       </Link>
                     )}
 
@@ -291,7 +293,7 @@ export default function Header() {
                         className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                       >
                         <LayoutDashboard className="w-4 h-4" />
-                        Specialist Dashboard
+                        {t.dashboard}
                       </Link>
                     )}
 
@@ -319,7 +321,7 @@ export default function Header() {
                         className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                       >
                         <LayoutDashboard className="w-4 h-4" />
-                        My Dashboard
+                        {t.dashboard}
                       </Link>
                     )}
 
@@ -346,7 +348,7 @@ export default function Header() {
                         }}
                         className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                       >
-                        {hasPendingRequest ? 'Pending' : 'პროფილი'}
+                        {hasPendingRequest ? t.requestPending : t.myProfile}
                       </Link>
                     )}
 
@@ -376,7 +378,7 @@ export default function Header() {
                       className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                     >
                       <LogOut className="w-4 h-4" />
-                      გასვლა
+                      {t.logout}
                     </button>
                     </>
                     )}
@@ -404,7 +406,7 @@ export default function Header() {
                       }}
                       className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                     >
-                      შესვლა
+                      {t.login}
                     </Link>
                     <Link 
                       href={`/${currentLocale}/register`}
@@ -430,7 +432,7 @@ export default function Header() {
                       }}
                       className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                     >
-                      რეგისტრაცია
+                      {t.register}
                     </Link>
                   </>
                 )}
@@ -505,7 +507,7 @@ export default function Header() {
                             className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 active:scale-[0.98]"
                           >
                             <LayoutDashboard className="w-4 h-4" />
-                            Admin Dashboard
+                            {t.adminDashboard}
                           </Link>
                         )}
 
@@ -524,7 +526,7 @@ export default function Header() {
                             className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 active:scale-[0.98]"
                           >
                             <LayoutDashboard className="w-4 h-4" />
-                            Admin Panel
+                            {t.dashboard}
                           </Link>
                         )}
 
@@ -543,7 +545,7 @@ export default function Header() {
                             className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 active:scale-[0.98]"
                           >
                             <LayoutDashboard className="w-4 h-4" />
-                            Moderator Panel
+                            {t.dashboard}
                           </Link>
                         )}
 
@@ -562,7 +564,7 @@ export default function Header() {
                             className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 active:scale-[0.98]"
                           >
                             <LayoutDashboard className="w-4 h-4" />
-                            Company Dashboard
+                            {t.dashboard}
                           </Link>
                         )}
 
@@ -581,7 +583,7 @@ export default function Header() {
                             className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 active:scale-[0.98]"
                           >
                             <LayoutDashboard className="w-4 h-4" />
-                            Specialist Dashboard
+                            {t.dashboard}
                           </Link>
                         )}
 
@@ -600,7 +602,7 @@ export default function Header() {
                             className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 active:scale-[0.98]"
                           >
                             <LayoutDashboard className="w-4 h-4" />
-                            My Dashboard
+                            {t.dashboard}
                           </Link>
                         )}
 
@@ -618,7 +620,7 @@ export default function Header() {
                             }}
                             className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 active:scale-[0.98]"
                           >
-                            {hasPendingRequest ? 'Pending' : 'პროფილი'}
+                            {hasPendingRequest ? t.requestPending : t.myProfile}
                           </Link>
                         )}
                         
@@ -636,7 +638,7 @@ export default function Header() {
                           className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 active:scale-[0.98]"
                         >
                           <LogOut className="w-4 h-4" />
-                          გასვლა
+                          {t.logout}
                         </button>
                         </>
                         )}
@@ -655,7 +657,7 @@ export default function Header() {
                           }}
                           className="px-4 py-2 rounded-lg text-base font-medium text-center transition-all duration-300 active:scale-[0.98]"
                         >
-                          შესვლა
+                          {t.login}
                         </Link>
                         <Link
                           href={`/${currentLocale}/register`}
@@ -670,7 +672,7 @@ export default function Header() {
                           }}
                           className="px-4 py-2 rounded-lg text-base font-medium text-center transition-all duration-300 active:scale-[0.98]"
                         >
-                          რეგისტრაცია
+                          {t.register}
                         </Link>
                       </>
                     )}

@@ -13,9 +13,6 @@ export default function ContentTab({ companyId }: { companyId: string }) {
   const supabase = createClient()
   
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
-  const [currentSlug, setCurrentSlug] = useState<string>('')
-  const [isSlugEditable, setIsSlugEditable] = useState(false)
-  const [companyName, setCompanyName] = useState<string>('')
 
   const currentData = translations[activeLanguage].content
 
@@ -40,21 +37,19 @@ export default function ContentTab({ companyId }: { companyId: string }) {
       .replace(/-+$/, '')            // Trim - from end
   }
 
-  // Fetch avatar URL, current slug and company name from profiles
+  // Fetch avatar URL from profiles
   useEffect(() => {
     const fetchProfileData = async () => {
       if (!companyId) return
       
       const { data: profile } = await supabase
         .from('profiles')
-        .select('avatar_url, company_slug, full_name')
+        .select('avatar_url')
         .eq('id', companyId)
         .single()
       
-      if (profile) {
-        if (profile.avatar_url) setAvatarUrl(profile.avatar_url)
-        if (profile.company_slug) setCurrentSlug(profile.company_slug)
-        if (profile.full_name) setCompanyName(profile.full_name)
+      if (profile?.avatar_url) {
+        setAvatarUrl(profile.avatar_url)
       }
     }
     
@@ -63,32 +58,25 @@ export default function ContentTab({ companyId }: { companyId: string }) {
 
   const handleSlugChange = (value: string) => {
     const sanitizedSlug = generateSlug(value)
-    setCurrentSlug(sanitizedSlug)
+    updateContentField(activeLanguage, 'slug', sanitizedSlug)
   }
 
-  const handleSlugSave = async () => {
-    if (!companyId || !currentSlug) return
-
-    const { error } = await supabase
-      .from('profiles')
-      .update({ company_slug: currentSlug })
-      .eq('id', companyId)
-
-    if (error) {
-      console.error('Error updating company_slug:', error)
-      alert('შეცდომა slug-ის განახლებისას')
-    } else {
-      alert(`Slug წარმატებით განახლდა: ${currentSlug}`)
-    }
-  }
-
-  const handleAutoGenerate = () => {
-    if (!companyName) {
-      alert('კომპანიის სახელი უნდა იყოს შევსებული')
+  // Generate slug from company name with language suffix
+  const generateSlugFromName = () => {
+    // Use company name from current language data
+    const companyNameText = currentData.company_name
+    
+    if (!companyNameText || companyNameText.trim() === '') {
+      alert('გთხოვთ ჯერ შეავსოთ კომპანიის სახელი!')
       return
     }
-    const generatedSlug = generateSlug(companyName)
-    setCurrentSlug(generatedSlug)
+    
+    const baseSlug = generateSlug(companyNameText)
+    
+    // Add language suffix: -ka for Georgian, -en for English, -ru for Russian
+    const langSuffix = activeLanguage === 'georgian' ? '-ka' : activeLanguage === 'english' ? '-en' : '-ru'
+    const generatedSlug = baseSlug + langSuffix
+    updateContentField(activeLanguage, 'slug', generatedSlug)
   }
 
   const getPlaceholder = (field: string): string => {
@@ -122,6 +110,11 @@ export default function ContentTab({ companyId }: { companyId: string }) {
         georgian: 'როგორ ვმუშაობთ...',
         english: 'How we work...',
         russian: 'Как мы работаем...'
+      },
+      company_name: {
+        georgian: 'კომპანიის სახელი ქართულად',
+        english: 'Company name in English',
+        russian: 'Название компании на русском'
       },
       avatar_alt_text: {
         georgian: 'კომპანიის ლოგოს აღწერა',
@@ -187,84 +180,64 @@ export default function ContentTab({ companyId }: { companyId: string }) {
         </div>
       </div>
 
-      {/* Slug Input - როგორც posts-ში და specialists-ში */}
+      {/* Company Name - თითოეული ენისთვის */}
+      <div>
+        <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/70' : 'text-black/70'}`}>
+          🏢 კომპანიის სახელი ({activeLanguage === 'georgian' ? '🇬🇪 ქართული' : activeLanguage === 'english' ? '🇬🇧 English' : '🇷🇺 Русский'})
+        </label>
+        <input
+          type="text"
+          value={currentData.company_name}
+          onChange={(e) => updateContentField(activeLanguage, 'company_name', e.target.value)}
+          placeholder={getPlaceholder('company_name')}
+          className={`w-full rounded-lg border px-4 py-2 transition-colors ${
+            isDark
+              ? 'border-white/10 bg-white/5 text-white focus:border-blue-400'
+              : 'border-black/10 bg-black/5 text-black focus:border-blue-600'
+          }`}
+        />
+        <p className={`mt-1 text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+          ეს სახელი გამოიყენება slug-ის გენერაციისთვის
+        </p>
+      </div>
+
+      {/* Slug Input - თითოეული ენისთვის ცალ-ცალკე */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <label className={`text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
-            URL Slug (სამივე ენისთვის)
+            URL Slug ({activeLanguage === 'georgian' ? 'ქართული' : activeLanguage === 'english' ? 'ინგლისური' : 'რუსული'})
           </label>
           <button
-            type="button"
-            onClick={() => setIsSlugEditable(!isSlugEditable)}
-            className={`text-xs px-2 py-0.5 rounded-md transition-colors ${
+            onClick={generateSlugFromName}
+            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
               isDark
-                ? 'text-emerald-400 hover:bg-emerald-500/10'
-                : 'text-emerald-600 hover:bg-emerald-500/10'
+                ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30'
+                : 'bg-emerald-500/20 text-emerald-600 hover:bg-emerald-500/30 border border-emerald-500/30'
             }`}
           >
-            {isSlugEditable ? '🔓 ხელით' : '🔒 ავტო'}
+            � ავტო-გენერაცია
           </button>
         </div>
         <div className={`flex items-center gap-1.5 px-2 py-1.5 text-xs rounded-md border ${
           isDark
             ? 'bg-white/5 border-white/20'
-            : 'bg-black/5 border-black/10'
+            : 'bg-black/10 border-black/10'
         }`}>
           <span className={`${isDark ? 'text-white/40' : 'text-black/40'}`}>
-            /practices/
+            /companies/
           </span>
-          {isSlugEditable ? (
-            <input
-              type="text"
-              value={currentSlug}
-              onChange={(e) => handleSlugChange(e.target.value)}
-              placeholder="slug-avtomaturad-generirebuli"
-              className={`flex-1 bg-transparent border-none outline-none ${
-                isDark ? 'text-white placeholder:text-white/40' : 'text-black placeholder:text-black/40'
-              }`}
-            />
-          ) : (
-            <span className={`flex-1 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-              {currentSlug || 'slug-avtomaturad-generirebuli'}
-            </span>
-          )}
+          <input
+            type="text"
+            value={currentData?.slug || ''}
+            onChange={(e) => handleSlugChange(e.target.value)}
+            placeholder="slug-avtomaturad-generirebuli"
+            className={`flex-1 bg-transparent border-none outline-none ${
+              isDark ? 'text-white placeholder:text-white/40' : 'text-black placeholder:text-black/40'
+            }`}
+          />
         </div>
-        
-        {/* Buttons Row */}
-        <div className="flex gap-2">
-          {!isSlugEditable && (
-            <button
-              type="button"
-              onClick={handleAutoGenerate}
-              disabled={!companyName}
-              className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                isDark
-                  ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30'
-                  : 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/20'
-              }`}
-            >
-              ⚡ კომპანიის სახელიდან გენერაცია
-            </button>
-          )}
-          
-          {isSlugEditable && (
-            <button
-              type="button"
-              onClick={handleSlugSave}
-              disabled={!currentSlug}
-              className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                isDark
-                  ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
-                  : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
-              }`}
-            >
-              💾 Slug-ის შენახვა
-            </button>
-          )}
-        </div>
-        
         <p className={`text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
-          💡 Slug გენერირდება კომპანიის სახელიდან. გსურთ თუ არა ხელით რედაქტირება, დააჭირეთ 🔓 ხელით.
+          💡 დააჭირეთ &ldquo;🔄 ავტო-გენერაცია&rdquo; ღილაკს → slug დაგენერირდება კომპანიის სახელიდან + -{activeLanguage === 'georgian' ? 'ka' : activeLanguage === 'english' ? 'en' : 'ru'} სუფიქსით
         </p>
       </div>
 

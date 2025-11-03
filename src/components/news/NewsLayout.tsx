@@ -34,7 +34,7 @@ export default function NewsLayout() {
       <div className={`min-h-screen py-4 md:py-8 lg:py-12 transition-colors duration-300 ${
         isDark ? 'bg-black' : 'bg-white'
       }`}>
-        <div className="mx-auto max-w-[1200px] px-3 md:px-6">
+        <div className="mx-auto max-w-[1200px] px-6 sm:px-8 lg:px-10">
           <div className={`flex items-center justify-center py-20 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-current border-t-transparent" />
             <span className="ml-3 text-lg">{t.loading}</span>
@@ -50,7 +50,7 @@ export default function NewsLayout() {
       <div className={`min-h-screen py-4 md:py-8 lg:py-12 transition-colors duration-300 ${
         isDark ? 'bg-black' : 'bg-white'
       }`}>
-        <div className="mx-auto max-w-[1200px] px-3 md:px-6">
+        <div className="mx-auto max-w-[1200px] px-6 sm:px-8 lg:px-10">
           <div className={`py-20 text-center ${isDark ? 'text-white/60' : 'text-black/60'}`}>
             <p className="text-lg">{t.error || 'Error loading posts'}</p>
           </div>
@@ -88,7 +88,7 @@ export default function NewsLayout() {
         isDark ? 'bg-black' : 'bg-white'
       }`}>
         {/* Container - Max Width 1200px (Apple style) */}
-        <div className="mx-auto max-w-[1200px] px-3 md:px-6">
+        <div className="mx-auto max-w-[1200px] px-6 sm:px-8 lg:px-10">
           {/* Main content area */}
           <main id="main-content" tabIndex={-1} className="focus:outline-none">
             {/* Main Grid Layout - Apple minimalist approach */}

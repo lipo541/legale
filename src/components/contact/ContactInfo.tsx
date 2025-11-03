@@ -45,7 +45,7 @@ export default function ContactInfo({ locale }: ContactInfoProps) {
     <div className={`min-h-screen py-20 transition-colors duration-150 ${
       isDark ? 'bg-black' : 'bg-white'
     }`}>
-      <div className="mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1200px] px-6 sm:px-8 lg:px-10">
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className={`text-4xl md:text-5xl font-bold mb-4 ${

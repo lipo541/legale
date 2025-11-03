@@ -162,7 +162,7 @@ export default function PrivacyPage() {
     }`}>
       {/* Header Section */}
       <div className={`border-b ${isDark ? 'border-white/10' : 'border-black/10'}`}>
-        <div className="mx-auto w-full max-w-[900px] px-4 sm:px-6 lg:px-8 py-16">
+        <div className="mx-auto w-full max-w-[1200px] px-6 sm:px-8 lg:px-10 py-16">
           <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border mb-6 ${
             isDark ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/10'
           }`}>
@@ -187,7 +187,7 @@ export default function PrivacyPage() {
       </div>
 
       {/* Content Section */}
-      <div className="mx-auto w-full max-w-[900px] px-4 sm:px-6 lg:px-8 py-12">
+      <div className="mx-auto w-full max-w-[1200px] px-6 sm:px-8 lg:px-10 py-12">
         <div className="space-y-12">
           {content.sections.map((section) => (
             <section key={section.id} id={section.id} className="scroll-mt-8">
@@ -208,7 +208,7 @@ export default function PrivacyPage() {
 
       {/* Footer Note */}
       <div className={`border-t mt-16 ${isDark ? 'border-white/10' : 'border-black/10'}`}>
-        <div className="mx-auto w-full max-w-[900px] px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mx-auto w-full max-w-[1200px] px-6 sm:px-8 lg:px-10 py-8">
           <p className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
             © {new Date().getFullYear()} LegalGE. {locale === 'ka' ? 'ყველა უფლება დაცულია' : locale === 'ru' ? 'Все права защищены' : 'All rights reserved'}.
           </p>

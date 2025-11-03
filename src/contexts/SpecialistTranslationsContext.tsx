@@ -18,6 +18,7 @@ export interface ContentTranslation {
   credentials_memberships: string[]
   values_how_we_work: Record<string, string>
   avatar_alt_text: string
+  slug: string // Add slug field
 }
 
 export interface SeoTranslation {
@@ -86,7 +87,8 @@ const createEmptyContentTranslation = (): ContentTranslation => ({
   representative_matters: [],
   credentials_memberships: [],
   values_how_we_work: {},
-  avatar_alt_text: ''
+  avatar_alt_text: '',
+  slug: ''
 })
 
 const createEmptySeoTranslation = (): SeoTranslation => ({
@@ -170,16 +172,17 @@ export function SpecialistTranslationsProvider({ children }: { children: ReactNo
 
       // Create fallback data from profile (original Georgian data)
       const fallbackContent: ContentTranslation = {
-        full_name: profile?.full_name || '',
-        role_title: profile?.role_title || '',
-        bio: profile?.bio || '',
-        philosophy: profile?.philosophy || '',
-        teaching_writing_speaking: profile?.teaching_writing_speaking || '',
-        focus_areas: profile?.focus_areas || [],
-        representative_matters: profile?.representative_matters || [],
-        credentials_memberships: profile?.credentials_memberships || [],
-        values_how_we_work: profile?.values_how_we_work || {},
-        avatar_alt_text: profile?.avatar_alt_text || ''
+        full_name: profile.full_name || '',
+        role_title: profile.role_title || '',
+        bio: profile.bio || '',
+        philosophy: profile.philosophy || '',
+        teaching_writing_speaking: profile.teaching_writing_speaking || '',
+        focus_areas: profile.focus_areas || [],
+        representative_matters: profile.representative_matters || [],
+        credentials_memberships: profile.credentials_memberships || [],
+        values_how_we_work: profile.values_how_we_work || {},
+        avatar_alt_text: profile.avatar_alt_text || '',
+        slug: profile.slug || ''
       }
 
       const fallbackSeo: SeoTranslation = {
@@ -218,7 +221,8 @@ export function SpecialistTranslationsProvider({ children }: { children: ReactNo
           representative_matters: translation.representative_matters || [],
           credentials_memberships: translation.credentials_memberships || [],
           values_how_we_work: translation.values_how_we_work || {},
-          avatar_alt_text: translation.avatar_alt_text || ''
+          avatar_alt_text: translation.avatar_alt_text || '',
+          slug: translation.slug || ''
         }
 
         // SEO fields
@@ -287,7 +291,7 @@ export function SpecialistTranslationsProvider({ children }: { children: ReactNo
       }
     }))
   }, [activeLanguage])
-
+  
   // Save translations to database
   const saveTranslations = useCallback(async () => {
     if (!specialistId) {
@@ -332,10 +336,10 @@ export function SpecialistTranslationsProvider({ children }: { children: ReactNo
 
       if (profileError) throw profileError
 
-      // 2. Save ENGLISH and RUSSIAN to specialist_translations table
-      const otherLanguages: LanguageType[] = ['english', 'russian']
+      // 2. Save ALL THREE LANGUAGES (Georgian, English, Russian) to specialist_translations table
+      const allLanguages: LanguageType[] = ['georgian', 'english', 'russian']
       
-      for (const lang of otherLanguages) {
+      for (const lang of allLanguages) {
         const translationData = {
           specialist_id: specialistId,
           language: langToCode(lang),
@@ -351,6 +355,7 @@ export function SpecialistTranslationsProvider({ children }: { children: ReactNo
           credentials_memberships: data.content[lang].credentials_memberships,
           values_how_we_work: data.content[lang].values_how_we_work,
           avatar_alt_text: data.content[lang].avatar_alt_text,
+          slug: data.content[lang].slug, // Save slug for each language
           
           // SEO
           seo_title: data.seo[lang].seo_title,
@@ -375,7 +380,7 @@ export function SpecialistTranslationsProvider({ children }: { children: ReactNo
       }
 
       // Success notification
-      alert('✅ ქართული → profiles table-ში შეინახა\n✅ English/Russian → specialist_translations-ში შეინახა')
+      alert('✅ Georgian → profiles table + specialist_translations\n✅ English/Russian → specialist_translations\n✅ Slug saved for all 3 languages')
     } catch (err) {
       console.error('Error saving translations:', err)
       setError(err instanceof Error ? err.message : 'Unknown error')

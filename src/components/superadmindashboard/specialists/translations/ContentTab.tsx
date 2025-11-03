@@ -13,8 +13,6 @@ export default function ContentTab() {
   const supabase = createClient()
   
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
-  const [currentSlug, setCurrentSlug] = useState<string>('')
-  const [isSlugEditable, setIsSlugEditable] = useState(false)
 
   const currentData = data.content[activeLanguage]
 
@@ -39,21 +37,18 @@ export default function ContentTab() {
       .replace(/-+$/, '')            // Trim - from end
   }
 
-  // Fetch avatar URL and current slug from profiles
+  // Fetch avatar URL from profiles
   useEffect(() => {
     const fetchProfileData = async () => {
       if (!specialistId) return
       
       const { data: profile } = await supabase
         .from('profiles')
-        .select('avatar_url, slug')
+        .select('avatar_url')
         .eq('id', specialistId)
         .single()
       
-      if (profile) {
-        if (profile.avatar_url) setAvatarUrl(profile.avatar_url)
-        if (profile.slug) setCurrentSlug(profile.slug)
-      }
+      if (profile?.avatar_url) setAvatarUrl(profile.avatar_url)
     }
     
     fetchProfileData()
@@ -61,32 +56,31 @@ export default function ContentTab() {
 
   const handleNameChange = (value: string) => {
     updateContentField('full_name', value)
-    // Auto-generate slug from name if not in editable mode
-    if (!isSlugEditable && value) {
-      const generatedSlug = generateSlug(value)
-      setCurrentSlug(generatedSlug)
+    // Auto-generate slug from name if slug is empty
+    if (!currentData?.slug && value) {
+      const baseSlug = generateSlug(value)
+      // Add language suffix to make slugs unique
+      const langSuffix = activeLanguage === 'georgian' ? '-ka' : activeLanguage === 'english' ? '-en' : '-ru'
+      const generatedSlug = baseSlug + langSuffix
+      updateContentField('slug', generatedSlug)
     }
   }
 
-  const handleSlugChange = async (value: string) => {
+  const handleSlugChange = (value: string) => {
     const sanitizedSlug = generateSlug(value)
-    setCurrentSlug(sanitizedSlug)
+    updateContentField('slug', sanitizedSlug)
   }
 
-  const handleSlugSave = async () => {
-    if (!specialistId || !currentSlug) return
-
-    const { error } = await supabase
-      .from('profiles')
-      .update({ slug: currentSlug })
-      .eq('id', specialistId)
-
-    if (error) {
-      console.error('Error updating slug:', error)
-      alert('შეცდომა slug-ის განახლებისას')
-    } else {
-      alert(`Slug წარმატებით განახლდა: ${currentSlug}`)
+  // Generate slug from current name with language suffix
+  const generateSlugFromName = () => {
+    if (!currentData?.full_name) {
+      alert('ჯერ შეიყვანეთ სახელი!')
+      return
     }
+    const baseSlug = generateSlug(currentData.full_name)
+    const langSuffix = activeLanguage === 'georgian' ? '-ka' : activeLanguage === 'english' ? '-en' : '-ru'
+    const generatedSlug = baseSlug + langSuffix
+    updateContentField('slug', generatedSlug)
   }
 
   // Helper to get placeholder text based on active language
@@ -213,64 +207,43 @@ export default function ContentTab() {
         />
       </div>
 
-      {/* Slug Input - როგორც posts-ში */}
+      {/* Slug Input - თითოეული ენისთვის ცალ-ცალკე */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <label className={`text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
-            URL Slug (სამივე ენისთვის)
+            URL Slug ({activeLanguage === 'georgian' ? 'ქართული' : activeLanguage === 'english' ? 'ინგლისური' : 'რუსული'})
           </label>
           <button
-            type="button"
-            onClick={() => setIsSlugEditable(!isSlugEditable)}
-            className={`text-xs px-2 py-0.5 rounded-md transition-colors ${
+            onClick={generateSlugFromName}
+            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
               isDark
-                ? 'text-emerald-400 hover:bg-emerald-500/10'
-                : 'text-emerald-600 hover:bg-emerald-500/10'
+                ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30'
+                : 'bg-emerald-500/20 text-emerald-600 hover:bg-emerald-500/30 border border-emerald-500/30'
             }`}
           >
-            {isSlugEditable ? '🔓 ხელით' : '🔒 ავტო'}
+            🔄 ავტო-გენერაცია
           </button>
         </div>
         <div className={`flex items-center gap-1.5 px-2 py-1.5 text-xs rounded-md border ${
           isDark
             ? 'bg-white/5 border-white/20'
-            : 'bg-black/5 border-black/10'
+            : 'bg-black/10 border-black/10'
         }`}>
           <span className={`${isDark ? 'text-white/40' : 'text-black/40'}`}>
             /specialists/
           </span>
-          {isSlugEditable ? (
-            <input
-              type="text"
-              value={currentSlug}
-              onChange={(e) => handleSlugChange(e.target.value)}
-              placeholder="slug-avtomaturad-generirebuli"
-              className={`flex-1 bg-transparent border-none outline-none ${
-                isDark ? 'text-white placeholder:text-white/40' : 'text-black placeholder:text-black/40'
-              }`}
-            />
-          ) : (
-            <span className={`flex-1 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-              {currentSlug || 'slug-avtomaturad-generirebuli'}
-            </span>
-          )}
-        </div>
-        {isSlugEditable && (
-          <button
-            type="button"
-            onClick={handleSlugSave}
-            disabled={!currentSlug}
-            className={`w-full mt-2 px-3 py-1.5 text-xs font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-              isDark
-                ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
-                : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
+          <input
+            type="text"
+            value={currentData?.slug || ''}
+            onChange={(e) => handleSlugChange(e.target.value)}
+            placeholder="slug-avtomaturad-generirebuli"
+            className={`flex-1 bg-transparent border-none outline-none ${
+              isDark ? 'text-white placeholder:text-white/40' : 'text-black placeholder:text-black/40'
             }`}
-          >
-            💾 Slug-ის შენახვა
-          </button>
-        )}
+          />
+        </div>
         <p className={`text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
-          💡 Slug ავტომატურად გენერირდება სახელიდან. გსურთ თუ არა ხელით რედაქტირება, დააჭირეთ 🔓 ხელით.
+          💡 დააჭირეთ &ldquo;🔄 ავტო-გენერაცია&rdquo; ღილაკს → slug დაგენერირდება სახელიდან + -{activeLanguage === 'georgian' ? 'ka' : activeLanguage === 'english' ? 'en' : 'ru'} სუფიქსით
         </p>
       </div>
 

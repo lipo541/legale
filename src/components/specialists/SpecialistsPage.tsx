@@ -214,8 +214,26 @@ export default function SpecialistsPage() {
 
           if (soloError) {
             console.error('Error fetching solo specialists:', soloError);
+          } else if (soloData && soloData.length > 0) {
+            // Fetch slugs from specialist_translations for current locale
+            const { data: soloTranslations } = await supabase
+              .from('specialist_translations')
+              .select('specialist_id, slug')
+              .eq('language', locale)
+              .in('specialist_id', soloData.map(s => s.id));
+
+            // Create a map of specialist_id -> slug
+            const slugMap = new Map(soloTranslations?.map(t => [t.specialist_id, t.slug]) || []);
+
+            // Map specialists with the correct slug for current locale
+            const soloWithSlugs = soloData.map(specialist => ({
+              ...specialist,
+              slug: slugMap.get(specialist.id) || specialist.slug // fallback to profiles.slug
+            }));
+
+            setSoloSpecialists(sortSpecialists(soloWithSlugs));
           } else {
-            setSoloSpecialists(sortSpecialists(soloData || []));
+            setSoloSpecialists([]);
           }
         }
       } else {
@@ -254,6 +272,16 @@ export default function SpecialistsPage() {
             
             const companyMap = new Map(companiesData?.map(c => [c.id, { name: c.full_name, slug: c.company_slug }]) || []);
             
+            // Fetch slugs from specialist_translations for current locale
+            const { data: companyTranslations } = await supabase
+              .from('specialist_translations')
+              .select('specialist_id, slug')
+              .eq('language', locale)
+              .in('specialist_id', companyData.map(s => s.id));
+
+            // Create a map of specialist_id -> slug
+            const slugMap = new Map(companyTranslations?.map(t => [t.specialist_id, t.slug]) || []);
+            
             const mappedData = companyData.map((s: { id: string; full_name: string; role_title: string; bio: string; company_id: string; photo_url?: string; email?: string; phone_number?: string; avatar_url?: string; slug?: string }) => {
               const companyInfo = companyMap.get(s.company_id);
               return {
@@ -264,7 +292,7 @@ export default function SpecialistsPage() {
                 avatar_url: s.avatar_url,
                 company: companyInfo?.name || 'Company',
                 company_slug: companyInfo?.slug,
-                slug: s.slug
+                slug: slugMap.get(s.id) || s.slug // Use locale-specific slug
               };
             });
             
@@ -312,7 +340,7 @@ export default function SpecialistsPage() {
 
   return (
     <div className="min-h-screen py-8 md:py-12 lg:py-16">
-      <div className="mx-auto max-w-[1200px]">
+      <div className="mx-auto max-w-[1200px] px-6 sm:px-8 lg:px-10">
         {/* Breadcrumb Navigation */}
         <Breadcrumb items={[{ label: t.breadcrumb }]} />
         

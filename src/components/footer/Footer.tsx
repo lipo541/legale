@@ -47,7 +47,7 @@ export default function Footer() {
         isDark ? 'bg-black border-white/10' : 'bg-white border-black/10'
       }`}
     >
-      <div className="mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1200px] px-6 sm:px-8 lg:px-10">
         {/* Main Footer Content */}
         <div className="py-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand Section */}

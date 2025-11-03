@@ -95,132 +95,156 @@ export default function PostPageClient({ post, author, category, relatedPosts, l
   }
 
   return (
-    <div className="min-h-screen">
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8 py-8">
+    <div className={`min-h-screen transition-colors duration-300 ${
+      isDark ? 'bg-black text-white' : 'bg-white text-black'
+    }`}>
+      <div className="mx-auto max-w-[1200px] px-6 sm:px-8 lg:px-10 py-12 sm:py-16">
         {/* Back Button */}
         <Link
           href={`/${locale}/news`}
-          className={`mb-6 inline-flex items-center gap-2 text-sm font-medium transition-colors ${
-            isDark ? 'text-white/60 hover:text-white' : 'text-black/60 hover:text-black'
+          className={`group flex items-center gap-2 mb-8 text-sm font-light transition-colors ${
+            isDark ? 'text-white/50 hover:text-white/80' : 'text-black/50 hover:text-black/80'
           }`}
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
           <span>უკან ბლოგზე</span>
         </Link>
 
-        {/* Category Badge */}
-        {category && (
-          <Link
-            href={`/${locale}/news/category/${category.slug}`}
-            className={`inline-flex items-center gap-1.5 mb-4 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-              isDark 
-                ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30' 
-                : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
-            }`}
-          >
-            <Tag className="h-3 w-3" />
-            {category.name}
-          </Link>
-        )}
-
-        {/* Title */}
-        <h1 className={`text-[30px] font-bold mb-4 leading-tight ${isDark ? 'text-white' : 'text-black'}`}>
-          {post.title}
-        </h1>
-
-        {/* Excerpt */}
-        {post.excerpt && (
-          <p className={`text-[18px] mb-6 leading-relaxed ${isDark ? 'text-white/70' : 'text-black/70'}`}>
-            {post.excerpt}
-          </p>
-        )}
-
-        {/* Meta Info */}
-        <div className={`flex flex-wrap items-center gap-4 mb-8 pb-6 border-b ${
-          isDark ? 'border-white/10' : 'border-black/10'
+        {/* Main Article Card */}
+        <article className={`p-8 sm:p-10 rounded-2xl ring-1 mb-12 ${
+          isDark ? 'bg-white/[0.02] ring-white/[0.08]' : 'bg-black/[0.02] ring-black/[0.08]'
         }`}>
-          <div className={`flex items-center gap-2 text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-            <Calendar className="h-4 w-4" />
-            <span>{formattedDate || '...'}</span>
-          </div>
-          
-          {author?.full_name && (
-            <div className={`flex items-center gap-2 text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-              <User className="h-4 w-4" />
-              <span>{author.full_name}</span>
-            </div>
-          )}
-          
-          {post.readingTime && (
-            <div className={`flex items-center gap-2 text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-              <Clock className="h-4 w-4" />
-              <span>{post.readingTime} წუთი</span>
-            </div>
+          {/* Category Badge */}
+          {category && (
+            <Link
+              href={`/${locale}/news/category/${category.slug}`}
+              className={`inline-flex items-center gap-1.5 mb-4 px-3 py-1.5 rounded-full text-xs font-light transition-all ring-1 ${
+                isDark 
+                  ? 'bg-blue-500/10 text-blue-400 ring-blue-500/20 hover:bg-blue-500/20' 
+                  : 'bg-blue-500/10 text-blue-600 ring-blue-500/20 hover:bg-blue-500/20'
+              }`}
+            >
+              <Tag className="h-3 w-3" />
+              {category.name}
+            </Link>
           )}
 
-          {/* Share Buttons */}
-          <div className="flex items-center gap-3 ml-auto">
-            <button
-              onClick={() => handleShare('facebook')}
-              className={`p-2 rounded-full transition-all hover:scale-110 ${
-                isDark ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'
-              }`}
-              aria-label="Share on Facebook"
-            >
-              <Facebook className={`h-4 w-4 ${isDark ? 'text-white' : 'text-black'}`} />
-            </button>
-            <button
-              onClick={() => handleShare('linkedin')}
-              className={`p-2 rounded-full transition-all hover:scale-110 ${
-                isDark ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'
-              }`}
-              aria-label="Share on LinkedIn"
-            >
-              <Linkedin className={`h-4 w-4 ${isDark ? 'text-white' : 'text-black'}`} />
-            </button>
-            <button
-              onClick={() => handleShare('twitter')}
-              className={`p-2 rounded-full transition-all hover:scale-110 ${
-                isDark ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'
-              }`}
-              aria-label="Share on Twitter"
-            >
-              <Twitter className={`h-4 w-4 ${isDark ? 'text-white' : 'text-black'}`} />
-            </button>
-          </div>
-        </div>
+          {/* Title */}
+          <h1 className="text-3xl sm:text-4xl font-extralight tracking-tight mb-4 leading-tight">
+            {post.title}
+          </h1>
 
-        {/* Featured Image */}
-        {post.featuredImage && (
-          <div className="relative w-full h-96 mb-8 rounded-2xl overflow-hidden">
-            <Image
-              src={post.featuredImage}
-              alt={post.title}
-              fill
-              className="object-cover"
-              priority
-              unoptimized
-              onError={(e) => {
-                // Fallback to placeholder if image fails to load
-                const target = e.target as HTMLImageElement;
-                target.src = '/images/placeholder-news.svg';
-              }}
-            />
-          </div>
-        )}
+          {/* Excerpt */}
+          {post.excerpt && (
+            <p className={`text-lg font-light mb-6 leading-relaxed ${
+              isDark ? 'text-white/60' : 'text-black/60'
+            }`}>
+              {post.excerpt}
+            </p>
+          )}
 
-        {/* Content */}
-        <div 
-          className={`prose prose-lg max-w-none mb-12 ${
-            isDark ? 'prose-invert' : ''
-          }`}
-          dangerouslySetInnerHTML={{ __html: post.content }}
-        />
+          {/* Meta Info */}
+          <div className={`flex flex-wrap items-center gap-4 mb-8 pb-6 border-b ${
+            isDark ? 'border-white/[0.08]' : 'border-black/[0.08]'
+          }`}>
+            <div className={`flex items-center gap-2 text-sm font-light ${
+              isDark ? 'text-white/50' : 'text-black/50'
+            }`}>
+              <Calendar className="h-4 w-4 opacity-50" />
+              <span>{formattedDate || '...'}</span>
+            </div>
+            
+            {author?.full_name && (
+              <div className={`flex items-center gap-2 text-sm font-light ${
+                isDark ? 'text-white/50' : 'text-black/50'
+              }`}>
+                <User className="h-4 w-4 opacity-50" />
+                <span>{author.full_name}</span>
+              </div>
+            )}
+            
+            {post.readingTime && (
+              <div className={`flex items-center gap-2 text-sm font-light ${
+                isDark ? 'text-white/50' : 'text-black/50'
+              }`}>
+                <Clock className="h-4 w-4 opacity-50" />
+                <span>{post.readingTime} წუთი</span>
+              </div>
+            )}
+
+            {/* Share Buttons */}
+            <div className="flex items-center gap-2 ml-auto">
+              <button
+                onClick={() => handleShare('facebook')}
+                className={`p-2 rounded-full transition-all ring-1 ${
+                  isDark 
+                    ? 'bg-white/[0.02] ring-white/[0.08] hover:bg-white/[0.05]' 
+                    : 'bg-black/[0.02] ring-black/[0.08] hover:bg-black/[0.05]'
+                }`}
+                aria-label="Share on Facebook"
+              >
+                <Facebook className="h-4 w-4 opacity-50" />
+              </button>
+              <button
+                onClick={() => handleShare('linkedin')}
+                className={`p-2 rounded-full transition-all ring-1 ${
+                  isDark 
+                    ? 'bg-white/[0.02] ring-white/[0.08] hover:bg-white/[0.05]' 
+                    : 'bg-black/[0.02] ring-black/[0.08] hover:bg-black/[0.05]'
+                }`}
+                aria-label="Share on LinkedIn"
+              >
+                <Linkedin className="h-4 w-4 opacity-50" />
+              </button>
+              <button
+                onClick={() => handleShare('twitter')}
+                className={`p-2 rounded-full transition-all ring-1 ${
+                  isDark 
+                    ? 'bg-white/[0.02] ring-white/[0.08] hover:bg-white/[0.05]' 
+                    : 'bg-black/[0.02] ring-black/[0.08] hover:bg-black/[0.05]'
+                }`}
+                aria-label="Share on Twitter"
+              >
+                <Twitter className="h-4 w-4 opacity-50" />
+              </button>
+            </div>
+          </div>
+
+          {/* Featured Image */}
+          {post.featuredImage && (
+            <div className="relative w-full h-96 mb-8 rounded-xl overflow-hidden ring-1 ring-black/5">
+              <Image
+                src={post.featuredImage}
+                alt={post.title}
+                fill
+                className="object-cover"
+                priority
+                unoptimized
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = '/images/placeholder-news.svg';
+                }}
+              />
+            </div>
+          )}
+
+          {/* Content */}
+          <div 
+            className={`prose prose-lg max-w-none ${
+              isDark 
+                ? 'prose-invert prose-headings:font-extralight prose-headings:tracking-tight prose-p:font-light prose-p:text-white/70' 
+                : 'prose-headings:font-extralight prose-headings:tracking-tight prose-p:font-light prose-p:text-black/70'
+            }`}
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
+        </article>
 
         {/* Related Posts */}
         {relatedPosts.length > 0 && (
-          <div className={`mt-16 pt-12 border-t ${isDark ? 'border-white/10' : 'border-black/10'}`}>
-            <h2 className={`text-2xl font-bold mb-6 ${isDark ? 'text-white' : 'text-black'}`}>
+          <section className={`p-8 sm:p-10 rounded-2xl ring-1 ${
+            isDark ? 'bg-white/[0.02] ring-white/[0.08]' : 'bg-black/[0.02] ring-black/[0.08]'
+          }`}>
+            <h2 className="text-2xl font-extralight tracking-tight mb-6">
               მსგავსი სტატიები
             </h2>
             
@@ -232,8 +256,10 @@ export default function PostPageClient({ post, author, category, relatedPosts, l
                   <Link
                     key={relatedPost.id}
                     href={`/${locale}/news/${translation.slug}`}
-                    className={`group overflow-hidden rounded-xl transition-all hover:scale-[0.98] ${
-                      isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'
+                    className={`group overflow-hidden rounded-xl transition-all ring-1 ${
+                      isDark 
+                        ? 'bg-white/[0.02] ring-white/[0.08] hover:bg-white/[0.05]' 
+                        : 'bg-black/[0.02] ring-black/[0.08] hover:bg-black/[0.05]'
                     }`}
                   >
                     {relatedPost.featured_image_url && (
@@ -253,13 +279,11 @@ export default function PostPageClient({ post, author, category, relatedPosts, l
                     )}
                     
                     <div className="p-4">
-                      <h3 className={`font-semibold mb-2 line-clamp-2 ${
-                        isDark ? 'text-white' : 'text-black'
-                      }`}>
+                      <h3 className="font-light text-base mb-2 line-clamp-2">
                         {translation.title}
                       </h3>
-                      <p className={`text-sm line-clamp-2 ${
-                        isDark ? 'text-white/60' : 'text-black/60'
+                      <p className={`text-sm font-light line-clamp-2 ${
+                        isDark ? 'text-white/50' : 'text-black/50'
                       }`}>
                         {translation.excerpt}
                       </p>
@@ -268,7 +292,7 @@ export default function PostPageClient({ post, author, category, relatedPosts, l
                 )
               })}
             </div>
-          </div>
+          </section>
         )}
       </div>
     </div>

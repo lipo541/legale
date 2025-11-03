@@ -111,8 +111,29 @@ export default function CompaniesPage() {
           throw companiesError;
         }
 
-        setCompanies(companiesData || []);
-        setFilteredCompanies(companiesData || []);
+        // Fetch slugs from company_translations for current locale (en/ru only)
+        if (locale !== 'ka' && companiesData && companiesData.length > 0) {
+          const { data: translations } = await supabase
+            .from('company_translations')
+            .select('company_id, slug')
+            .eq('language', locale)
+            .in('company_id', companiesData.map(c => c.id))
+
+          // Create slug map
+          const slugMap = new Map(translations?.map(t => [t.company_id, t.slug]) || [])
+
+          // Add translation slugs to companies, fallback to company_slug
+          const companiesWithSlugs = companiesData.map(company => ({
+            ...company,
+            company_slug: slugMap.get(company.id) || company.company_slug
+          }))
+
+          setCompanies(companiesWithSlugs)
+          setFilteredCompanies(companiesWithSlugs)
+        } else {
+          setCompanies(companiesData || [])
+          setFilteredCompanies(companiesData || [])
+        }
 
         // Fetch only cities that are actually assigned to companies
         const { data: companyCitiesData, error: companyCitiesError } = await supabase
@@ -389,8 +410,8 @@ export default function CompaniesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen px-4 py-6">
-        <div className="mx-auto max-w-[1200px]">
+      <div className="min-h-screen py-6">
+        <div className="mx-auto max-w-[1200px] px-6 sm:px-8 lg:px-10">
           {/* Header */}
           <div className="mb-6 text-center">
             <h1 className={`mb-1 text-3xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-black'}`}>
@@ -413,8 +434,8 @@ export default function CompaniesPage() {
   }
 
   return (
-    <div className="min-h-screen px-4 py-6">
-      <div className="mx-auto max-w-7xl px-2 py-4 sm:px-4 lg:px-8">
+    <div className="min-h-screen py-6">
+      <div className="mx-auto max-w-[1200px] px-6 sm:px-8 lg:px-10">
         {/* Breadcrumb Navigation */}
         <Breadcrumb 
           items={[{ 

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 
 // Content Translation Interface
 export interface CompanyContentTranslation {
+  company_name: string
   company_overview: string
   summary: string
   mission_statement: string
@@ -12,6 +13,7 @@ export interface CompanyContentTranslation {
   history: string
   how_we_work: string
   avatar_alt_text: string
+  slug: string
 }
 
 // SEO Translation Interface
@@ -56,13 +58,15 @@ interface CompanyTranslationsContextType {
 const CompanyTranslationsContext = createContext<CompanyTranslationsContextType | undefined>(undefined)
 
 const createEmptyContentTranslation = (): CompanyContentTranslation => ({
+  company_name: '',
   company_overview: '',
   summary: '',
   mission_statement: '',
   vision_values: '',
   history: '',
   how_we_work: '',
-  avatar_alt_text: ''
+  avatar_alt_text: '',
+  slug: ''
 })
 
 const createEmptySeoTranslation = (): CompanySeoTranslation => ({
@@ -102,7 +106,7 @@ export function CompanyTranslationsProvider({ children }: { children: React.Reac
       // Fetch Georgian data from profiles table
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('company_overview, summary, mission_statement, vision_values, history, how_we_work, avatar_alt_text, meta_title, meta_description, meta_keywords, social_title, social_description, social_hashtags, social_image_url')
+        .select('full_name, company_overview, summary, mission_statement, vision_values, history, how_we_work, avatar_alt_text, meta_title, meta_description, meta_keywords, social_title, social_description, social_hashtags, social_image_url, company_slug')
         .eq('id', companyId)
         .single()
 
@@ -110,13 +114,15 @@ export function CompanyTranslationsProvider({ children }: { children: React.Reac
 
       // Fallback content for Georgian
       const fallbackContent: CompanyContentTranslation = {
+        company_name: profile?.full_name || '',
         company_overview: profile?.company_overview || '',
         summary: profile?.summary || '',
         mission_statement: profile?.mission_statement || '',
         vision_values: profile?.vision_values || '',
         history: profile?.history || '',
         how_we_work: profile?.how_we_work || '',
-        avatar_alt_text: profile?.avatar_alt_text || ''
+        avatar_alt_text: profile?.avatar_alt_text || '',
+        slug: profile?.company_slug || ''
       }
 
       const fallbackSeo: CompanySeoTranslation = {
@@ -154,13 +160,15 @@ export function CompanyTranslationsProvider({ children }: { children: React.Reac
       // Map translations to their respective languages
       translationsData?.forEach((trans) => {
         const content: CompanyContentTranslation = {
+          company_name: trans.company_name || '',
           company_overview: trans.company_overview || '',
           summary: trans.summary || '',
           mission_statement: trans.mission_statement || '',
           vision_values: trans.vision_values || '',
           history: trans.history || '',
           how_we_work: trans.how_we_work || '',
-          avatar_alt_text: trans.avatar_alt_text || ''
+          avatar_alt_text: trans.avatar_alt_text || '',
+          slug: trans.slug || ''
         }
 
         const seo: CompanySeoTranslation = {
@@ -196,6 +204,7 @@ export function CompanyTranslationsProvider({ children }: { children: React.Reac
     try {
       // Save Georgian data to profiles table
       const georgianData = {
+        full_name: translations.georgian.content.company_name,
         company_overview: translations.georgian.content.company_overview,
         summary: translations.georgian.content.summary,
         mission_statement: translations.georgian.content.mission_statement,
@@ -203,6 +212,7 @@ export function CompanyTranslationsProvider({ children }: { children: React.Reac
         history: translations.georgian.content.history,
         how_we_work: translations.georgian.content.how_we_work,
         avatar_alt_text: translations.georgian.content.avatar_alt_text,
+        company_slug: translations.georgian.content.slug, // Georgian slug
         meta_title: translations.georgian.seo.meta_title,
         meta_description: translations.georgian.seo.meta_description,
         meta_keywords: translations.georgian.seo.meta_keywords,
@@ -223,6 +233,7 @@ export function CompanyTranslationsProvider({ children }: { children: React.Reac
       const englishData = {
         company_id: companyId,
         language: 'en',
+        company_name: translations.english.content.company_name,
         company_overview: translations.english.content.company_overview,
         summary: translations.english.content.summary,
         mission_statement: translations.english.content.mission_statement,
@@ -230,6 +241,7 @@ export function CompanyTranslationsProvider({ children }: { children: React.Reac
         history: translations.english.content.history,
         how_we_work: translations.english.content.how_we_work,
         avatar_alt_text: translations.english.content.avatar_alt_text,
+        slug: translations.english.content.slug, // English slug
         meta_title: translations.english.seo.meta_title,
         meta_description: translations.english.seo.meta_description,
         meta_keywords: translations.english.seo.meta_keywords,
@@ -249,6 +261,7 @@ export function CompanyTranslationsProvider({ children }: { children: React.Reac
       const russianData = {
         company_id: companyId,
         language: 'ru',
+        company_name: translations.russian.content.company_name,
         company_overview: translations.russian.content.company_overview,
         summary: translations.russian.content.summary,
         mission_statement: translations.russian.content.mission_statement,
@@ -256,6 +269,7 @@ export function CompanyTranslationsProvider({ children }: { children: React.Reac
         history: translations.russian.content.history,
         how_we_work: translations.russian.content.how_we_work,
         avatar_alt_text: translations.russian.content.avatar_alt_text,
+        slug: translations.russian.content.slug, // Russian slug
         meta_title: translations.russian.seo.meta_title,
         meta_description: translations.russian.seo.meta_description,
         meta_keywords: translations.russian.seo.meta_keywords,
