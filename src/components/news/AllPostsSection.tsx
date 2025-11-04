@@ -64,10 +64,6 @@ export default function AllPostsSection() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [sortBy, setSortBy] = useState<SortOption>('newest')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  
-  // Pagination state
-  const [displayLimit, setDisplayLimit] = useState(12)
-  const POSTS_PER_PAGE = 12
 
   // Load posts function with useCallback
   const loadPosts = useCallback(async () => {
@@ -301,12 +297,9 @@ export default function AllPostsSection() {
       }
     })
     
-    // Apply pagination limit
-    const paginatedPosts = sorted.slice(0, displayLimit)
-    
-    // Re-group paginated posts by category
+    // Re-group all sorted posts by category (no pagination limit)
     const regrouped: GroupedPosts = {}
-    paginatedPosts.forEach(post => {
+    sorted.forEach(post => {
       if (post.category_id) {
         const categoryId = post.category_id
         
@@ -336,8 +329,8 @@ export default function AllPostsSection() {
       }
     })
     
-    return { grouped: regrouped, total: sorted.length, displayed: paginatedPosts.length }
-  }, [groupedPosts, searchQuery, selectedCategories, sortBy, locale, t.uncategorized, displayLimit])
+    return { grouped: regrouped, total: sorted.length, displayed: sorted.length }
+  }, [groupedPosts, searchQuery, selectedCategories, sortBy, locale, t.uncategorized])
 
   // Handlers with useCallback
   const handleSearch = useCallback((query: string) => {
@@ -350,10 +343,6 @@ export default function AllPostsSection() {
 
   const handleSortChange = useCallback((sort: SortOption) => {
     setSortBy(sort)
-  }, [])
-  
-  const handleLoadMore = useCallback(() => {
-    setDisplayLimit(prev => prev + POSTS_PER_PAGE)
   }, [])
 
   const formatDate = (dateString: string) => {
@@ -625,33 +614,6 @@ export default function AllPostsSection() {
           )
         })}
       </div>
-      
-      {/* Load More Button */}
-      {filteredAndSortedPosts.displayed < filteredAndSortedPosts.total && (
-        <div className="mt-10 md:mt-12 text-center">
-          <button
-            onClick={handleLoadMore}
-            className={`group inline-flex items-center gap-2 px-6 md:px-8 py-3 md:py-3.5 rounded-xl font-medium transition-all duration-300 ${
-              isDark 
-                ? 'bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-white/20' 
-                : 'bg-black/5 hover:bg-black/10 text-black border border-black/10 hover:border-black/20'
-            }`}
-          >
-            <span className="text-sm md:text-base">{t.loadMore}</span>
-            <span className={`text-xs md:text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-              ({filteredAndSortedPosts.total - filteredAndSortedPosts.displayed} {t.remaining})
-            </span>
-            <svg 
-              className="h-4 w-4 transition-transform group-hover:translate-y-1" 
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-        </div>
-      )}
     </div>
   )
 }

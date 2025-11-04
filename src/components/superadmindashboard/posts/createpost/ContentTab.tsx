@@ -33,7 +33,6 @@ export default function ContentTab() {
   const [expandedCategories, setExpandedCategories] = useState<string[]>([])
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [isSlugEditable, setIsSlugEditable] = useState(false)
   const [featuredImagePreview, setFeaturedImagePreview] = useState<string | null>(null)
 
   const currentTranslation = translations[activeLanguage]
@@ -172,8 +171,12 @@ export default function ContentTab() {
 
   const handleTitleChange = (value: string) => {
     updateField('title', value)
-    if (!isSlugEditable) {
-      const generatedSlug = generateSlug(value)
+    // Auto-generate slug only if slug is empty
+    if (!currentTranslation.slug && value) {
+      const baseSlug = generateSlug(value)
+      // Add language suffix to make slugs unique per language (like specialists/companies)
+      const langSuffix = activeLanguage === 'georgian' ? '-ka' : activeLanguage === 'english' ? '-en' : '-ru'
+      const generatedSlug = baseSlug + langSuffix
       console.log('Title:', value, 'Generated Slug:', generatedSlug, 'Language:', activeLanguage)
       updateField('slug', generatedSlug)
     }
@@ -571,18 +574,27 @@ export default function ContentTab() {
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <label className={`text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
-            URL Slug
+            URL Slug ({activeLanguage === 'georgian' ? 'ქართული' : activeLanguage === 'english' ? 'ინგლისური' : 'რუსული'})
           </label>
           <button
             type="button"
-            onClick={() => setIsSlugEditable(!isSlugEditable)}
-            className={`text-xs px-2 py-0.5 rounded-md transition-colors ${
+            onClick={() => {
+              if (!currentTranslation.title) {
+                alert('ჯერ შეიყვანეთ სათაური!')
+                return
+              }
+              const baseSlug = generateSlug(currentTranslation.title)
+              const langSuffix = activeLanguage === 'georgian' ? '-ka' : activeLanguage === 'english' ? '-en' : '-ru'
+              const generatedSlug = baseSlug + langSuffix
+              updateField('slug', generatedSlug)
+            }}
+            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
               isDark
-                ? 'text-emerald-400 hover:bg-emerald-500/10'
-                : 'text-emerald-600 hover:bg-emerald-500/10'
+                ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30'
+                : 'bg-emerald-500/20 text-emerald-600 hover:bg-emerald-500/30 border border-emerald-500/30'
             }`}
           >
-            {isSlugEditable ? '🔓 ხელით' : '🔒 ავტო'}
+            � ავტო-გენერაცია
           </button>
         </div>
         <div className={`flex items-center gap-1.5 px-2 py-1.5 text-xs rounded-md border ${
@@ -593,21 +605,19 @@ export default function ContentTab() {
           <span className={`${isDark ? 'text-white/40' : 'text-black/40'}`}>
             /blog/
           </span>
-          {isSlugEditable ? (
-            <input
-              type="text"
-              value={currentTranslation.slug || ''}
-              onChange={(e) => handleSlugChange(e.target.value)}
-              className={`flex-1 bg-transparent border-none outline-none ${
-                isDark ? 'text-white' : 'text-black'
-              }`}
-            />
-          ) : (
-            <span className={`flex-1 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-              {currentTranslation.slug || 'slug-avtomaturad-generirebuli'}
-            </span>
-          )}
+          <input
+            type="text"
+            value={currentTranslation.slug || ''}
+            onChange={(e) => handleSlugChange(e.target.value)}
+            placeholder="slug-avtomaturad-generirebuli"
+            className={`flex-1 bg-transparent border-none outline-none ${
+              isDark ? 'text-white placeholder:text-white/40' : 'text-black placeholder:text-black/40'
+            }`}
+          />
         </div>
+        <p className={`text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+          💡 დააჭირეთ &ldquo;🔄 ავტო-გენერაცია&rdquo; ღილაკს → slug დაგენერირდება სათაურიდან + -{activeLanguage === 'georgian' ? 'ka' : activeLanguage === 'english' ? 'en' : 'ru'} სუფიქსით
+        </p>
       </div>
 
       {/* Excerpt (Short Description) */}

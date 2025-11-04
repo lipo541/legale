@@ -47,6 +47,8 @@ export default function MyPostsPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
+      console.log('🔍 Fetching posts for user:', user.id)
+
       const { data, error } = await supabase
         .from('posts')
         .select(`
@@ -64,6 +66,12 @@ export default function MyPostsPage() {
         `)
         .eq('author_id', user.id)
         .order('created_at', { ascending: false })
+
+      console.log('🔍 Posts query result:', { data, error })
+      
+      if (data && data.length > 0) {
+        console.log('🔍 First post detail:', JSON.stringify(data[0], null, 2))
+      }
 
       if (error) throw error
 

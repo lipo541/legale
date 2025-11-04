@@ -12,7 +12,9 @@ import {
   Calendar,
   Loader2,
   Shield,
-  X
+  X,
+  Award, // Award icon for Author role
+  UserCog // Add UserCog icon for Moderator role
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -20,7 +22,7 @@ interface UserProfile {
   id: string
   email: string | null
   full_name: string | null
-  role: 'USER'
+  role: 'USER' | 'AUTHOR' | 'MODERATOR' // Allow USER, AUTHOR, and MODERATOR roles
   avatar_url: string | null
   created_at: string
   updated_at: string
@@ -40,10 +42,12 @@ export default function UsersPage() {
   })
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [authorRoleUpdatingId, setAuthorRoleUpdatingId] = useState<string | null>(null)
+  const [moderatorRoleUpdatingId, setModeratorRoleUpdatingId] = useState<string | null>(null)
 
   const supabase = createClient()
 
-  // Fetch only USER role users from database
+  // Fetch USER, AUTHOR, and MODERATOR role users from database
   const fetchUsers = useCallback(async () => {
     setLoading(true)
     
@@ -51,7 +55,7 @@ export default function UsersPage() {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('role', 'USER')
+        .in('role', ['USER', 'AUTHOR', 'MODERATOR']) // Fetch USER, AUTHOR, and MODERATOR
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -118,6 +122,68 @@ export default function UsersPage() {
     }
   }
 
+  // Toggle Author role (USER <-> AUTHOR)
+  const handleAuthorRoleToggle = async (user: UserProfile) => {
+    // If currently AUTHOR, switch to USER
+    // If currently USER or MODERATOR, switch to AUTHOR
+    const newRole: 'USER' | 'AUTHOR' | 'MODERATOR' = user.role === 'AUTHOR' ? 'USER' : 'AUTHOR'
+    
+    setAuthorRoleUpdatingId(user.id)
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: newRole, updated_at: new Date().toISOString() })
+        .eq('id', user.id)
+
+      if (error) {
+        console.error('Author role update error:', error)
+        alert('ავტორის როლის განახლებისას მოხდა შეცდომა: ' + error.message)
+      } else {
+        // Update local state for immediate UI feedback
+        setUsers(prevUsers => 
+          prevUsers.map(u => u.id === user.id ? { ...u, role: newRole } : u)
+        )
+      }
+    } catch (err) {
+      console.error('Catch error on author role update:', err)
+      alert('ავტორის როლის განახლებისას მოხდა შეცდომა')
+    } finally {
+      setAuthorRoleUpdatingId(null)
+    }
+  }
+
+  // Toggle Moderator role (USER <-> MODERATOR)
+  const handleModeratorRoleToggle = async (user: UserProfile) => {
+    // If currently MODERATOR, switch to USER
+    // If currently USER or AUTHOR, switch to MODERATOR
+    const newRole: 'USER' | 'AUTHOR' | 'MODERATOR' = user.role === 'MODERATOR' ? 'USER' : 'MODERATOR'
+    
+    setModeratorRoleUpdatingId(user.id)
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: newRole, updated_at: new Date().toISOString() })
+        .eq('id', user.id)
+
+      if (error) {
+        console.error('Moderator role update error:', error)
+        alert('მოდერატორის როლის განახლებისას მოხდა შეცდომა: ' + error.message)
+      } else {
+        // Update local state for immediate UI feedback
+        setUsers(prevUsers => 
+          prevUsers.map(u => u.id === user.id ? { ...u, role: newRole } : u)
+        )
+      }
+    } catch (err) {
+      console.error('Catch error on moderator role update:', err)
+      alert('მოდერატორის როლის განახლებისას მოხდა შეცდომა')
+    } finally {
+      setModeratorRoleUpdatingId(null)
+    }
+  }
+
   const handleDeleteUser = async (userId: string) => {
     if (!confirm('დარწმუნებული ხართ რომ გსურთ ამ მომხმარებლის წაშლა?')) {
       return
@@ -162,7 +228,7 @@ export default function UsersPage() {
             Users
           </h1>
           <p className={`mt-2 text-lg ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-            USER როლის მომხმარებლების მართვა
+            USER, AUTHOR და MODERATOR როლების მართვა
           </p>
         </div>
       </div>
@@ -200,7 +266,13 @@ export default function UsersPage() {
                   მომხმარებელი
                 </th>
                 <th className={`px-6 py-4 text-left text-sm font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
-                  ელფოსტა
+                  როლი
+                </th>
+                <th className={`px-6 py-4 text-left text-sm font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
+                  ავტორის როლი
+                </th>
+                <th className={`px-6 py-4 text-left text-sm font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
+                  მოდერატორის როლი
                 </th>
                 <th className={`px-6 py-4 text-left text-sm font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
                   რეგისტრაცია
@@ -233,12 +305,72 @@ export default function UsersPage() {
                           <div className={`font-medium ${isDark ? 'text-white' : 'text-black'}`}>
                             {user.full_name || 'N/A'}
                           </div>
+                          <div className={`text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                            {user.email || 'N/A'}
+                          </div>
                         </div>
                       </div>
                     </td>
-                    <td className={`px-6 py-4 text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-                      {user.email || 'N/A'}
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${
+                        user.role === 'AUTHOR'
+                          ? isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-500/10 text-blue-600'
+                          : user.role === 'MODERATOR'
+                          ? isDark ? 'bg-purple-500/20 text-purple-400' : 'bg-purple-500/10 text-purple-600'
+                          : isDark ? 'bg-gray-500/20 text-gray-400' : 'bg-gray-500/10 text-gray-600'
+                      }`}>
+                        {user.role === 'AUTHOR' ? 'ავტორი' : user.role === 'MODERATOR' ? 'მოდერატორი' : 'მომხმარებელი'}
+                      </span>
                     </td>
+                    
+                    {/* Author Role Toggle */}
+                    <td className="px-6 py-4">
+                      {authorRoleUpdatingId === user.id ? (
+                        <Loader2 className={`h-5 w-5 animate-spin ${isDark ? 'text-white/60' : 'text-black/60'}`} />
+                      ) : (
+                        <button
+                          onClick={() => handleAuthorRoleToggle(user)}
+                          disabled={moderatorRoleUpdatingId === user.id}
+                          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                            user.role === 'AUTHOR' 
+                              ? 'bg-blue-500' 
+                              : isDark ? 'bg-white/20' : 'bg-black/20'
+                          } ${isDark ? 'focus:ring-offset-black' : 'focus:ring-offset-white'}`}
+                          title={user.role === 'AUTHOR' ? 'ავტორის როლის ჩამორთმევა' : 'ავტორის როლის მინიჭება'}
+                        >
+                          <span
+                            className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                              user.role === 'AUTHOR' ? 'translate-x-5' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      )}
+                    </td>
+                    
+                    {/* Moderator Role Toggle */}
+                    <td className="px-6 py-4">
+                      {moderatorRoleUpdatingId === user.id ? (
+                        <Loader2 className={`h-5 w-5 animate-spin ${isDark ? 'text-white/60' : 'text-black/60'}`} />
+                      ) : (
+                        <button
+                          onClick={() => handleModeratorRoleToggle(user)}
+                          disabled={authorRoleUpdatingId === user.id}
+                          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                            user.role === 'MODERATOR' 
+                              ? 'bg-purple-500' 
+                              : isDark ? 'bg-white/20' : 'bg-black/20'
+                          } ${isDark ? 'focus:ring-offset-black' : 'focus:ring-offset-white'}`}
+                          title={user.role === 'MODERATOR' ? 'მოდერატორის როლის ჩამორთმევა' : 'მოდერატორის როლის მინიჭება'}
+                        >
+                          <span
+                            className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                              user.role === 'MODERATOR' ? 'translate-x-5' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      )}
+                    </td>
+                    
                     <td className={`px-6 py-4 text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                       {new Date(user.created_at).toLocaleDateString('ka-GE')}
                     </td>
@@ -280,7 +412,7 @@ export default function UsersPage() {
                   {/* Expanded Details Dropdown */}
                   {expandedUserId === user.id && (
                     <tr className={isDark ? 'bg-white/5' : 'bg-black/5'}>
-                      <td colSpan={4} className="px-6 py-6">
+                      <td colSpan={6} className="px-6 py-6">
                         <div className={`rounded-xl border p-6 ${isDark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
                           {editingUser?.id === user.id ? (
                             /* Edit Mode */
@@ -449,8 +581,21 @@ export default function UsersPage() {
                                     <Shield className="h-4 w-4" />
                                     როლი
                                   </label>
-                                  <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ${isDark ? 'bg-gray-500/20 text-gray-400' : 'bg-gray-500/10 text-gray-600'}`}>
-                                    მომხმარებელი
+                                  <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ${
+                                    user.role === 'AUTHOR'
+                                      ? isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-500/10 text-blue-600'
+                                      : user.role === 'MODERATOR'
+                                      ? isDark ? 'bg-purple-500/20 text-purple-400' : 'bg-purple-500/10 text-purple-600'
+                                      : isDark ? 'bg-gray-500/20 text-gray-400' : 'bg-gray-500/10 text-gray-600'
+                                  }`}>
+                                    {user.role === 'AUTHOR' ? (
+                                      <Award className="h-4 w-4" />
+                                    ) : user.role === 'MODERATOR' ? (
+                                      <UserCog className="h-4 w-4" />
+                                    ) : (
+                                      <Shield className="h-4 w-4" />
+                                    )}
+                                    {user.role === 'AUTHOR' ? 'ავტორი' : user.role === 'MODERATOR' ? 'მოდერატორი' : 'მომხმარებელი'}
                                   </span>
                                 </div>
 
@@ -502,7 +647,7 @@ export default function UsersPage() {
       {!loading && filteredUsers.length === 0 && (
         <div className={`rounded-xl border p-12 text-center ${isDark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
           <p className={`text-lg font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-            {searchQuery ? 'მომხმარებლები ვერ მოიძებნა' : 'USER როლის მომხმარებლები ჯერ არ არის'}
+            {searchQuery ? 'მომხმარებლები ვერ მოიძებნა' : 'USER, AUTHOR ან MODERATOR როლის მომხმარებლები ჯერ არ არის'}
           </p>
         </div>
       )}

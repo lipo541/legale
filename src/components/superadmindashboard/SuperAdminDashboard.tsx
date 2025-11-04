@@ -29,6 +29,7 @@ import CompaniesPage from './companies/CompaniesPage'
 import AuthorsPage from './authors/AuthorsPage'
 import ModeratorsPage from './moderators/ModeratorsPage'
 import PostsPage from './posts/PostsPage'
+import { createClient } from '@/lib/supabase/client'
 
 export default function SuperAdminDashboard() {
   const { theme } = useTheme()
@@ -37,6 +38,40 @@ export default function SuperAdminDashboard() {
   const searchParams = useSearchParams()
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [activeTab, setActiveTab] = useState('dashboard')
+  const [draftCount, setDraftCount] = useState(0)
+
+  // Fetch draft posts count
+  useEffect(() => {
+    const fetchDraftCount = async () => {
+      const supabase = createClient()
+      const { count, error } = await supabase
+        .from('posts')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'draft')
+      
+      if (!error && count !== null) {
+        setDraftCount(count)
+      }
+    }
+
+    fetchDraftCount()
+    
+    // Optional: Set up real-time subscription for draft count updates
+    const supabase = createClient()
+    const channel = supabase
+      .channel('draft-posts-changes-admin')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'posts', filter: 'status=eq.draft' },
+        () => {
+          fetchDraftCount()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [])
 
   // Sync activeTab with URL on mount and when searchParams change
   useEffect(() => {
@@ -65,7 +100,7 @@ export default function SuperAdminDashboard() {
     { id: 'authors', label: 'Authors', icon: FileText },
     { id: 'moderators', label: 'Moderators', icon: ShieldAlert },
     { id: 'requests', label: 'All Requests', icon: ClipboardList },
-    { id: 'posts', label: 'Posts', icon: FileText },
+    { id: 'posts', label: 'Posts', icon: FileText, badge: draftCount },
     { id: 'categories', label: 'Categories', icon: Grid },
     { id: 'slider', label: 'Slider', icon: Presentation },
     { id: 'legal-pages', label: 'Legal Pages', icon: FileStack },
@@ -184,7 +219,7 @@ export default function SuperAdminDashboard() {
               <button
                 key={item.id}
                 onClick={() => handleTabChange(item.id)}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-200 ${
+                className={`relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-200 ${
                   isActive
                     ? isDark
                       ? 'bg-emerald-500/20 text-emerald-400'
@@ -195,7 +230,15 @@ export default function SuperAdminDashboard() {
                 }`}
               >
                 <Icon className="h-5 w-5 flex-shrink-0" />
-                {!isCollapsed && <span className="font-medium">{item.label}</span>}
+                {!isCollapsed && <span className="flex-1 text-left font-medium">{item.label}</span>}
+                {/* Draft Badge */}
+                {item.badge !== undefined && item.badge > 0 && (
+                  <span className={`flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-xs font-bold ${
+                    isCollapsed ? 'absolute -right-1 -top-1' : ''
+                  } bg-red-500 text-white`}>
+                    {item.badge}
+                  </span>
+                )}
               </button>
             )
           })}
