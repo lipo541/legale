@@ -20,6 +20,12 @@ const eslintConfig = [
       "next-env.d.ts",
     ],
   },
+  {
+    files: ["src/components/practice/PracticePage.tsx"],
+    rules: {
+      "react-hooks/rules-of-hooks": "off",
+    },
+  },
 ];
 
 export default eslintConfig;

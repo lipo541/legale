@@ -28,8 +28,15 @@ interface Post {
   published_at: string
   post_translations: PostTranslation[]
   author?: {
+    id: string
     email: string
     full_name?: string
+    role?: string
+    company_id?: string
+    company?: {
+      full_name?: string
+      company_slug?: string
+    }
   }
 }
 
@@ -74,7 +81,13 @@ export default function AllPostsSection() {
         .select(`
           *,
           post_translations!inner (*),
-          author:profiles!posts_author_id_fkey(email, full_name)
+          author:profiles!posts_author_id_fkey(
+            id, 
+            email, 
+            full_name,
+            role,
+            company_id
+          )
         `)
         .eq('status', 'published')
         .eq('post_translations.language', locale)
@@ -90,6 +103,36 @@ export default function AllPostsSection() {
       const uniquePosts = postsData ? Array.from(
         new Map(postsData.map(post => [post.id, post])).values()
       ) : []
+
+      // Fetch company info for authors who are specialists
+      const companyIds = uniquePosts
+        .filter(post => post.author?.role === 'SPECIALIST' && post.author?.company_id)
+        .map(post => post.author!.company_id!)
+      
+      const companyMap = new Map<string, { full_name: string; company_slug: string }>()
+      
+      if (companyIds.length > 0) {
+        const { data: companiesData } = await supabase
+          .from('profiles')
+          .select('id, full_name, company_slug')
+          .in('id', [...new Set(companyIds)])
+        
+        companiesData?.forEach((company: { id: string; full_name: string | null; company_slug: string | null }) => {
+          if (company.id) {
+            companyMap.set(company.id, {
+              full_name: company.full_name || '',
+              company_slug: company.company_slug || ''
+            })
+          }
+        })
+      }
+
+      // Attach company info to posts
+      uniquePosts.forEach((post: Post) => {
+        if (post.author?.company_id && companyMap.has(post.author.company_id)) {
+          post.author.company = companyMap.get(post.author.company_id)
+        }
+      })
 
       // Get unique category IDs
       const categoryIds = [...new Set(uniquePosts.map(post => post.category_id).filter(Boolean))]
@@ -505,10 +548,36 @@ export default function AllPostsSection() {
                             <span className={`text-[9px] md:text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
                               {formatDate(post.published_at)}
                             </span>
-                            {post.author?.full_name && (
-                              <span className={`text-[9px] md:text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-                                {post.author.full_name}
-                              </span>
+                            {post.author?.full_name && post.author.id && (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    window.location.href = `/${locale}/news/author/${post.author!.id}`
+                                  }}
+                                  className={`text-[9px] md:text-[10px] transition-colors hover:underline ${isDark ? 'text-white/40 hover:text-white/60' : 'text-black/40 hover:text-black/60'}`}
+                                >
+                                  {post.author.full_name}
+                                </button>
+                                {post.author.role === 'SPECIALIST' && post.author.company?.full_name && post.author.company_id && (
+                                  <>
+                                    <span className={`text-[9px] md:text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                                      •
+                                    </span>
+                                    <button
+                                      onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        window.location.href = `/${locale}/news/author/${post.author!.company_id}`
+                                      }}
+                                      className={`text-[9px] md:text-[10px] transition-colors hover:underline ${isDark ? 'text-emerald-400/60 hover:text-emerald-400' : 'text-emerald-600/60 hover:text-emerald-600'}`}
+                                    >
+                                      {post.author.company.full_name}
+                                    </button>
+                                  </>
+                                )}
+                              </div>
                             )}
                           </div>
                           <span className={`text-[9px] md:text-[10px] flex-shrink-0 ${isDark ? 'text-white/40' : 'text-black/40'}`}>

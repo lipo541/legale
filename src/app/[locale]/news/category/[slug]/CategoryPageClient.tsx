@@ -29,8 +29,15 @@ interface Post {
   published_at: string
   post_translations: Translation[]
   author?: {
+    id: string
     email: string
     full_name?: string
+    role?: string
+    company_id?: string
+    company?: {
+      full_name?: string
+      company_slug?: string
+    }
   }
 }
 
@@ -138,10 +145,36 @@ export default function CategoryPageClient({ category, posts, locale }: Category
                         <Calendar className="h-3.5 w-3.5" />
                         <span>{formatDate(post.published_at)}</span>
                       </div>
-                      {post.author?.full_name && (
-                        <div className={`flex items-center gap-1.5 ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-                          <User className="h-3.5 w-3.5" />
-                          <span>{post.author.full_name}</span>
+                      {post.author?.full_name && post.author.id && (
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              window.location.href = `/${locale}/news/author/${post.author!.id}`
+                            }}
+                            className={`flex items-center gap-1.5 transition-colors hover:underline ${isDark ? 'text-white/40 hover:text-white/60' : 'text-black/40 hover:text-black/60'}`}
+                          >
+                            <User className="h-3.5 w-3.5" />
+                            <span>{post.author.full_name}</span>
+                          </button>
+                          {post.author.role === 'SPECIALIST' && post.author.company?.full_name && post.author.company_id && (
+                            <>
+                              <span className={`${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                                •
+                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  window.location.href = `/${locale}/news/author/${post.author!.company_id}`
+                                }}
+                                className={`transition-colors hover:underline ${isDark ? 'text-emerald-400/60 hover:text-emerald-400' : 'text-emerald-600/60 hover:text-emerald-600'}`}
+                              >
+                                {post.author.company.full_name}
+                              </button>
+                            </>
+                          )}
                         </div>
                       )}
                       {translation?.reading_time && (

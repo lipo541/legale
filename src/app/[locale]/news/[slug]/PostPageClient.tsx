@@ -36,6 +36,12 @@ interface Author {
   email: string
   full_name?: string
   avatar_url?: string
+  role?: string
+  company_id?: string
+  company?: {
+    full_name?: string
+    company_slug?: string
+  }
 }
 
 interface Category {
@@ -154,12 +160,40 @@ export default function PostPageClient({ post, author, category, relatedPosts, l
               <span>{formattedDate || '...'}</span>
             </div>
             
-            {author?.full_name && (
-              <div className={`flex items-center gap-2 text-sm font-light ${
-                isDark ? 'text-white/50' : 'text-black/50'
-              }`}>
-                <User className="h-4 w-4 opacity-50" />
-                <span>{author.full_name}</span>
+            {author?.full_name && author.id && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.location.href = `/${locale}/news/author/${author.id}`;
+                  }}
+                  className={`flex items-center gap-2 text-sm font-light transition-colors hover:cursor-pointer hover:underline ${
+                    isDark ? 'text-white/50 hover:text-white/80' : 'text-black/50 hover:text-black/80'
+                  }`}
+                >
+                  <User className="h-4 w-4 opacity-50" />
+                  <span>{author.full_name}</span>
+                </button>
+                {author.role === 'SPECIALIST' && author.company?.full_name && author.company_id && (
+                  <>
+                    <span className={`text-sm font-light ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+                      •
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        window.location.href = `/${locale}/news/author/${author.company_id}`;
+                      }}
+                      className={`text-sm font-light transition-colors hover:cursor-pointer hover:underline ${
+                        isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-700'
+                      }`}
+                    >
+                      {author.company.full_name}
+                    </button>
+                  </>
+                )}
               </div>
             )}
             

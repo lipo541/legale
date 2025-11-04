@@ -9,6 +9,24 @@ interface PageProps {
   }>
 }
 
+interface PostAuthor {
+  id: string
+  email: string
+  full_name?: string
+  role?: string
+  company_id?: string
+  company?: {
+    full_name?: string
+    company_slug?: string
+  }
+}
+
+interface Post {
+  id: string
+  author?: PostAuthor
+  [key: string]: unknown
+}
+
 export default async function CategoryPage({ params }: PageProps) {
   const { locale, slug } = await params
   const supabase = await createClient()
@@ -83,8 +101,11 @@ export default async function CategoryPage({ params }: PageProps) {
         reading_time
       ),
       author:profiles!posts_author_id_fkey(
+        id,
         email,
-        full_name
+        full_name,
+        role,
+        company_id
       )
     `)
     .eq('status', 'published')
@@ -100,6 +121,35 @@ export default async function CategoryPage({ params }: PageProps) {
   const uniquePosts = posts ? Array.from(
     new Map(posts.map(post => [post.id, post])).values()
   ) : []
+
+  // Fetch company info for specialists
+  const companyIds = uniquePosts
+    .filter(post => post.author?.role === 'SPECIALIST' && post.author?.company_id)
+    .map(post => post.author!.company_id!)
+
+  if (companyIds.length > 0) {
+    const { data: companiesData } = await supabase
+      .from('profiles')
+      .select('id, full_name, company_slug')
+      .in('id', [...new Set(companyIds)])
+
+    const companyMap = new Map<string, { full_name: string; company_slug: string }>()
+    companiesData?.forEach((company: { id: string; full_name: string | null; company_slug: string | null }) => {
+      if (company.id) {
+        companyMap.set(company.id, {
+          full_name: company.full_name || '',
+          company_slug: company.company_slug || ''
+        })
+      }
+    })
+
+    // Attach company info
+    uniquePosts.forEach((post: Post) => {
+      if (post.author?.company_id && companyMap.has(post.author.company_id)) {
+        post.author.company = companyMap.get(post.author.company_id)
+      }
+    })
+  }
 
   return (
     <CategoryPageClient

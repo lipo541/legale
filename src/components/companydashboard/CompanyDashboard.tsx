@@ -18,6 +18,7 @@ import {
 import CompanyProfilePage from './companyprofile/CompanyProfilePage'
 import ManageSpecialistsPage from './specialists/ManageSpecialistsPage'
 import SpecialistRequestsPage from './requests/SpecialistRequestsPage'
+import MyPostsPage from '@/components/common/MyPostsPage'
 
 export default function CompanyDashboard() {
   const { theme } = useTheme()
@@ -49,10 +50,7 @@ export default function CompanyDashboard() {
     { id: 'company-profile', label: 'Company Profile', icon: Building2 },
     { id: 'manage-specialists', label: 'Manage Specialists', icon: Users },
     { id: 'specialist-requests', label: 'Specialist Requests', icon: ClipboardList, badge: pendingRequestsCount },
-    { id: 'bio-approval', label: 'Bio Approval', icon: CheckCircle },
-    { id: 'posts', label: 'Posts', icon: FileText },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'categories', label: 'Categories', icon: Grid },
+    { id: 'posts', label: 'My Posts', icon: FileText },
   ]
 
   const renderContent = () => {
@@ -75,54 +73,8 @@ export default function CompanyDashboard() {
         return <ManageSpecialistsPage />
       case 'specialist-requests':
         return <SpecialistRequestsPage onRequestUpdate={fetchPendingRequestsCount} />
-      case 'bio-approval':
-        return (
-          <div>
-            <h1 className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
-              Bio Approval
-            </h1>
-            <p className={`mt-2 text-lg ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-              ბიოგრაფიის დამტკიცება
-            </p>
-            {/* TODO: Bio Approval კომპონენტი */}
-          </div>
-        )
       case 'posts':
-        return (
-          <div>
-            <h1 className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
-              Posts
-            </h1>
-            <p className={`mt-2 text-lg ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-              პოსტების მართვა
-            </p>
-            {/* TODO: Posts მართვა */}
-          </div>
-        )
-      case 'analytics':
-        return (
-          <div>
-            <h1 className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
-              Analytics
-            </h1>
-            <p className={`mt-2 text-lg ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-              ანალიტიკა და სტატისტიკა
-            </p>
-            {/* TODO: Analytics კომპონენტი */}
-          </div>
-        )
-      case 'categories':
-        return (
-          <div>
-            <h1 className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
-              Categories
-            </h1>
-            <p className={`mt-2 text-lg ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-              კატეგორიების მართვა
-            </p>
-            {/* TODO: Categories მართვა */}
-          </div>
-        )
+        return <MyPostsPage />
       default:
         return null
     }

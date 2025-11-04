@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import ProfilePage from '@/components/specialistdashboard/profile/ProfilePage'
 import CreatePostPage from '@/components/specialistdashboard/createpost/CreatePostPage'
+import MyPostsPage from '@/components/common/MyPostsPage'
 
 export default function SpecialistDashboard() {
   const { theme } = useTheme()
@@ -21,7 +22,7 @@ export default function SpecialistDashboard() {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'profile', label: 'Profile', icon: User },
-    { id: 'create-post', label: 'Create Post', icon: FileText },
+    { id: 'posts', label: 'My Posts', icon: FileText },
   ]
 
   const renderContent = () => {
@@ -102,7 +103,7 @@ export default function SpecialistDashboard() {
                 </button>
 
                 <button
-                  onClick={() => setActiveTab('create-post')}
+                  onClick={() => setActiveTab('posts')}
                   className={`flex items-center gap-4 p-6 rounded-xl border transition-all duration-200 ${
                     isDark 
                       ? 'border-white/10 bg-white/5 hover:bg-white/10' 
@@ -113,8 +114,8 @@ export default function SpecialistDashboard() {
                     <FileText className={`w-6 h-6 ${isDark ? 'text-green-400' : 'text-green-600'}`} />
                   </div>
                   <div className="text-left">
-                    <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-black'}`}>Create New Post</h3>
-                    <p className={`text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>Share your expertise</p>
+                    <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-black'}`}>My Posts</h3>
+                    <p className={`text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>Create and manage posts</p>
                   </div>
                 </button>
               </div>
@@ -123,8 +124,8 @@ export default function SpecialistDashboard() {
         )
       case 'profile':
         return <ProfilePage />
-      case 'create-post':
-        return <CreatePostPage />
+      case 'posts':
+        return <MyPostsPage />
       default:
         return null
     }

@@ -45,9 +45,28 @@ export default async function PostPage({ params }: PageProps) {
   // Fetch author info
   const { data: author } = await supabase
     .from('profiles')
-    .select('id, email, full_name, avatar_url')
+    .select(`
+      id, 
+      email, 
+      full_name, 
+      avatar_url,
+      role,
+      company_id
+    `)
     .eq('id', postData.post.author_id)
     .single()
+
+  // Fetch company info if author is a specialist
+  let companyInfo = null
+  if (author?.role === 'SPECIALIST' && author?.company_id) {
+    const { data: company } = await supabase
+      .from('profiles')
+      .select('full_name, company_slug')
+      .eq('id', author.company_id)
+      .single()
+    
+    companyInfo = company
+  }
 
   // Fetch category info if exists
   let category = null
@@ -147,7 +166,10 @@ export default async function PostPage({ params }: PageProps) {
         ogImage: postData.og_image,
         translations: allTranslations || []
       }}
-      author={author}
+      author={author ? {
+        ...author,
+        company: companyInfo || undefined
+      } : null}
       category={category}
       relatedPosts={relatedPosts}
       locale={locale}
