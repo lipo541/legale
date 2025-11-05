@@ -182,10 +182,13 @@ export async function generateMetadata({ params }: PageProps) {
   const { locale, slug } = await params
   const supabase = await createClient()
 
+  // Step 1: Find the post translation by slug and locale to get the post_id
   const { data: postData } = await supabase
     .from('post_translations')
     .select(`
+      post_id,
       title,
+      excerpt,
       meta_title,
       meta_description,
       keywords,
@@ -193,7 +196,11 @@ export async function generateMetadata({ params }: PageProps) {
       og_description,
       og_image,
       post:posts!inner(
-        featured_image_url
+        id,
+        featured_image_url,
+        published_at,
+        updated_at,
+        author_id
       )
     `)
     .eq('slug', slug)
@@ -203,32 +210,120 @@ export async function generateMetadata({ params }: PageProps) {
   if (!postData) {
     return {
       title: 'სტატია ვერ მოიძებნა',
+      description: 'მოთხოვნილი სტატია ვერ მოიძებნა.',
     }
   }
 
-  interface PostWithImage {
+  interface PostWithDetails {
+    id?: string
     featured_image_url?: string
+    published_at?: string
+    updated_at?: string
+    author_id?: string
   }
 
-  const featuredImage = Array.isArray(postData.post) 
-    ? postData.post[0]?.featured_image_url 
-    : (postData.post as PostWithImage)?.featured_image_url
+  const post = Array.isArray(postData.post) 
+    ? postData.post[0] 
+    : (postData.post as PostWithDetails)
+
+  // Step 2: Fetch all translations for this post to build hreflang tags
+  const { data: allTranslations } = await supabase
+    .from('post_translations')
+    .select('language, slug')
+    .eq('post_id', postData.post_id)
+
+  const languageAlternates: { [key: string]: string } = {}
+  if (allTranslations) {
+    allTranslations.forEach(trans => {
+      languageAlternates[trans.language] = `https://legale.ge/${trans.language}/news/${trans.slug}`
+    })
+  }
+
+  // Step 3: Fetch author info for schema
+  let authorName = 'Legale.ge'
+  if (post?.author_id) {
+    const { data: authorData } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', post.author_id)
+      .single()
+    
+    if (authorData?.full_name) {
+      authorName = authorData.full_name
+    }
+  }
+
+  // Build metadata
+  const featuredImage = post?.featured_image_url
+  const ogImage = postData.og_image || featuredImage || 'https://legale.ge/asset/images/og-image.jpg'
+  const title = postData.meta_title || postData.title
+  const description = postData.meta_description || postData.excerpt || postData.title
+  const canonicalUrl = `https://legale.ge/${locale}/news/${slug}`
+
+  // Article Schema Markup
+  const articleSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: postData.title,
+    description: description,
+    image: ogImage,
+    datePublished: post?.published_at,
+    dateModified: post?.updated_at || post?.published_at,
+    author: {
+      '@type': 'Person',
+      name: authorName,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Legale.ge',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://legale.ge/asset/images/logo.png',
+      },
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': canonicalUrl,
+    },
+  }
 
   return {
-    title: postData.meta_title || postData.title,
-    description: postData.meta_description || postData.title,
+    title,
+    description,
     keywords: postData.keywords,
+    alternates: {
+      canonical: canonicalUrl,
+      languages: languageAlternates,
+    },
     openGraph: {
       title: postData.og_title || postData.title,
-      description: postData.og_description || postData.meta_description,
-      images: [postData.og_image || featuredImage].filter(Boolean),
+      description: postData.og_description || description,
+      url: canonicalUrl,
+      siteName: 'Legale.ge',
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: postData.title,
+        },
+      ],
+      locale: locale,
       type: 'article',
+      publishedTime: post?.published_at,
+      modifiedTime: post?.updated_at,
     },
     twitter: {
       card: 'summary_large_image',
       title: postData.og_title || postData.title,
-      description: postData.og_description || postData.meta_description,
-      images: [postData.og_image || featuredImage].filter(Boolean),
+      description: postData.og_description || description,
+      images: [ogImage],
+    },
+    other: {
+      'application/ld+json': JSON.stringify(articleSchema),
     },
   }
 }
+
+// Enable Incremental Static Regeneration - revalidate every 1 hour
+export const revalidate = 3600

@@ -334,7 +334,15 @@ export async function createPost(data: {
       throw translationsError
     }
 
-    return { success: true, postId: post.id }
+    return { 
+      success: true, 
+      postId: post.id,
+      slugs: {
+        ka: georgianSlug,
+        en: englishSlug,
+        ru: russianSlug
+      }
+    }
   } catch (error) {
     console.error('Error creating post:', error)
     console.error('Full error details:', JSON.stringify(error, null, 2))
@@ -481,7 +489,15 @@ export async function updatePost(
       if (translationError) throw translationError
     }
 
-    return { success: true, postId }
+    return { 
+      success: true, 
+      postId,
+      slugs: {
+        ka: data.translations.georgian.slug,
+        en: data.translations.english.slug,
+        ru: data.translations.russian.slug
+      }
+    }
   } catch (error) {
     console.error('Error updating post:', error)
     throw error

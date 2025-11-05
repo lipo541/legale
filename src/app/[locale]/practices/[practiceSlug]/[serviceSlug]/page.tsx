@@ -5,7 +5,8 @@ import { createClient as createBrowserClient } from '@/lib/supabase/client'
 import { Locale } from '@/lib/enums'
 import ServiceDetail from '@/components/service/ServiceDetail'
 
-export const revalidate = 0
+// Enable Incremental Static Regeneration - revalidate every 1 hour
+export const revalidate = 3600
 
 type Props = {
   params: Promise<{

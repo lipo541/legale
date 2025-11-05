@@ -173,9 +173,10 @@ export async function generateMetadata({ params }: PageProps) {
   const { locale, slug } = await params
   const supabase = await createClient()
 
+  // Step 1: Find the category translation by slug and locale to get the category_id
   const { data: categoryData } = await supabase
     .from('post_category_translations')
-    .select('name, seo_title, seo_description')
+    .select('category_id, name, seo_title, seo_description')
     .eq('slug', slug)
     .eq('language', locale)
     .single()
@@ -183,11 +184,78 @@ export async function generateMetadata({ params }: PageProps) {
   if (!categoryData) {
     return {
       title: 'კატეგორია ვერ მოიძებნა',
+      description: 'მოთხოვნილი კატეგორია ვერ მოიძებნა.',
     }
   }
 
+  // Step 2: Fetch all translations for this category to build hreflang tags
+  const { data: allTranslations } = await supabase
+    .from('post_category_translations')
+    .select('language, slug')
+    .eq('category_id', categoryData.category_id)
+
+  const languageAlternates: { [key: string]: string } = {}
+  if (allTranslations) {
+    allTranslations.forEach(trans => {
+      languageAlternates[trans.language] = `https://legale.ge/${trans.language}/news/category/${trans.slug}`
+    })
+  }
+
+  // Build metadata
+  const title = categoryData.seo_title || `${categoryData.name} - Legale.ge`
+  const description = categoryData.seo_description || `იხილეთ სტატიები კატეგორიაში "${categoryData.name}" Legale.ge-ზე`
+  const canonicalUrl = `https://legale.ge/${locale}/news/category/${slug}`
+  const ogImage = 'https://legale.ge/asset/images/og-image.jpg'
+
+  // CollectionPage Schema Markup
+  const collectionPageSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: categoryData.name,
+    description: description,
+    url: canonicalUrl,
+    inLanguage: locale,
+    isPartOf: {
+      '@type': 'WebSite',
+      name: 'Legale.ge',
+      url: 'https://legale.ge',
+    },
+  }
+
   return {
-    title: categoryData.seo_title || categoryData.name || 'კატეგორია',
-    description: categoryData.seo_description || categoryData.name,
+    title,
+    description,
+    alternates: {
+      canonical: canonicalUrl,
+      languages: languageAlternates,
+    },
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      siteName: 'Legale.ge',
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
+      locale: locale,
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [ogImage],
+    },
+    other: {
+      'application/ld+json': JSON.stringify(collectionPageSchema),
+    },
   }
 }
+
+// Enable Incremental Static Regeneration - revalidate every 1 hour
+export const revalidate = 3600

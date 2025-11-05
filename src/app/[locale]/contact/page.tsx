@@ -26,20 +26,65 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const meta = metadata[locale] || metadata.ka
+  const canonicalUrl = `https://legale.ge/${locale}/contact`
+  const ogImage = 'https://legale.ge/asset/images/og-image.jpg'
+
+  // Organization Schema Markup with Contact Information
+  const organizationSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Legale.ge',
+    url: 'https://legale.ge',
+    logo: 'https://legale.ge/asset/images/logo.png',
+    contactPoint: {
+      '@type': 'ContactPoint',
+      telephone: '+995-XXX-XXX-XXX',
+      contactType: 'customer service',
+      areaServed: 'GE',
+      availableLanguage: ['ka', 'en', 'ru'],
+    },
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: 'Tbilisi',
+      addressCountry: 'GE',
+    },
+  }
 
   return {
     title: meta.title,
     description: meta.description,
+    alternates: {
+      canonical: canonicalUrl,
+      languages: {
+        ka: 'https://legale.ge/ka/contact',
+        en: 'https://legale.ge/en/contact',
+        ru: 'https://legale.ge/ru/contact',
+      },
+    },
     openGraph: {
       title: meta.title,
       description: meta.description,
-      type: 'website',
+      url: canonicalUrl,
+      siteName: 'Legale.ge',
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: meta.title,
+        },
+      ],
       locale: locale,
+      type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
       title: meta.title,
       description: meta.description,
+      images: [ogImage],
+    },
+    other: {
+      'application/ld+json': JSON.stringify(organizationSchema),
     },
   }
 }
@@ -53,3 +98,7 @@ export default async function ContactPage({ params }: Props) {
 
   return <ContactInfo locale={locale} />
 }
+
+// Enable ISR (Incremental Static Regeneration)
+// Revalidate every 3600 seconds (1 hour)
+export const revalidate = 3600

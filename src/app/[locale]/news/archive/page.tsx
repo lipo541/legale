@@ -100,3 +100,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     classification: 'Legal Archive',
   }
 }
+
+// Enable ISR (Incremental Static Regeneration)
+// Revalidate every 3600 seconds (1 hour)
+export const revalidate = 3600

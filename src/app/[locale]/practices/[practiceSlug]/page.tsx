@@ -4,7 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createClient as createBrowserClient } from '@/lib/supabase/client'
 import PracticeDetail from '@/components/practice/PracticeDetail'
 
-export const revalidate = 0
+// Enable Incremental Static Regeneration - revalidate every 1 hour
+export const revalidate = 3600
 
 type Props = {
   params: Promise<{
@@ -53,22 +54,52 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
+  // Step 3: Fetch all translations for the practice to build hreflang tags
+  const { data: allTranslations } = await supabase
+    .from('practice_translations')
+    .select('language, slug')
+    .eq('practice_id', translationData.practice_id);
+
+  const languageAlternates: { [key: string]: string } = {};
+  if (allTranslations) {
+    allTranslations.forEach(trans => {
+      languageAlternates[trans.language] = `https://legale.ge/${trans.language}/practices/${trans.slug}`;
+    });
+  }
+
   // Use the fetched translation data to build metadata
-  const title = translationData.meta_title || translationData.title;
-  const description = translationData.meta_description || 'Default description if none provided'; // Provide a fallback
-  const ogTitle = translationData.og_title || title;
+  const title = `${translationData.meta_title || translationData.title} - იურიდიული კონსულტაცია | Legale`;
+  const description = translationData.meta_description || 'პროფესიონალური იურიდიული კონსულტაცია და მომსახურება Legale.ge-ზე';
+  const ogTitle = translationData.og_title || translationData.meta_title || translationData.title;
   const ogDescription = translationData.og_description || description;
-  const ogImage = translationData.og_image_url || '/default-og-image.jpg'; // Ensure this default image exists in /public
+  const ogImage = translationData.og_image_url || 'https://legale.ge/asset/images/og-image.jpg';
+  const canonicalUrl = `https://legale.ge/${locale}/practices/${slug}`;
+
+  // Service Schema Markup
+  const serviceSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: translationData.title,
+    description: description,
+    provider: {
+      '@type': 'Organization',
+      name: 'Legale.ge',
+    },
+    url: canonicalUrl,
+  };
 
   return {
     title,
     description,
-    keywords: translationData.focus_keyword || undefined,
+    alternates: {
+      canonical: canonicalUrl,
+      languages: languageAlternates,
+    },
     openGraph: {
       title: ogTitle,
       description: ogDescription,
-      type: 'article',
-      locale: locale === 'ka' ? 'ka_GE' : locale === 'en' ? 'en_US' : 'ru_RU',
+      url: canonicalUrl,
+      siteName: 'Legale.ge',
       images: [
         {
           url: ogImage,
@@ -77,6 +108,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           alt: ogTitle,
         },
       ],
+      locale: locale,
+      type: 'article',
     },
     twitter: {
       card: 'summary_large_image',
@@ -84,9 +117,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: ogDescription,
       images: [ogImage],
     },
-    alternates: {
-      // Make sure the canonical URL is correct
-      canonical: `https://legale-opal.vercel.app/${locale}/practices/${slug}`,
+    other: {
+      'application/ld+json': JSON.stringify(serviceSchema),
     },
   };
 }

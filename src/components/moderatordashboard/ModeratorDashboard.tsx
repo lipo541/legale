@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import PostsPage from '@/components/superadmindashboard/posts/PostsPage'
 import { createClient } from '@/lib/supabase/client'
+import CacheClearButton from '@/components/superadmindashboard/common/CacheClearButton'
 
 export default function ModeratorDashboard() {
   const { theme } = useTheme()
@@ -235,6 +236,13 @@ export default function ModeratorDashboard() {
 
       {/* Main Content */}
       <main className={`flex-1 p-8 ${isDark ? 'bg-black' : 'bg-white'}`}>
+        {/* Header with Cache Clear Button */}
+        <div className="mb-6 flex items-center justify-between">
+          <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+            Moderator Panel
+          </h1>
+          <CacheClearButton />
+        </div>
         {renderContent()}
       </main>
     </div>

@@ -30,6 +30,7 @@ import AuthorsPage from './authors/AuthorsPage'
 import ModeratorsPage from './moderators/ModeratorsPage'
 import PostsPage from './posts/PostsPage'
 import { createClient } from '@/lib/supabase/client'
+import CacheClearButton from './common/CacheClearButton'
 
 export default function SuperAdminDashboard() {
   const { theme } = useTheme()
@@ -243,6 +244,11 @@ export default function SuperAdminDashboard() {
             )
           })}
         </nav>
+
+        {/* Cache Clear Button */}
+        <div className={`border-t p-4 ${isDark ? 'border-white/10' : 'border-black/10'}`}>
+          <CacheClearButton />
+        </div>
       </aside>
 
       {/* Main Content */}

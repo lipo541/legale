@@ -1,17 +1,143 @@
 import SpecialistDetailPage from '@/components/specialists/specialist-detail/SpecialistDetailPage'
+import { createClient } from '@/lib/supabase/server'
+import { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 
 interface PageProps {
   params: Promise<{ slug: string; locale: string }>
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const resolvedParams = await params
+  const { slug, locale } = resolvedParams
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://legale.ge'
+  const supabase = await createClient()
+
+  // Fetch specialist data with translations and company info
+  const { data: specialistData, error } = await supabase
+    .from('specialist_translations')
+    .select(`
+      full_name,
+      role_title,
+      bio,
+      slug,
+      language,
+      specialist_id,
+      profiles!inner(
+        avatar_url,
+        company_id,
+        role
+      )
+    `)
+    .eq('slug', slug)
+    .eq('language', locale)
+    .single()
+
+  if (error || !specialistData) {
+    return {
+      title: 'Specialist Not Found | Legale',
+      description: 'The specialist you are looking for could not be found.',
+    }
+  }
+
+  // Extract profile data (Supabase returns profiles as array in select query)
+  const specialist = {
+    ...specialistData,
+    profiles: Array.isArray(specialistData.profiles) 
+      ? specialistData.profiles[0] 
+      : specialistData.profiles
+  }
+
+  // Fetch company info if specialist belongs to a company
+  let companyName = null
+  if (specialist.profiles?.company_id) {
+    const { data: company } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', specialist.profiles.company_id)
+      .single()
+    
+    companyName = company?.full_name || null
+  }
+
+  // Create dynamic title and description
+  const title = specialist.role_title
+    ? `${specialist.full_name}, ${specialist.role_title} | Legale`
+    : `${specialist.full_name} | Legale`
+
+  const description = specialist.bio
+    ? specialist.bio.substring(0, 160) + (specialist.bio.length > 160 ? '...' : '')
+    : `Professional profile of ${specialist.full_name} on Legale.`
+
+  const canonicalUrl =
+    locale === 'ka'
+      ? `${baseUrl}/specialists/${slug}`
+      : `${baseUrl}/${locale}/specialists/${slug}`
+
+  const avatarUrl = specialist.profiles?.avatar_url || `${baseUrl}/images/default-avatar.jpg`
+
+  // Person Schema for structured data
+  const personSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: specialist.full_name,
+    jobTitle: specialist.role_title || 'Legal Specialist',
+    image: avatarUrl,
+    description: specialist.bio || `Professional legal specialist ${specialist.full_name}.`,
+    ...(companyName && {
+      worksFor: {
+        '@type': 'Organization',
+        name: companyName,
+      },
+    }),
+    url: canonicalUrl,
+  }
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      siteName: 'LegalGE',
+      images: [
+        {
+          url: avatarUrl,
+          width: 400,
+          height: 400,
+          alt: specialist.full_name,
+        },
+      ],
+      locale: locale,
+      type: 'profile',
+    },
+    twitter: {
+      card: 'summary',
+      title,
+      description,
+      images: [avatarUrl],
+    },
+    other: {
+      'application/ld+json': JSON.stringify(personSchema),
+    },
+  }
 }
 
 export default async function SpecialistPage({ params }: PageProps) {
   const resolvedParams = await params
   const slug = resolvedParams.slug
   const locale = resolvedParams.locale || 'ka'
-  
+
   console.log('Page rendered with slug:', slug, 'locale:', locale)
-  
+
   return <SpecialistDetailPage slug={slug} locale={locale} />
 }
 
-export const dynamic = 'force-dynamic'
+// Enable ISR (Incremental Static Regeneration)
+// Revalidate every 3600 seconds (1 hour)
+export const revalidate = 3600
+

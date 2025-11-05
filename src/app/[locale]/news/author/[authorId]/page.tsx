@@ -179,3 +179,6 @@ export async function generateMetadata({ params }: PageProps) {
     description: `ყველა სტატია ${authorName}-${author.role === 'COMPANY' ? 'ისგან' : 'მ დაწერა'}`,
   }
 }
+
+// Enable Incremental Static Regeneration - revalidate every 1 hour
+export const revalidate = 3600
