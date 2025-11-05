@@ -34,6 +34,7 @@ interface PracticeTranslation {
   og_title: string | null
   og_description: string | null
   og_image_url: string | null
+  social_hashtags: string | null
 }
 
 interface PracticeWithTranslations extends Practice {
@@ -80,7 +81,8 @@ export default function PracticesPage() {
           focus_keyword,
           og_title,
           og_description,
-          og_image_url
+          og_image_url,
+          social_hashtags
         )
       `)
       .order('created_at', { ascending: false })

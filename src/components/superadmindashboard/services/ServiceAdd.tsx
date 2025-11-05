@@ -30,6 +30,7 @@ interface Translation {
   metaDescription: string
   ogTitle: string
   ogDescription: string
+  socialHashtags: string
 }
 
 interface Practice {
@@ -53,6 +54,7 @@ interface ServiceTranslation {
   meta_description: string | null
   og_title: string | null
   og_description: string | null
+  social_hashtags: string | null
   word_count: number
   reading_time: number
 }
@@ -91,9 +93,9 @@ export default function ServiceAdd({ onBack, editData }: ServiceAddProps) {
   const [isPracticeDropdownOpen, setIsPracticeDropdownOpen] = useState(false)
 
   const [translations, setTranslations] = useState<Record<Language, Translation>>({
-    ka: { title: '', slug: '', description: '', imageAlt: '', metaTitle: '', metaDescription: '', ogTitle: '', ogDescription: '' },
-    en: { title: '', slug: '', description: '', imageAlt: '', metaTitle: '', metaDescription: '', ogTitle: '', ogDescription: '' },
-    ru: { title: '', slug: '', description: '', imageAlt: '', metaTitle: '', metaDescription: '', ogTitle: '', ogDescription: '' },
+    ka: { title: '', slug: '', description: '', imageAlt: '', metaTitle: '', metaDescription: '', ogTitle: '', ogDescription: '', socialHashtags: '' },
+    en: { title: '', slug: '', description: '', imageAlt: '', metaTitle: '', metaDescription: '', ogTitle: '', ogDescription: '', socialHashtags: '' },
+    ru: { title: '', slug: '', description: '', imageAlt: '', metaTitle: '', metaDescription: '', ogTitle: '', ogDescription: '', socialHashtags: '' },
   })
 
   const [serviceImage, setServiceImage] = useState<File | null>(null)
@@ -125,15 +127,15 @@ export default function ServiceAdd({ onBack, editData }: ServiceAddProps) {
       const populatedTranslations: Record<Language, Translation> = {
         ka: { 
           title: '', slug: '', description: '', imageAlt: '',
-          metaTitle: '', metaDescription: '', ogTitle: '', ogDescription: ''
+          metaTitle: '', metaDescription: '', ogTitle: '', ogDescription: '', socialHashtags: ''
         },
         en: { 
           title: '', slug: '', description: '', imageAlt: '',
-          metaTitle: '', metaDescription: '', ogTitle: '', ogDescription: ''
+          metaTitle: '', metaDescription: '', ogTitle: '', ogDescription: '', socialHashtags: ''
         },
         ru: { 
           title: '', slug: '', description: '', imageAlt: '',
-          metaTitle: '', metaDescription: '', ogTitle: '', ogDescription: ''
+          metaTitle: '', metaDescription: '', ogTitle: '', ogDescription: '', socialHashtags: ''
         },
       }
 
@@ -149,6 +151,7 @@ export default function ServiceAdd({ onBack, editData }: ServiceAddProps) {
           metaDescription: trans.meta_description || '',
           ogTitle: trans.og_title || '',
           ogDescription: trans.og_description || '',
+          socialHashtags: trans.social_hashtags || '',
         }
       })
 
@@ -446,6 +449,7 @@ export default function ServiceAdd({ onBack, editData }: ServiceAddProps) {
             meta_description: translations[lang].metaDescription || translations[lang].description.replace(/<[^>]*>/g, '').substring(0, 160),
             og_title: translations[lang].ogTitle || translations[lang].metaTitle || translations[lang].title,
             og_description: translations[lang].ogDescription || translations[lang].metaDescription || translations[lang].description.replace(/<[^>]*>/g, '').substring(0, 160),
+            social_hashtags: translations[lang].socialHashtags || null,
             word_count: wordCount,
             reading_time: readingTime,
           }
@@ -616,19 +620,41 @@ export default function ServiceAdd({ onBack, editData }: ServiceAddProps) {
                   <label className={`text-xs font-medium ${isDark ? 'text-white' : 'text-black'}`}>
                     Slug ({languageLabels[activeLanguage]})
                   </label>
-                  <button
-                    type="button"
-                    onClick={toggleSlugEdit}
-                    className={`text-[10px] md:text-xs font-medium transition-colors whitespace-nowrap ${
-                      isSlugEditable[activeLanguage]
-                        ? 'text-emerald-500 hover:text-emerald-600'
-                        : isDark
-                        ? 'text-white/60 hover:text-white'
-                        : 'text-black/60 hover:text-black'
-                    }`}
-                  >
-                    {isSlugEditable[activeLanguage] ? 'ჩაკეტვა' : 'რედაქტირება'}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!translations[activeLanguage].title) {
+                          alert('ჯერ შეიყვანეთ სათაური!')
+                          return
+                        }
+                        const baseSlug = generateSlug(translations[activeLanguage].title)
+                        const langSuffix = activeLanguage === 'ka' ? '-ka' : activeLanguage === 'en' ? '-en' : '-ru'
+                        const generatedSlug = baseSlug + langSuffix
+                        updateTranslation(activeLanguage, 'slug', generatedSlug)
+                      }}
+                      className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                        isDark
+                          ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30'
+                          : 'bg-emerald-500/20 text-emerald-600 hover:bg-emerald-500/30 border border-emerald-500/30'
+                      }`}
+                    >
+                      🔄 ავტო-გენერაცია
+                    </button>
+                    <button
+                      type="button"
+                      onClick={toggleSlugEdit}
+                      className={`text-[10px] md:text-xs font-medium transition-colors whitespace-nowrap ${
+                        isSlugEditable[activeLanguage]
+                          ? 'text-emerald-500 hover:text-emerald-600'
+                          : isDark
+                          ? 'text-white/60 hover:text-white'
+                          : 'text-black/60 hover:text-black'
+                      }`}
+                    >
+                      {isSlugEditable[activeLanguage] ? 'ჩაკეტვა' : 'რედაქტირება'}
+                    </button>
+                  </div>
                 </div>
                 <input 
                   type="text" 
@@ -648,7 +674,7 @@ export default function ServiceAdd({ onBack, editData }: ServiceAddProps) {
                 />
                 {isSlugEditable[activeLanguage] && (
                   <p className={`mt-1 text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-                    მხოლოდ ასოები, რიცხვები და - (დეფისი)
+                    💡 დააჭირეთ &quot;🔄 ავტო-გენერაცია&quot; ღილაკს → slug დაგენერირდება სათაურიდან + -{activeLanguage === 'ka' ? 'ka' : activeLanguage === 'en' ? 'en' : 'ru'} სუფიქსით
                   </p>
                 )}
               </div>
@@ -843,6 +869,27 @@ export default function ServiceAdd({ onBack, editData }: ServiceAddProps) {
                 ></textarea>
                 <p className={`mt-1 text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
                   რეკომენდაცია: 150-200 სიმბოლო
+                </p>
+              </div>
+
+              {/* Social Hashtags */}
+              <div>
+                <label className={`mb-1.5 block text-xs font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+                  Social Media Hashtags ({languageLabels[activeLanguage]})
+                </label>
+                <input
+                  type="text"
+                  value={translations[activeLanguage].socialHashtags}
+                  onChange={(e) => updateTranslation(activeLanguage, 'socialHashtags', e.target.value)}
+                  placeholder="#სამართალი #იურიდიული #კონსულტაცია"
+                  className={`w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors ${
+                    isDark
+                      ? 'border-white/10 bg-[#0d0d0d] text-white placeholder:text-white/40 focus:border-emerald-500'
+                      : 'border-black/10 bg-white text-black placeholder:text-black/40 focus:border-emerald-500'
+                  }`}
+                />
+                <p className={`mt-1 text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                  დაამატეთ რელევანტური hashtags (გამოყავით სივრცით ან კომით)
                 </p>
               </div>
 

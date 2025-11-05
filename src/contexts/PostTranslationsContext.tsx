@@ -28,6 +28,7 @@ interface PostTranslationData {
   og_title: string
   og_description: string
   og_image?: string
+  social_hashtags: string
 }
 
 interface PostTranslations {
@@ -48,6 +49,9 @@ interface PostContextType {
   status: 'draft' | 'pending' | 'published' | 'archived'
   postId: string | null // For editing existing posts
   categoryId: string | null // Category ID (language-independent)
+  // OG Image upload state
+  ogImageFile: File | null
+  ogImagePreview: string | null
   setActiveTab: (tab: TabType) => void
   setActiveLanguage: (lang: Language) => void
   updateField: (field: keyof PostTranslationData, value: string) => void
@@ -57,6 +61,8 @@ interface PostContextType {
   setStatus: (status: 'draft' | 'pending' | 'published' | 'archived') => void
   setPostId: (id: string | null) => void
   setCategoryId: (id: string | null) => void
+  setOgImageFile: (file: File | null) => void
+  setOgImagePreview: (preview: string | null) => void
   savePost: () => Promise<void>
 }
 
@@ -74,6 +80,7 @@ const emptyTranslationData: PostTranslationData = {
   og_title: '',
   og_description: '',
   og_image: '',
+  social_hashtags: '',
 }
 
 // Context
@@ -99,6 +106,7 @@ interface InitialPostData {
     og_title?: string
     og_description?: string
     og_image?: string
+    social_hashtags?: string
     slug?: string
     word_count?: number
     reading_time?: number
@@ -126,6 +134,10 @@ export function PostTranslationsProvider({
   const [postId, setPostId] = useState<string | null>(null) // null = new post, string = editing existing
   const [categoryId, setCategoryId] = useState<string | null>(null) // Category ID
   
+  // OG Image upload state
+  const [ogImageFile, setOgImageFile] = useState<File | null>(null)
+  const [ogImagePreview, setOgImagePreview] = useState<string | null>(null)
+  
   const [translations, setTranslations] = useState<PostTranslations>({
     georgian: { ...emptyTranslationData },
     english: { ...emptyTranslationData },
@@ -147,6 +159,12 @@ export function PostTranslationsProvider({
         const englishTrans = initialData.post_translations.find((t) => t.language === 'en')
         const russianTrans = initialData.post_translations.find((t) => t.language === 'ru')
 
+        // Load OG Image preview if exists (from any translation, usually they're the same)
+        const ogImageUrl = georgianTrans?.og_image || englishTrans?.og_image || russianTrans?.og_image
+        if (ogImageUrl) {
+          setOgImagePreview(ogImageUrl)
+        }
+
         setTranslations({
           georgian: georgianTrans ? {
             title: georgianTrans.title || '',
@@ -162,6 +180,7 @@ export function PostTranslationsProvider({
             og_title: georgianTrans.og_title || '',
             og_description: georgianTrans.og_description || '',
             og_image: georgianTrans.og_image || '',
+            social_hashtags: georgianTrans.social_hashtags || '',
           } : { ...emptyTranslationData },
           english: englishTrans ? {
             title: englishTrans.title || '',
@@ -177,6 +196,7 @@ export function PostTranslationsProvider({
             og_title: englishTrans.og_title || '',
             og_description: englishTrans.og_description || '',
             og_image: englishTrans.og_image || '',
+            social_hashtags: englishTrans.social_hashtags || '',
           } : { ...emptyTranslationData },
           russian: russianTrans ? {
             title: russianTrans.title || '',
@@ -192,6 +212,7 @@ export function PostTranslationsProvider({
             og_title: russianTrans.og_title || '',
             og_description: russianTrans.og_description || '',
             og_image: russianTrans.og_image || '',
+            social_hashtags: russianTrans.social_hashtags || '',
           } : { ...emptyTranslationData },
         })
       }
@@ -240,6 +261,7 @@ export function PostTranslationsProvider({
         positionOrder,
         status,
         featuredImageFile,
+        ogImageFile, // Add OG image file
         categoryId, // Add category ID
       }
 
@@ -277,6 +299,8 @@ export function PostTranslationsProvider({
         status,
         postId,
         categoryId,
+        ogImageFile,
+        ogImagePreview,
         setActiveTab,
         setActiveLanguage,
         updateField,
@@ -286,6 +310,8 @@ export function PostTranslationsProvider({
         setStatus,
         setPostId,
         setCategoryId,
+        setOgImageFile,
+        setOgImagePreview,
         savePost,
       }}
     >

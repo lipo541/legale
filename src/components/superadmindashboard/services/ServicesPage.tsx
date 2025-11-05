@@ -30,6 +30,7 @@ interface ServiceTranslation {
   meta_description: string | null
   og_title: string | null
   og_description: string | null
+  social_hashtags: string | null
   word_count: number
   reading_time: number
 }

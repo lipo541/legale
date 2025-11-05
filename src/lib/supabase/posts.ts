@@ -121,6 +121,49 @@ export async function deletePostImage(imageUrl: string): Promise<boolean> {
   }
 }
 
+/**
+ * Upload OG image to Supabase Storage
+ * @param file - File object
+ * @param postId - Post ID for organizing files
+ * @returns Public URL of uploaded image
+ */
+export async function uploadOgImage(
+  file: File,
+  postId: string
+): Promise<string | null> {
+  const supabase = createClient()
+
+  try {
+    // Generate unique filename
+    const fileExt = file.name.split('.').pop()
+    const timestamp = Math.floor(Date.now() / 1000)
+    const fileName = `og-images/${postId}-${timestamp}.${fileExt}`
+
+    // Upload to post-images bucket in og-images subfolder
+    const { data, error } = await supabase.storage
+      .from('post-images')
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false,
+      })
+
+    if (error) {
+      console.error('Error uploading OG image:', error)
+      return null
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('post-images')
+      .getPublicUrl(data.path)
+
+    return publicUrl
+  } catch (error) {
+    console.error('Error in uploadOgImage:', error)
+    return null
+  }
+}
+
 interface Translation {
   title: string
   excerpt: string
@@ -133,6 +176,7 @@ interface Translation {
   og_title?: string
   og_description?: string
   og_image?: string | File
+  social_hashtags?: string
   word_count?: number
   reading_time?: number
 }
@@ -150,6 +194,7 @@ export async function createPost(data: {
   positionOrder: number
   status: 'draft' | 'pending' | 'published' | 'archived'
   featuredImageFile?: File | string
+  ogImageFile?: File | null
   categoryId?: string | null
 }) {
   const supabase = createClient()
@@ -202,7 +247,13 @@ export async function createPost(data: {
       }
     }
 
-    // 4. Create translations for all 3 languages
+    // 4. Upload OG image if provided
+    let ogImageUrl: string | null = null
+    if (data.ogImageFile) {
+      ogImageUrl = await uploadOgImage(data.ogImageFile, post.id)
+    }
+
+    // 5. Create translations for all 3 languages
     console.log('Creating translations for post:', post.id)
     console.log('Georgian data:', {
       title: data.translations.georgian.title,
@@ -231,7 +282,8 @@ export async function createPost(data: {
         keywords: data.translations.georgian.keywords,
         og_title: data.translations.georgian.og_title,
         og_description: data.translations.georgian.og_description,
-        og_image: data.translations.georgian.og_image,
+        og_image: ogImageUrl || data.translations.georgian.og_image,
+        social_hashtags: data.translations.georgian.social_hashtags,
         word_count: calculateWordCount(data.translations.georgian.content),
         reading_time: calculateReadingTime(data.translations.georgian.content, 'georgian'),
       },
@@ -248,7 +300,8 @@ export async function createPost(data: {
         keywords: data.translations.english.keywords,
         og_title: data.translations.english.og_title,
         og_description: data.translations.english.og_description,
-        og_image: data.translations.english.og_image,
+        og_image: ogImageUrl || data.translations.english.og_image,
+        social_hashtags: data.translations.english.social_hashtags,
         word_count: calculateWordCount(data.translations.english.content),
         reading_time: calculateReadingTime(data.translations.english.content, 'english'),
       },
@@ -265,7 +318,8 @@ export async function createPost(data: {
         keywords: data.translations.russian.keywords,
         og_title: data.translations.russian.og_title,
         og_description: data.translations.russian.og_description,
-        og_image: data.translations.russian.og_image,
+        og_image: ogImageUrl || data.translations.russian.og_image,
+        social_hashtags: data.translations.russian.social_hashtags,
         word_count: calculateWordCount(data.translations.russian.content),
         reading_time: calculateReadingTime(data.translations.russian.content, 'russian'),
       },
@@ -303,6 +357,7 @@ export async function updatePost(
     positionOrder: number
     status: 'draft' | 'pending' | 'published' | 'archived'
     featuredImageFile?: File | string
+    ogImageFile?: File | null
     categoryId?: string | null
   }
 ) {
@@ -368,6 +423,32 @@ export async function updatePost(
       }
     }
 
+    // 2.5. Upload new OG image if provided
+    let ogImageUrl: string | null = null
+    if (data.ogImageFile) {
+      // Get existing OG image from translations to delete it
+      const { data: existingTranslations } = await supabase
+        .from('post_translations')
+        .select('og_image')
+        .eq('post_id', postId)
+        .limit(1)
+        .single()
+
+      // Delete old OG image from storage if exists
+      if (existingTranslations?.og_image) {
+        const oldFilePath = existingTranslations.og_image.split('/post-images/')[1]
+        if (oldFilePath) {
+          await supabase.storage
+            .from('post-images')
+            .remove([oldFilePath])
+            .catch(err => console.error('Error deleting old OG image:', err))
+        }
+      }
+
+      // Upload new OG image
+      ogImageUrl = await uploadOgImage(data.ogImageFile, postId)
+    }
+
     // 3. Update translations
     const languages = [
       { code: 'ka', data: data.translations.georgian, language: 'georgian' },
@@ -389,7 +470,8 @@ export async function updatePost(
           keywords: lang.data.keywords,
           og_title: lang.data.og_title,
           og_description: lang.data.og_description,
-          og_image: lang.data.og_image,
+          og_image: ogImageUrl || lang.data.og_image,
+          social_hashtags: lang.data.social_hashtags,
           word_count: calculateWordCount(lang.data.content),
           reading_time: calculateReadingTime(lang.data.content, lang.language as 'georgian' | 'english' | 'russian'),
         })

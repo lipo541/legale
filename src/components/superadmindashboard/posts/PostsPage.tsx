@@ -42,6 +42,15 @@ interface Post {
     category: string
     category_id: string | null
     slug: string
+    meta_title?: string
+    meta_description?: string
+    keywords?: string
+    og_title?: string
+    og_description?: string
+    og_image?: string
+    social_hashtags?: string
+    word_count?: number
+    reading_time?: number
   }>
   author?: {
     email: string

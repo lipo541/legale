@@ -2,12 +2,46 @@
 
 import { useTheme } from '@/contexts/ThemeContext'
 import { usePostTranslations } from '@/contexts/PostTranslationsContext'
+import { X } from 'lucide-react'
 
 export default function SocialTab() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
-  const { translations, activeLanguage, updateField } = usePostTranslations()
+  const { translations, activeLanguage, updateField, ogImageFile, ogImagePreview, setOgImageFile, setOgImagePreview } = usePostTranslations()
   const currentData = translations[activeLanguage]
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('სურათის ზომა არ უნდა აღემატებოდეს 5MB-ს')
+      return
+    }
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      alert('მხოლოდ JPG, PNG და WebP ფორმატები დაშვებულია')
+      return
+    }
+
+    // Create preview
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setOgImagePreview(reader.result as string)
+      setOgImageFile(file)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const removeImage = () => {
+    setOgImagePreview(null)
+    setOgImageFile(null)
+    // Clear og_image URL from all translations
+    updateField('og_image', '')
+  }
 
   return (
     <div className="space-y-6">
@@ -62,34 +96,94 @@ export default function SocialTab() {
           />
         </div>
 
-        {/* OG Image */}
+        {/* Social Media Hashtags */}
         <div>
           <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white/80' : 'text-black/80'}`}>
-            OG სურათის URL
+            Social Media Hashtags ({activeLanguage === 'georgian' ? 'ქართული' : activeLanguage === 'english' ? 'English' : 'Русский'})
           </label>
           <input
             type="text"
-            value={currentData.og_image || ''}
-            onChange={(e) => updateField('og_image', e.target.value)}
-            placeholder="https://example.com/og-image.jpg (რეკომენდებული: 1200x630px)"
+            value={currentData.social_hashtags}
+            onChange={(e) => updateField('social_hashtags', e.target.value)}
+            placeholder="#სამართალი #იურიდიული #კონსულტაცია"
             className={`w-full px-4 py-2.5 rounded-lg transition-all ${
               isDark
                 ? 'bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:border-emerald-500'
                 : 'bg-black/5 border border-black/10 text-black placeholder:text-black/40 focus:border-emerald-500'
             }`}
           />
-          {currentData.og_image && (
-            <div className={`mt-3 rounded-lg p-2 border ${isDark ? 'border-white/10' : 'border-black/10'}`}>
-              <img
-                src={currentData.og_image}
-                alt="OG Preview"
-                className="max-h-48 rounded object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1200" height="630"%3E%3Crect fill="%23ddd" width="1200" height="630"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle"%3E1200x630%3C/text%3E%3C/svg%3E'
-                }}
-              />
-            </div>
-          )}
+          <p className={`mt-1 text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+            გამოიყენეთ ჰეშთეგები სოციალურ მედიაში გასაზიარებლად
+          </p>
+        </div>
+
+        {/* OG Image */}
+        <div>
+          <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+            OG სურათი (Social Media Share)
+          </label>
+          
+          {/* Upload Button */}
+          <label
+            className={`flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed transition-colors ${
+              ogImagePreview
+                ? 'border-transparent'
+                : isDark
+                ? 'border-white/20 bg-[#0d0d0d] hover:border-white/40 hover:bg-white/5'
+                : 'border-black/20 bg-gray-50 hover:border-black/40 hover:bg-gray-100'
+            }`}
+          >
+            {ogImagePreview ? (
+              <div className="relative w-full h-full">
+                <img 
+                  src={ogImagePreview} 
+                  alt="OG Preview" 
+                  className="w-full h-full rounded-lg object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    removeImage()
+                  }}
+                  className={`absolute top-2 right-2 p-2 rounded-full transition-colors ${
+                    isDark
+                      ? 'bg-black/60 hover:bg-black/80 text-white'
+                      : 'bg-white/60 hover:bg-white/80 text-black'
+                  }`}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center p-4 text-center">
+                <div className={`mb-3 rounded-full p-3 ${isDark ? 'bg-white/10' : 'bg-black/5'}`}>
+                  <svg className={`h-6 w-6 ${isDark ? 'text-white/60' : 'text-black/60'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <p className={`mb-1 text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+                  დააჭირეთ ატვირთვისთვის
+                </p>
+                <p className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                  რეკომენდირებული: 1200x630px
+                </p>
+                <p className={`text-xs mt-1 ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                  JPG, PNG, WebP (მაქს. 5MB)
+                </p>
+              </div>
+            )}
+            <input
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
+          </label>
+          
+          <p className={`mt-2 text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+            ეს სურათი გამოჩნდება როცა პოსტს სოციალურ მედიაში გააზიარებენ (Facebook, Twitter, LinkedIn და ა.შ.)
+          </p>
         </div>
       </div>
 
@@ -99,14 +193,11 @@ export default function SocialTab() {
           Social Media Preview
         </h3>
         <div className={`rounded-lg overflow-hidden border ${isDark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
-          {currentData.og_image && (
+          {ogImagePreview && (
             <img 
-              src={currentData.og_image} 
+              src={ogImagePreview} 
               alt="Preview" 
               className="w-full h-48 object-cover"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none'
-              }}
             />
           )}
           <div className="p-4">

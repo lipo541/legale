@@ -29,6 +29,7 @@ interface Translation {
   // Open Graph Fields
   ogTitle: string
   ogDescription: string
+  socialHashtags: string
 }
 
 interface PracticeTranslation {
@@ -46,6 +47,7 @@ interface PracticeTranslation {
   og_title: string | null
   og_description: string | null
   og_image_url: string | null
+  social_hashtags: string | null
   word_count: number
   reading_time: number
 }
@@ -105,19 +107,19 @@ export default function PracticeAdd({ onBack, editData }: PracticeAddProps) {
       title: '', slug: '', description: '', 
       heroImageAlt: '', pageHeroImageAlt: '',
       metaTitle: '', metaDescription: '', focusKeyword: '',
-      ogTitle: '', ogDescription: ''
+      ogTitle: '', ogDescription: '', socialHashtags: ''
     },
     en: { 
       title: '', slug: '', description: '', 
       heroImageAlt: '', pageHeroImageAlt: '',
       metaTitle: '', metaDescription: '', focusKeyword: '',
-      ogTitle: '', ogDescription: ''
+      ogTitle: '', ogDescription: '', socialHashtags: ''
     },
     ru: { 
       title: '', slug: '', description: '', 
       heroImageAlt: '', pageHeroImageAlt: '',
       metaTitle: '', metaDescription: '', focusKeyword: '',
-      ogTitle: '', ogDescription: ''
+      ogTitle: '', ogDescription: '', socialHashtags: ''
     },
   })
   
@@ -166,19 +168,19 @@ export default function PracticeAdd({ onBack, editData }: PracticeAddProps) {
           title: '', slug: '', description: '', 
           heroImageAlt: '', pageHeroImageAlt: '',
           metaTitle: '', metaDescription: '', focusKeyword: '',
-          ogTitle: '', ogDescription: ''
+          ogTitle: '', ogDescription: '', socialHashtags: ''
         },
         en: { 
           title: '', slug: '', description: '', 
           heroImageAlt: '', pageHeroImageAlt: '',
           metaTitle: '', metaDescription: '', focusKeyword: '',
-          ogTitle: '', ogDescription: ''
+          ogTitle: '', ogDescription: '', socialHashtags: ''
         },
         ru: { 
           title: '', slug: '', description: '', 
           heroImageAlt: '', pageHeroImageAlt: '',
           metaTitle: '', metaDescription: '', focusKeyword: '',
-          ogTitle: '', ogDescription: ''
+          ogTitle: '', ogDescription: '', socialHashtags: ''
         },
       }
 
@@ -196,6 +198,7 @@ export default function PracticeAdd({ onBack, editData }: PracticeAddProps) {
           focusKeyword: trans.focus_keyword || '',
           ogTitle: trans.og_title || '',
           ogDescription: trans.og_description || '',
+          socialHashtags: trans.social_hashtags || '',
         }
       })
 
@@ -203,16 +206,26 @@ export default function PracticeAdd({ onBack, editData }: PracticeAddProps) {
     }
   }, [editData])
 
-  // Auto-generate slug from title
+  // Auto-generate slug from title with transliteration
   const generateSlug = (text: string) => {
-    return text
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, '-')        // Replace spaces with -
-      .replace(/[^\w\u10A0-\u10FF\-]/g, '') // Keep letters (including Georgian), numbers, and -
-      .replace(/\-\-+/g, '-')      // Replace multiple - with single -
-      .replace(/^-+/, '')          // Trim - from start
-      .replace(/-+$/, '')          // Trim - from end
+    const translitMap: { [key: string]: string } = {
+      // Georgian
+      'ა': 'a', 'ბ': 'b', 'გ': 'g', 'დ': 'd', 'ე': 'e', 'ვ': 'v', 'ზ': 'z', 'თ': 't', 'ი': 'i', 'კ': 'k', 'ლ': 'l', 'მ': 'm', 'ნ': 'n', 'ო': 'o', 'პ': 'p', 'ჟ': 'zh', 'რ': 'r', 'ს': 's', 'ტ': 't', 'უ': 'u', 'ფ': 'f', 'ქ': 'q', 'ღ': 'gh', 'ყ': 'y', 'შ': 'sh', 'ჩ': 'ch', 'ც': 'ts', 'ძ': 'dz', 'წ': 'w', 'ჭ': 'ch', 'ხ': 'kh', 'ჯ': 'j', 'ჰ': 'h',
+      // Russian
+      'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo', 'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'shch', 'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya'
+    }
+
+    let slug = text.toLowerCase().trim()
+    
+    // Transliterate character by character
+    slug = slug.split('').map(char => translitMap[char] || char).join('')
+
+    return slug
+      .replace(/[^a-z0-9\s-]/g, '') // Remove non-latin, non-numeric, non-space, non-hyphen characters
+      .replace(/\s+/g, '-')           // Replace spaces with -
+      .replace(/--+/g, '-')           // Replace multiple - with single -
+      .replace(/^-+/, '')             // Trim - from start
+      .replace(/-+$/, '')            // Trim - from end
   }
 
   // Update translation field for current language
@@ -446,7 +459,8 @@ export default function PracticeAdd({ onBack, editData }: PracticeAddProps) {
           // Open Graph Fields (NEW)
           og_title: trans.ogTitle || null,
           og_description: trans.ogDescription || null,
-          og_image_url: pageHeroImageUrl // Use Page Hero as OG Image (1200x630 recommended)
+          og_image_url: pageHeroImageUrl, // Use Page Hero as OG Image (1200x630 recommended)
+          social_hashtags: trans.socialHashtags || null
         }
       })
 
@@ -631,19 +645,41 @@ export default function PracticeAdd({ onBack, editData }: PracticeAddProps) {
             <label className={`text-xs font-medium ${isDark ? 'text-white' : 'text-black'}`}>
               Slug ({languageLabels[activeLanguage]})
             </label>
-            <button
-              type="button"
-              onClick={toggleSlugEdit}
-              className={`text-[10px] md:text-xs font-medium transition-colors whitespace-nowrap ${
-                isSlugEditable[activeLanguage]
-                  ? 'text-emerald-500 hover:text-emerald-600'
-                  : isDark
-                  ? 'text-white/60 hover:text-white'
-                  : 'text-black/60 hover:text-black'
-              }`}
-            >
-              {isSlugEditable[activeLanguage] ? 'ჩაკეტვა' : 'რედაქტირება'}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!currentTranslation.title) {
+                    alert('ჯერ შეიყვანეთ სათაური!')
+                    return
+                  }
+                  const baseSlug = generateSlug(currentTranslation.title)
+                  const langSuffix = activeLanguage === 'ka' ? '-ka' : activeLanguage === 'en' ? '-en' : '-ru'
+                  const generatedSlug = baseSlug + langSuffix
+                  updateTranslation('slug', generatedSlug)
+                }}
+                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                  isDark
+                    ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30'
+                    : 'bg-emerald-500/20 text-emerald-600 hover:bg-emerald-500/30 border border-emerald-500/30'
+                }`}
+              >
+                🔄 ავტო-გენერაცია
+              </button>
+              <button
+                type="button"
+                onClick={toggleSlugEdit}
+                className={`text-[10px] md:text-xs font-medium transition-colors whitespace-nowrap ${
+                  isSlugEditable[activeLanguage]
+                    ? 'text-emerald-500 hover:text-emerald-600'
+                    : isDark
+                    ? 'text-white/60 hover:text-white'
+                    : 'text-black/60 hover:text-black'
+                }`}
+              >
+                {isSlugEditable[activeLanguage] ? 'ჩაკეტვა' : 'რედაქტირება'}
+              </button>
+            </div>
           </div>
           <input
             type="text"
@@ -663,7 +699,7 @@ export default function PracticeAdd({ onBack, editData }: PracticeAddProps) {
           />
           {isSlugEditable[activeLanguage] && (
             <p className={`mt-1 text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-              მხოლოდ ასოები, რიცხვები და - (დეფისი)
+              💡 დააჭირეთ &quot;🔄 ავტო-გენერაცია&quot; ღილაკს → slug დაგენერირდება სათაურიდან + -{activeLanguage === 'ka' ? 'ka' : activeLanguage === 'en' ? 'en' : 'ru'} სუფიქსით
             </p>
           )}
         </div>
@@ -957,6 +993,27 @@ export default function PracticeAdd({ onBack, editData }: PracticeAddProps) {
                 />
                 <p className={`mt-1 text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
                   რეკომენდაცია: 150-200 სიმბოლო
+                </p>
+              </div>
+
+              {/* Social Hashtags */}
+              <div>
+                <label className={`mb-1.5 block text-xs font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+                  Social Media Hashtags ({languageLabels[activeLanguage]})
+                </label>
+                <input
+                  type="text"
+                  value={currentTranslation.socialHashtags}
+                  onChange={(e) => updateTranslation('socialHashtags', e.target.value)}
+                  placeholder="#სამართალი #იურიდიული #კონსულტაცია"
+                  className={`w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors ${
+                    isDark
+                      ? 'border-white/10 bg-[#0d0d0d] text-white placeholder:text-white/40 focus:border-emerald-500'
+                      : 'border-black/10 bg-white text-black placeholder:text-black/40 focus:border-emerald-500'
+                  }`}
+                />
+                <p className={`mt-1 text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                  დაამატეთ რელევანტური hashtags (გამოყავით სივრცით ან კომით)
                 </p>
               </div>
 
