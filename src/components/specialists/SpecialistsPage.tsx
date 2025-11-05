@@ -215,23 +215,40 @@ export default function SpecialistsPage() {
           if (soloError) {
             console.error('Error fetching solo specialists:', soloError);
           } else if (soloData && soloData.length > 0) {
-            // Fetch slugs from specialist_translations for current locale
+            // Fetch full translation data (not just slug) from specialist_translations for current locale
             const { data: soloTranslations } = await supabase
               .from('specialist_translations')
-              .select('specialist_id, slug')
+              .select('specialist_id, slug, full_name, role_title, bio')
               .eq('language', locale)
               .in('specialist_id', soloData.map(s => s.id));
 
-            // Create a map of specialist_id -> slug
-            const slugMap = new Map(soloTranslations?.map(t => [t.specialist_id, t.slug]) || []);
+            // Create a map of specialist_id -> translation data
+            const translationMap = new Map(
+              soloTranslations?.map(t => [
+                t.specialist_id, 
+                { 
+                  slug: t.slug, 
+                  full_name: t.full_name, 
+                  role_title: t.role_title, 
+                  bio: t.bio 
+                }
+              ]) || []
+            );
 
-            // Map specialists with the correct slug for current locale
-            const soloWithSlugs = soloData.map(specialist => ({
-              ...specialist,
-              slug: slugMap.get(specialist.id) || specialist.slug // fallback to profiles.slug
-            }));
+            // Map specialists with the correct translation for current locale
+            const soloWithTranslations = soloData.map(specialist => {
+              const translation = translationMap.get(specialist.id);
+              return {
+                ...specialist,
+                // Use translated data if available, otherwise fallback to profiles data
+                slug: translation?.slug || specialist.slug,
+                full_name: translation?.full_name || specialist.full_name,
+                role_title: translation?.role_title || specialist.role_title,
+                bio: translation?.bio || specialist.bio,
+              };
+            });
 
-            setSoloSpecialists(sortSpecialists(soloWithSlugs));
+            setSoloSpecialists(sortSpecialists(soloWithTranslations));
           } else {
             setSoloSpecialists([]);
           }
@@ -272,27 +289,39 @@ export default function SpecialistsPage() {
             
             const companyMap = new Map(companiesData?.map(c => [c.id, { name: c.full_name, slug: c.company_slug }]) || []);
             
-            // Fetch slugs from specialist_translations for current locale
+            // Fetch full translation data (not just slug) from specialist_translations for current locale
             const { data: companyTranslations } = await supabase
               .from('specialist_translations')
-              .select('specialist_id, slug')
+              .select('specialist_id, slug, full_name, role_title, bio')
               .eq('language', locale)
               .in('specialist_id', companyData.map(s => s.id));
 
-            // Create a map of specialist_id -> slug
-            const slugMap = new Map(companyTranslations?.map(t => [t.specialist_id, t.slug]) || []);
+            // Create a map of specialist_id -> translation data
+            const translationMap = new Map(
+              companyTranslations?.map(t => [
+                t.specialist_id,
+                {
+                  slug: t.slug,
+                  full_name: t.full_name,
+                  role_title: t.role_title,
+                  bio: t.bio
+                }
+              ]) || []
+            );
             
             const mappedData = companyData.map((s: { id: string; full_name: string; role_title: string; bio: string; company_id: string; photo_url?: string; email?: string; phone_number?: string; avatar_url?: string; slug?: string }) => {
               const companyInfo = companyMap.get(s.company_id);
+              const translation = translationMap.get(s.id);
               return {
                 id: s.id,
-                full_name: s.full_name,
-                role_title: s.role_title,
-                bio: s.bio,
+                // Use translated data if available, otherwise fallback to profiles data
+                full_name: translation?.full_name || s.full_name,
+                role_title: translation?.role_title || s.role_title,
+                bio: translation?.bio || s.bio,
                 avatar_url: s.avatar_url,
                 company: companyInfo?.name || 'Company',
                 company_slug: companyInfo?.slug,
-                slug: slugMap.get(s.id) || s.slug // Use locale-specific slug
+                slug: translation?.slug || s.slug
               };
             });
             
@@ -332,7 +361,7 @@ export default function SpecialistsPage() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearchTerm, selectedCity, selectedSpecialistType, selectedServices, sortSpecialists]);
+  }, [debouncedSearchTerm, selectedCity, selectedSpecialistType, selectedServices, sortSpecialists, locale]);
 
   useEffect(() => {
     fetchSpecialists();

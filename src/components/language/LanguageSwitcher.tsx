@@ -31,16 +31,18 @@ export function LanguageSwitcher() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const switchLanguage = (newLocale: Locale) => {
+  const switchLanguage = async (newLocale: Locale) => {
     // Save preference to cookie
     document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000`
     
-    // Replace locale in pathname
-    const segments = pathname.split('/')
-    segments[1] = newLocale
-    const newPathname = segments.join('/')
+    // Import getTranslatedUrl dynamically
+    const { getTranslatedUrl } = await import('@/lib/i18n/getTranslatedUrl')
+    
+    // Get the translated URL
+    const newPathname = await getTranslatedUrl(pathname, newLocale, currentLang)
     
     router.push(newPathname)
+    router.refresh()
     setIsOpen(false)
   }
 

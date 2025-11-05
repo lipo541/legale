@@ -81,71 +81,73 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
     const fetchCompany = async () => {
       setLoading(true)
       try {
-        // First, try to find company by slug in translations table (en/ru)
-        const { data: translationData } = await supabase
-          .from('company_translations')
-          .select('company_id')
-          .eq('slug', slug)
-          .eq('language', locale)
-          .single()
-        
         let profileData, profileError
         
-        if (translationData?.company_id) {
-          // Found via translation slug - perfect match
+        // If Georgian (ka), directly query profiles table by company_slug
+        if (locale === 'ka') {
           const result = await supabase
             .from('profiles')
             .select('*')
-            .eq('id', translationData.company_id)
+            .eq('company_slug', slug)
             .eq('role', 'COMPANY')
             .single()
           
           profileData = result.data
           profileError = result.error
         } else {
-          // Fallback: try ANY language in translations, then redirect if needed
-          const { data: anyLangSlug } = await supabase
+          // For en/ru, try to find company by slug in translations table
+          const { data: translationData } = await supabase
             .from('company_translations')
-            .select('company_id, language, slug')
+            .select('company_id')
             .eq('slug', slug)
-            .limit(1)
+            .eq('language', locale)
             .single()
-
-          if (anyLangSlug) {
-            // Get the correct slug for current locale
-            const { data: correctSlugData } = await supabase
-              .from('company_translations')
-              .select('slug')
-              .eq('company_id', anyLangSlug.company_id)
-              .eq('language', locale)
-              .single()
-
-            if (correctSlugData?.slug && correctSlugData.slug !== slug) {
-              router.replace(`/${locale}/companies/${correctSlugData.slug}`)
-              return
-            }
-
-            // Fetch the profile
+          
+          if (translationData?.company_id) {
+            // Found via translation slug - perfect match
             const result = await supabase
               .from('profiles')
               .select('*')
-              .eq('id', anyLangSlug.company_id)
+              .eq('id', translationData.company_id)
               .eq('role', 'COMPANY')
               .single()
             
             profileData = result.data
             profileError = result.error
           } else {
-            // Last resort: try company_slug in profiles table (for Georgian/ka)
-            const result = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('company_slug', slug)
-              .eq('role', 'COMPANY')
+            // Fallback: try ANY language in translations, then redirect if needed
+            const { data: anyLangSlug } = await supabase
+              .from('company_translations')
+              .select('company_id, language, slug')
+              .eq('slug', slug)
+              .limit(1)
               .single()
-            
-            profileData = result.data
-            profileError = result.error
+
+            if (anyLangSlug) {
+              // Get the correct slug for current locale
+              const { data: correctSlugData } = await supabase
+                .from('company_translations')
+                .select('slug')
+                .eq('company_id', anyLangSlug.company_id)
+                .eq('language', locale)
+                .single()
+
+              if (correctSlugData?.slug && correctSlugData.slug !== slug) {
+                router.replace(`/${locale}/companies/${correctSlugData.slug}`)
+                return
+              }
+
+              // Fetch the profile
+              const result = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', anyLangSlug.company_id)
+                .eq('role', 'COMPANY')
+                .single()
+              
+              profileData = result.data
+              profileError = result.error
+            }
           }
         }
 

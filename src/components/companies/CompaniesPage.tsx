@@ -111,25 +111,39 @@ export default function CompaniesPage() {
           throw companiesError;
         }
 
-        // Fetch slugs from company_translations for current locale (en/ru only)
+        // Fetch full translations from company_translations for current locale (en/ru only)
         if (locale !== 'ka' && companiesData && companiesData.length > 0) {
           const { data: translations } = await supabase
             .from('company_translations')
-            .select('company_id, slug')
+            .select('company_id, slug, company_name, summary')
             .eq('language', locale)
             .in('company_id', companiesData.map(c => c.id))
 
-          // Create slug map
-          const slugMap = new Map(translations?.map(t => [t.company_id, t.slug]) || [])
+          // Create translation map
+          const translationMap = new Map(
+            translations?.map(t => [
+              t.company_id,
+              {
+                slug: t.slug,
+                company_name: t.company_name,
+                summary: t.summary
+              }
+            ]) || []
+          )
 
-          // Add translation slugs to companies, fallback to company_slug
-          const companiesWithSlugs = companiesData.map(company => ({
-            ...company,
-            company_slug: slugMap.get(company.id) || company.company_slug
-          }))
+          // Add translations to companies, fallback to original data
+          const companiesWithTranslations = companiesData.map(company => {
+            const translation = translationMap.get(company.id)
+            return {
+              ...company,
+              company_slug: translation?.slug || company.company_slug,
+              full_name: translation?.company_name || company.full_name,
+              summary: translation?.summary || company.summary
+            }
+          })
 
-          setCompanies(companiesWithSlugs)
-          setFilteredCompanies(companiesWithSlugs)
+          setCompanies(companiesWithTranslations)
+          setFilteredCompanies(companiesWithTranslations)
         } else {
           setCompanies(companiesData || [])
           setFilteredCompanies(companiesData || [])
