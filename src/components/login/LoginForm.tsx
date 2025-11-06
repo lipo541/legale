@@ -99,6 +99,9 @@ export default function LoginForm() {
         provider: provider,
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            prompt: 'select_account',
+          },
         },
       })
 
