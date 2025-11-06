@@ -10,22 +10,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const metadata = {
     ka: {
-      title: 'პრაქტიკის სფეროები | Legale',
+      title: 'პრაქტიკის სფეროები | Legal',
       description: 'გაეცანით ჩვენს იურიდიულ პრაქტიკებს და სერვისებს. პროფესიონალური იურიდიული მომსახურება ყველა სფეროში - კორპორატიული სამართალი, უძრავი ქონება, საგადასახადო კონსულტაციები და სხვა.',
     },
     en: {
-      title: 'Practice Areas | Legale',
+      title: 'Practice Areas | Legal',
       description: 'Explore our legal practice areas and services. Professional legal assistance in all areas - Corporate Law, Real Estate, Tax Consulting, and more.',
     },
     ru: {
-      title: 'Области практики | Legale',
+      title: 'Области практики | Legal',
       description: 'Ознакомьтесь с нашими юридическими практиками и услугами. Профессиональная юридическая помощь во всех сферах - Корпоративное право, Недвижимость, Налоговое консультирование и др.',
     },
   }
 
   const currentMetadata = metadata[locale] || metadata.ka
-  const canonicalUrl = `https://legale.ge/${locale}/practices`
-  const ogImage = 'https://legale.ge/asset/images/og-image.jpg'
+  const canonicalUrl = `https://legal.ge/${locale}/practices`
+  const ogImage = 'https://legal.ge/asset/images/og-image.jpg'
 
   return {
     title: currentMetadata.title,
@@ -33,16 +33,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: {
       canonical: canonicalUrl,
       languages: {
-        'ka': 'https://legale.ge/ka/practices',
-        'en': 'https://legale.ge/en/practices',
-        'ru': 'https://legale.ge/ru/practices',
+        'ka': 'https://legal.ge/ka/practices',
+        'en': 'https://legal.ge/en/practices',
+        'ru': 'https://legal.ge/ru/practices',
       },
     },
     openGraph: {
       title: currentMetadata.title,
       description: currentMetadata.description,
       url: canonicalUrl,
-      siteName: 'Legale.ge',
+      siteName: 'Legal.ge',
       images: [
         {
           url: ogImage,

@@ -197,15 +197,15 @@ export async function generateMetadata({ params }: PageProps) {
   const languageAlternates: { [key: string]: string } = {}
   if (allTranslations) {
     allTranslations.forEach(trans => {
-      languageAlternates[trans.language] = `https://legale.ge/${trans.language}/news/category/${trans.slug}`
+      languageAlternates[trans.language] = `https://legal.ge/${trans.language}/news/category/${trans.slug}`
     })
   }
 
   // Build metadata
-  const title = categoryData.seo_title || `${categoryData.name} - Legale.ge`
-  const description = categoryData.seo_description || `იხილეთ სტატიები კატეგორიაში "${categoryData.name}" Legale.ge-ზე`
-  const canonicalUrl = `https://legale.ge/${locale}/news/category/${slug}`
-  const ogImage = 'https://legale.ge/asset/images/og-image.jpg'
+  const title = categoryData.seo_title || `${categoryData.name} - Legal.ge`
+  const description = categoryData.seo_description || `იხილეთ სტატიები კატეგორიაში "${categoryData.name}" Legal.ge-ზე`
+  const canonicalUrl = `https://legal.ge/${locale}/news/category/${slug}`
+  const ogImage = 'https://legal.ge/asset/images/og-image.jpg'
 
   // CollectionPage Schema Markup
   const collectionPageSchema = {
@@ -217,8 +217,8 @@ export async function generateMetadata({ params }: PageProps) {
     inLanguage: locale,
     isPartOf: {
       '@type': 'WebSite',
-      name: 'Legale.ge',
-      url: 'https://legale.ge',
+      name: 'Legal.ge',
+      url: 'https://legal.ge',
     },
   }
 
@@ -233,7 +233,7 @@ export async function generateMetadata({ params }: PageProps) {
       title,
       description,
       url: canonicalUrl,
-      siteName: 'Legale.ge',
+      siteName: 'Legal.ge',
       images: [
         {
           url: ogImage,

@@ -17,22 +17,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const metadata = {
     ka: {
-      title: 'სიახლეები - Legale.ge | იურიდიული სიახლეები და ანალიტიკა',
-      description: 'იყავით საქმის კურსში საქართველოსა და მსოფლიოს უახლესი იურიდიული სიახლეების, კანონმდებლობის ცვლილებებისა და ექსპერტული ანალიზის შესახებ Legale.ge-ზე.',
+      title: 'სიახლეები - Legal.ge | იურიდიული სიახლეები და ანალიტიკა',
+      description: 'იყავით საქმის კურსში საქართველოსა და მსოფლიოს უახლესი იურიდიული სიახლეების, კანონმდებლობის ცვლილებებისა და ექსპერტული ანალიზის შესახებ Legal.ge-ზე.',
     },
     en: {
-      title: 'News - Legale.ge | Legal News and Analysis',
-      description: 'Stay informed about the latest legal news, legislative changes, and expert analysis from Georgia and around the world on Legale.ge.',
+      title: 'News - Legal.ge | Legal News and Analysis',
+      description: 'Stay informed about the latest legal news, legislative changes, and expert analysis from Georgia and around the world on Legal.ge.',
     },
     ru: {
-      title: 'Новости - Legale.ge | Юридические новости и аналитика',
-      description: 'Будьте в курсе последних юридических новостей, изменений в законодательстве и экспертного анализа из Грузии и со всего мира на Legale.ge.',
+      title: 'Новости - Legal.ge | Юридические новости и аналитика',
+      description: 'Будьте в курсе последних юридических новостей, изменений в законодательстве и экспертного анализа из Грузии и со всего мира на Legal.ge.',
     },
   }
 
   const { title, description } = metadata[locale]
-  const canonicalUrl = `https://legale.ge/${locale}/news`
-  const ogImage = 'https://legale.ge/asset/images/og-image.jpg'
+  const canonicalUrl = `https://legal.ge/${locale}/news`
+  const ogImage = 'https://legal.ge/asset/images/og-image.jpg'
 
   // WebPage Schema Markup
   const webPageSchema = {
@@ -44,8 +44,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     inLanguage: locale,
     isPartOf: {
       '@type': 'WebSite',
-      name: 'Legale.ge',
-      url: 'https://legale.ge',
+      name: 'Legal.ge',
+      url: 'https://legal.ge',
     },
   }
 
@@ -55,16 +55,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: {
       canonical: canonicalUrl,
       languages: {
-        ka: 'https://legale.ge/ka/news',
-        en: 'https://legale.ge/en/news',
-        ru: 'https://legale.ge/ru/news',
+        ka: 'https://legal.ge/ka/news',
+        en: 'https://legal.ge/en/news',
+        ru: 'https://legal.ge/ru/news',
       },
     },
     openGraph: {
       title,
       description,
       url: canonicalUrl,
-      siteName: 'Legale.ge',
+      siteName: 'Legal.ge',
       images: [
         {
           url: ogImage,

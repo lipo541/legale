@@ -7,22 +7,22 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://legale.ge'
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://legal.ge'
 
   const metadata: Record<string, { title: string; description: string; ogImage: string }> = {
     ka: {
-      title: 'იურიდიული კომპანიები საქართველოში | Legale',
-      description: 'აღმოაჩინეთ და შეადარეთ იურიდიული კომპანიები საქართველოში. Legale-ზე თავმოყრილია საუკეთესო იურიდიული ფირმები, რომლებიც გთავაზობენ მრავალფეროვან სერვისებს.',
+      title: 'იურიდიული კომპანიები საქართველოში | Legal',
+      description: 'აღმოაჩინეთ და შეადარეთ იურიდიული კომპანიები საქართველოში. Legal-ზე თავმოყრილია საუკეთესო იურიდიული ფირმები, რომლებიც გთავაზობენ მრავალფეროვან სერვისებს.',
       ogImage: `${baseUrl}/images/og-companies-ka.jpg`,
     },
     en: {
-      title: 'Law Firms in Georgia | Legale',
-      description: 'Discover and compare law firms in Georgia. Legale features top legal companies offering a wide range of services.',
+      title: 'Law Firms in Georgia | Legal',
+      description: 'Discover and compare law firms in Georgia. Legal features top legal companies offering a wide range of services.',
       ogImage: `${baseUrl}/images/og-companies-en.jpg`,
     },
     ru: {
-      title: 'Юридические компании в Грузии | Legale',
-      description: 'Откройте для себя и сравните юридические компании в Грузии. На Legale представлены лучшие юридические фирмы, предлагающие широкий спектр услуг.',
+      title: 'Юридические компании в Грузии | Legal',
+      description: 'Откройте для себя и сравните юридические компании в Грузии. На Legal представлены лучшие юридические фирмы, предлагающие широкий спектр услуг.',
       ogImage: `${baseUrl}/images/og-companies-ru.jpg`,
     },
   }

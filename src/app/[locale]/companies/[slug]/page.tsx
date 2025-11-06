@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = String(companyTranslation?.meta_title || companyData.meta_title || companyTranslation?.company_name || companyData.company_name || 'Company')
   const description = String(companyTranslation?.meta_description || companyData.meta_description || companyTranslation?.summary || companyData.summary || '')
   const ogImage = String(companyData.social_image_url || companyData.logo_url || '/asset/images/og-image.jpg')
-  const canonicalUrl = `https://legale.ge/${locale}/companies/${slug}`
+  const canonicalUrl = `https://legal.ge/${locale}/companies/${slug}`
 
   const corporationSchema = {
     '@context': 'https://schema.org',
@@ -66,17 +66,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   return {
-    title: `${title} | Legale`,
+    title: `${title} | Legal`,
     description: description,
     keywords: (companyTranslation?.meta_keywords || companyData.meta_keywords) as string | string[] | undefined,
     alternates: {
       canonical: canonicalUrl,
     },
     openGraph: {
-      title: `${title} | Legale`,
+      title: `${title} | Legal`,
       description: description,
       url: canonicalUrl,
-      siteName: 'Legale.ge',
+      siteName: 'Legal.ge',
       images: [
         {
           url: ogImage,
@@ -90,7 +90,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${title} | Legale`,
+      title: `${title} | Legal`,
       description: description,
       images: [ogImage],
     },

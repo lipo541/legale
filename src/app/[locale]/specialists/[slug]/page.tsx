@@ -10,7 +10,7 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const resolvedParams = await params
   const { slug, locale } = resolvedParams
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://legale.ge'
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://legal.ge'
   const supabase = await createClient()
 
   // Fetch specialist data with translations and company info
@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (error || !specialistData) {
     return {
-      title: 'Specialist Not Found | Legale',
+      title: 'Specialist Not Found | Legal',
       description: 'The specialist you are looking for could not be found.',
     }
   }
@@ -62,12 +62,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   // Create dynamic title and description
   const title = specialist.role_title
-    ? `${specialist.full_name}, ${specialist.role_title} | Legale`
-    : `${specialist.full_name} | Legale`
+    ? `${specialist.full_name}, ${specialist.role_title} | Legal`
+    : `${specialist.full_name} | Legal`
 
   const description = specialist.bio
     ? specialist.bio.substring(0, 160) + (specialist.bio.length > 160 ? '...' : '')
-    : `Professional profile of ${specialist.full_name} on Legale.`
+    : `Professional profile of ${specialist.full_name} on Legal.`
 
   const canonicalUrl =
     locale === 'ka'

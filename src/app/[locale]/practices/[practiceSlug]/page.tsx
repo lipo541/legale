@@ -63,17 +63,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const languageAlternates: { [key: string]: string } = {};
   if (allTranslations) {
     allTranslations.forEach(trans => {
-      languageAlternates[trans.language] = `https://legale.ge/${trans.language}/practices/${trans.slug}`;
+      languageAlternates[trans.language] = `https://legal.ge/${trans.language}/practices/${trans.slug}`;
     });
   }
 
   // Use the fetched translation data to build metadata
-  const title = `${translationData.meta_title || translationData.title} - იურიდიული კონსულტაცია | Legale`;
-  const description = translationData.meta_description || 'პროფესიონალური იურიდიული კონსულტაცია და მომსახურება Legale.ge-ზე';
+  const title = `${translationData.meta_title || translationData.title} - იურიდიული კონსულტაცია | Legal`;
+  const description = translationData.meta_description || 'პროფესიონალური იურიდიული კონსულტაცია და მომსახურება Legal.ge-ზე';
   const ogTitle = translationData.og_title || translationData.meta_title || translationData.title;
   const ogDescription = translationData.og_description || description;
-  const ogImage = translationData.og_image_url || 'https://legale.ge/asset/images/og-image.jpg';
-  const canonicalUrl = `https://legale.ge/${locale}/practices/${slug}`;
+  const ogImage = translationData.og_image_url || 'https://legal.ge/asset/images/og-image.jpg';
+  const canonicalUrl = `https://legal.ge/${locale}/practices/${slug}`;
 
   // Service Schema Markup
   const serviceSchema = {
@@ -83,7 +83,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: description,
     provider: {
       '@type': 'Organization',
-      name: 'Legale.ge',
+      name: 'Legal.ge',
     },
     url: canonicalUrl,
   };
@@ -99,7 +99,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: ogTitle,
       description: ogDescription,
       url: canonicalUrl,
-      siteName: 'Legale.ge',
+      siteName: 'Legal.ge',
       images: [
         {
           url: ogImage,

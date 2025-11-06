@@ -13,21 +13,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const metadata = {
     ka: {
-      title: 'წესები და პირობები - Legale.ge',
-      description: 'გაეცანით Legale.ge-ს გამოყენების წესებსა და პირობებს. ინფორმაცია პლატფორმის გამოყენების, მომხმარებლის უფლებებისა და პასუხისმგებლობების შესახებ.',
+      title: 'წესები და პირობები - Legal.ge',
+      description: 'გაეცანით Legal.ge-ს გამოყენების წესებსა და პირობებს. ინფორმაცია პლატფორმის გამოყენების, მომხმარებლის უფლებებისა და პასუხისმგებლობების შესახებ.',
     },
     en: {
-      title: 'Terms & Conditions - Legale.ge',
-      description: 'Review Legale.ge\'s Terms and Conditions. Information about platform usage, user rights, and responsibilities.',
+      title: 'Terms & Conditions - Legal.ge',
+      description: 'Review Legal.ge\'s Terms and Conditions. Information about platform usage, user rights, and responsibilities.',
     },
     ru: {
-      title: 'Условия использования - Legale.ge',
-      description: 'Ознакомьтесь с Условиями использования Legale.ge. Информация об использовании платформы, правах и обязанностях пользователей.',
+      title: 'Условия использования - Legal.ge',
+      description: 'Ознакомьтесь с Условиями использования Legal.ge. Информация об использовании платформы, правах и обязанностях пользователей.',
     },
   }
 
   const meta = metadata[locale] || metadata.ka
-  const canonicalUrl = `https://legale.ge/${locale}/terms`
+  const canonicalUrl = `https://legal.ge/${locale}/terms`
 
   return {
     title: meta.title,
@@ -39,9 +39,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: {
       canonical: canonicalUrl,
       languages: {
-        ka: 'https://legale.ge/ka/terms',
-        en: 'https://legale.ge/en/terms',
-        ru: 'https://legale.ge/ru/terms',
+        ka: 'https://legal.ge/ka/terms',
+        en: 'https://legal.ge/en/terms',
+        ru: 'https://legal.ge/ru/terms',
       },
     },
   }

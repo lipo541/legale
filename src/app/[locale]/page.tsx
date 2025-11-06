@@ -7,26 +7,26 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>
 }): Promise<Metadata> {
   const { locale } = await params
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://legale.ge'
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://legal.ge'
 
   const metadata: Record<
     string,
     { title: string; description: string; ogImage: string }
   > = {
     ka: {
-      title: 'იურიდიული მომსახურება და კონსულტაცია | Legale',
+      title: 'იურიდიული მომსახურება და კონსულტაცია | Legal',
       description:
         'იპოვეთ საუკეთესო იურიდიული სპეციალისტები და კომპანიები საქართველოში. პროფესიონალური იურისტები, იურიდიული კონსულტაცია და მომსახურება ყველა სფეროში.',
       ogImage: `${baseUrl}/images/og-home-ka.jpg`,
     },
     en: {
-      title: 'Legal Services and Consultation | Legale',
+      title: 'Legal Services and Consultation | Legal',
       description:
         'Find the best legal specialists and law firms in Georgia. Professional lawyers, legal consultation and services in all practice areas.',
       ogImage: `${baseUrl}/images/og-home-en.jpg`,
     },
     ru: {
-      title: 'Юридические услуги и консультации | Legale',
+      title: 'Юридические услуги и консультации | Legal',
       description:
         'Найдите лучших юристов и юридические компании в Грузии. Профессиональные адвокаты, юридические консультации и услуги во всех областях.',
       ogImage: `${baseUrl}/images/og-home-ru.jpg`,

@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 export default async function LocaleLayout({ children, params }: LocaleLayoutProps) {
   const { locale } = await params
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://legale.ge'
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://legal.ge'
 
   const organizationSchema = {
     '@context': 'https://schema.org',
@@ -49,9 +49,9 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
         ? 'Платформа юридических услуг в Грузии - Найдите лучших юристов и юридические компании'
         : 'იურიდიული სერვისების პლატფორმა საქართველოში - იპოვეთ საუკეთესო იურისტები და იურიდიული კომპანიები',
     sameAs: [
-      'https://www.facebook.com/legale.ge',
-      'https://www.linkedin.com/company/legale-ge',
-      'https://twitter.com/legale_ge',
+      'https://www.facebook.com/legal.ge',
+      'https://www.linkedin.com/company/legal-ge',
+      'https://twitter.com/legal_ge',
     ],
     contactPoint: {
       '@type': 'ContactPoint',

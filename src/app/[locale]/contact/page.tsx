@@ -26,16 +26,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const meta = metadata[locale] || metadata.ka
-  const canonicalUrl = `https://legale.ge/${locale}/contact`
-  const ogImage = 'https://legale.ge/asset/images/og-image.jpg'
+  const canonicalUrl = `https://legal.ge/${locale}/contact`
+  const ogImage = 'https://legal.ge/asset/images/og-image.jpg'
 
   // Organization Schema Markup with Contact Information
   const organizationSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'Legale.ge',
-    url: 'https://legale.ge',
-    logo: 'https://legale.ge/asset/images/logo.png',
+    name: 'Legal.ge',
+    url: 'https://legal.ge',
+    logo: 'https://legal.ge/asset/images/logo.png',
     contactPoint: {
       '@type': 'ContactPoint',
       telephone: '+995-XXX-XXX-XXX',
@@ -56,16 +56,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: {
       canonical: canonicalUrl,
       languages: {
-        ka: 'https://legale.ge/ka/contact',
-        en: 'https://legale.ge/en/contact',
-        ru: 'https://legale.ge/ru/contact',
+        ka: 'https://legal.ge/ka/contact',
+        en: 'https://legal.ge/en/contact',
+        ru: 'https://legal.ge/ru/contact',
       },
     },
     openGraph: {
       title: meta.title,
       description: meta.description,
       url: canonicalUrl,
-      siteName: 'Legale.ge',
+      siteName: 'Legal.ge',
       images: [
         {
           url: ogImage,

@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 import { createClient } from '@supabase/supabase-js'
 
-const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://legale.ge'
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://legal.ge'
 
 // Create Supabase client for server-side operations
 const supabase = createClient(

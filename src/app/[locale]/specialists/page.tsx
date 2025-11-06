@@ -7,28 +7,28 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>
 }): Promise<Metadata> {
   const { locale } = await params
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://legale.ge'
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://legal.ge'
 
   const metadata: Record<
     string,
     { title: string; description: string; ogImage: string }
   > = {
     ka: {
-      title: 'სპეციალისტების სია | იპოვეთ იურისტი საქართველოში - Legale',
+      title: 'სპეციალისტების სია | იპოვეთ იურისტი საქართველოში - Legal',
       description:
-        'მოძებნეთ და დაუკავშირდით პროფესიონალ იურისტებსა და სპეციალისტებს საქართველოს მასშტაბით. Legale-ზე ნახავთ დამოწმებულ სპეციალისტებს სხვადასხვა პრაქტიკის სფეროში.',
+        'მოძებნეთ და დაუკავშირდით პროფესიონალ იურისტებსა და სპეციალისტებს საქართველოს მასშტაბით. Legal-ზე ნახავთ დამოწმებულ სპეციალისტებს სხვადასხვა პრაქტიკის სფეროში.',
       ogImage: `${baseUrl}/images/og-specialists-ka.jpg`,
     },
     en: {
-      title: 'List of Specialists | Find a Lawyer in Georgia - Legale',
+      title: 'List of Specialists | Find a Lawyer in Georgia - Legal',
       description:
-        'Search and connect with professional lawyers and specialists across Georgia. Find verified specialists in various practice areas on Legale.',
+        'Search and connect with professional lawyers and specialists across Georgia. Find verified specialists in various practice areas on Legal.',
       ogImage: `${baseUrl}/images/og-specialists-en.jpg`,
     },
     ru: {
-      title: 'Список специалистов | Найти юриста в Грузии - Legale',
+      title: 'Список специалистов | Найти юриста в Грузии - Legal',
       description:
-        'Ищите и связывайтесь с профессиональными юристами и специалистами по всей Грузии. На Legale вы найдёте проверенных специалистов в различных областях практики.',
+        'Ищите и связывайтесь с профессиональными юристами и специалистами по всей Грузии. На Legal вы найдёте проверенных специалистов в различных областях практики.',
       ogImage: `${baseUrl}/images/og-specialists-ru.jpg`,
     },
   }

@@ -82,7 +82,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: [ogImage],
     },
     alternates: {
-      canonical: `https://legale-opal.vercel.app/${locale}/practices/${practiceSlug}/${serviceSlug}`,
+      canonical: `https://legal.ge/${locale}/practices/${practiceSlug}/${serviceSlug}`,
     },
   }
 }

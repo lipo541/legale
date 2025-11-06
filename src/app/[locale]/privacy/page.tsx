@@ -13,21 +13,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const metadata = {
     ka: {
-      title: 'კონფიდენციალურობის პოლიტიკა - Legale.ge',
-      description: 'გაეცანით Legale.ge-ს კონფიდენციალურობის პოლიტიკას. ინფორმაცია თქვენი პერსონალური მონაცემების შეგროვების, გამოყენებისა და დაცვის შესახებ.',
+      title: 'კონფიდენციალურობის პოლიტიკა - Legal.ge',
+      description: 'გაეცანით Legal.ge-ს კონფიდენციალურობის პოლიტიკას. ინფორმაცია თქვენი პერსონალური მონაცემების შეგროვების, გამოყენებისა და დაცვის შესახებ.',
     },
     en: {
-      title: 'Privacy Policy - Legale.ge',
-      description: 'Review Legale.ge\'s Privacy Policy. Information about how we collect, use, and protect your personal data.',
+      title: 'Privacy Policy - Legal.ge',
+      description: 'Review Legal.ge\'s Privacy Policy. Information about how we collect, use, and protect your personal data.',
     },
     ru: {
-      title: 'Политика конфиденциальности - Legale.ge',
-      description: 'Ознакомьтесь с Политикой конфиденциальности Legale.ge. Информация о том, как мы собираем, используем и защищаем ваши персональные данные.',
+      title: 'Политика конфиденциальности - Legal.ge',
+      description: 'Ознакомьтесь с Политикой конфиденциальности Legal.ge. Информация о том, как мы собираем, используем и защищаем ваши персональные данные.',
     },
   }
 
   const meta = metadata[locale] || metadata.ka
-  const canonicalUrl = `https://legale.ge/${locale}/privacy`
+  const canonicalUrl = `https://legal.ge/${locale}/privacy`
 
   return {
     title: meta.title,
@@ -39,9 +39,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: {
       canonical: canonicalUrl,
       languages: {
-        ka: 'https://legale.ge/ka/privacy',
-        en: 'https://legale.ge/en/privacy',
-        ru: 'https://legale.ge/ru/privacy',
+        ka: 'https://legal.ge/ka/privacy',
+        en: 'https://legal.ge/en/privacy',
+        ru: 'https://legal.ge/ru/privacy',
       },
     },
   }

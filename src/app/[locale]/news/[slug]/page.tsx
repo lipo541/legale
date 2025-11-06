@@ -235,12 +235,12 @@ export async function generateMetadata({ params }: PageProps) {
   const languageAlternates: { [key: string]: string } = {}
   if (allTranslations) {
     allTranslations.forEach(trans => {
-      languageAlternates[trans.language] = `https://legale.ge/${trans.language}/news/${trans.slug}`
+      languageAlternates[trans.language] = `https://legal.ge/${trans.language}/news/${trans.slug}`
     })
   }
 
   // Step 3: Fetch author info for schema
-  let authorName = 'Legale.ge'
+  let authorName = 'Legal.ge'
   if (post?.author_id) {
     const { data: authorData } = await supabase
       .from('profiles')
@@ -255,10 +255,10 @@ export async function generateMetadata({ params }: PageProps) {
 
   // Build metadata
   const featuredImage = post?.featured_image_url
-  const ogImage = postData.og_image || featuredImage || 'https://legale.ge/asset/images/og-image.jpg'
+  const ogImage = postData.og_image || featuredImage || 'https://legal.ge/asset/images/og-image.jpg'
   const title = postData.meta_title || postData.title
   const description = postData.meta_description || postData.excerpt || postData.title
-  const canonicalUrl = `https://legale.ge/${locale}/news/${slug}`
+  const canonicalUrl = `https://legal.ge/${locale}/news/${slug}`
 
   // Article Schema Markup
   const articleSchema = {
@@ -275,10 +275,10 @@ export async function generateMetadata({ params }: PageProps) {
     },
     publisher: {
       '@type': 'Organization',
-      name: 'Legale.ge',
+      name: 'Legal.ge',
       logo: {
         '@type': 'ImageObject',
-        url: 'https://legale.ge/asset/images/logo.png',
+        url: 'https://legal.ge/asset/images/logo.png',
       },
     },
     mainEntityOfPage: {
@@ -299,7 +299,7 @@ export async function generateMetadata({ params }: PageProps) {
       title: postData.og_title || postData.title,
       description: postData.og_description || description,
       url: canonicalUrl,
-      siteName: 'Legale.ge',
+      siteName: 'Legal.ge',
       images: [
         {
           url: ogImage,
