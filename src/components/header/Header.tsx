@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Menu, X, LayoutDashboard, LogOut } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTheme } from '@/contexts/ThemeContext'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
@@ -21,11 +21,13 @@ export default function Header() {
   const pathname = usePathname()
   const router = useRouter()
 
-  const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
-  const [userRole, setUserRole] = useState<string | null>(null)
-  const [hasPendingRequest, setHasPendingRequest] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [roleLoading, setRoleLoading] = useState(false)
+  // Unified auth state
+  const [authState, setAuthState] = useState({
+    user: null as { id: string; email?: string } | null,
+    role: null as string | null,
+    hasPendingRequest: false,
+    loading: true,
+  })
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen)
   const isDark = theme === 'dark'
@@ -34,86 +36,67 @@ export default function Header() {
   const currentLocale = (pathname.split('/')[1] as Locale) || 'ka'
   const t = headerTranslations[currentLocale] || headerTranslations.ka
 
-  // Check authentication status and user data
-  useEffect(() => {
-    let mounted = true
+  // Fetch user session and profile data
+  const fetchUserSession = useCallback(async () => {
+    setAuthState(prev => ({ ...prev, loading: true }))
+    
+    // Get the current session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
-    const fetchUserSession = async () => {
-      setLoading(true)
-      
-      // 1. Get the current session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-      if (sessionError) {
-        console.error('Error fetching session:', sessionError)
-        if (mounted) {
-          setUser(null)
-          setUserRole(null)
-          setHasPendingRequest(false)
-          setLoading(false)
-        }
-        return
-      }
-
-      const currentUser = session?.user
-      if (currentUser) {
-        if (mounted) setUser(currentUser)
-        
-        // 2. If user exists, get their profile and access request status
-        try {
-          const [profileRes, requestRes] = await Promise.all([
-            supabase.from('profiles').select('role').eq('id', currentUser.id).single(),
-            supabase.from('access_requests').select('id, status').eq('user_id', currentUser.id).eq('status', 'PENDING').maybeSingle()
-          ])
-
-          if (mounted) {
-            setUserRole(profileRes.data?.role || null)
-            setHasPendingRequest(!!requestRes.data)
-          }
-        } catch (error) {
-          console.error('Error fetching user profile or request status:', error)
-          if (mounted) {
-            setUserRole(null)
-            setHasPendingRequest(false)
-          }
-        }
-      } else {
-        // No user session
-        if (mounted) {
-          setUser(null)
-          setUserRole(null)
-          setHasPendingRequest(false)
-        }
-      }
-      
-      if (mounted) {
-        setLoading(false)
-      }
+    if (sessionError) {
+      console.error('Error fetching session:', sessionError)
+      setAuthState({ user: null, role: null, hasPendingRequest: false, loading: false })
+      return
     }
 
+    // If no session, reset auth state
+    if (!session) {
+      setAuthState({ user: null, role: null, hasPendingRequest: false, loading: false })
+      return
+    }
+
+    // If session exists, fetch user profile and access request status
+    try {
+      const { user } = session
+      const [profileRes, requestRes] = await Promise.all([
+        supabase.from('profiles').select('role').eq('id', user.id).single(),
+        supabase.from('access_requests').select('id, status').eq('user_id', user.id).eq('status', 'PENDING').maybeSingle()
+      ])
+
+      setAuthState({
+        user,
+        role: profileRes.data?.role || null,
+        hasPendingRequest: !!requestRes.data,
+        loading: false,
+      })
+    } catch (error) {
+      console.error('Error fetching user profile or request status:', error)
+      setAuthState({ user: session.user, role: null, hasPendingRequest: false, loading: false })
+    }
+  }, [])
+
+  // Check authentication status and user data
+  useEffect(() => {
+    // Initial fetch
     fetchUserSession()
 
-    // Also, listen for future auth changes (login/logout)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!mounted) return
-      
-      // On login or logout, re-fetch all user data
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+    // Listen for auth state changes (only SIGNED_IN and SIGNED_OUT)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      // Only re-fetch on actual sign in/out events, NOT on token refresh
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
         fetchUserSession()
       }
     })
 
     return () => {
-      mounted = false
       subscription?.unsubscribe()
     }
-  }, [])
+  }, [fetchUserSession])
 
   // Handle logout
   const handleLogout = async () => {
     await supabase.auth.signOut()
-    setUser(null)
-    setUserRole(null)
+    setAuthState({ user: null, role: null, hasPendingRequest: false, loading: false })
     router.push(`/${currentLocale}`)
     setIsMenuOpen(false)
   }
@@ -166,19 +149,12 @@ export default function Header() {
             <LanguageSwitcher />
 
             {/* Desktop Auth Buttons */}
-            {!loading ? (
+            {!authState.loading ? (
               <div className="hidden md:flex items-center gap-3 ml-2">
-                {user ? (
+                {authState.user ? (
                   <>
-                    {/* Show loading or buttons based on roleLoading */}
-                    {roleLoading ? (
-                      <div className="px-4 py-2 text-sm font-medium" style={{ color: isDark ? '#FFFFFF' : '#000000' }}>
-                        Loading...
-                      </div>
-                    ) : (
-                      <>
                         {/* SUPER_ADMIN Dashboard Button */}
-                        {userRole === 'SUPER_ADMIN' && (
+                        {authState.role === 'SUPER_ADMIN' && (
                       <Link 
                         href={`/${currentLocale}/admin`}
                         style={{
@@ -206,7 +182,7 @@ export default function Header() {
                     )}
 
                     {/* ADMIN Dashboard Button */}
-                    {userRole === 'ADMIN' && (
+                    {authState.role === 'ADMIN' && (
                       <Link 
                         href={`/${currentLocale}/admin`}
                         style={{
@@ -234,7 +210,7 @@ export default function Header() {
                     )}
 
                     {/* MODERATOR Dashboard Button */}
-                    {userRole === 'MODERATOR' && (
+                    {authState.role === 'MODERATOR' && (
                       <Link 
                         href={`/${currentLocale}/moderator-dashboard`}
                         style={{
@@ -262,7 +238,7 @@ export default function Header() {
                     )}
 
                     {/* COMPANY Dashboard Button */}
-                    {userRole === 'COMPANY' && (
+                    {authState.role === 'COMPANY' && (
                       <Link 
                         href={`/${currentLocale}/company-dashboard`}
                         style={{
@@ -290,7 +266,7 @@ export default function Header() {
                     )}
 
                     {/* SOLO_SPECIALIST Dashboard Button */}
-                    {userRole === 'SOLO_SPECIALIST' && (
+                    {authState.role === 'SOLO_SPECIALIST' && (
                       <Link 
                         href={`/${currentLocale}/solo-specialist-dashboard`}
                         style={{
@@ -318,7 +294,7 @@ export default function Header() {
                     )}
 
                     {/* SPECIALIST Dashboard Button */}
-                    {userRole === 'SPECIALIST' && (
+                    {authState.role === 'SPECIALIST' && (
                       <Link 
                         href={`/${currentLocale}/specialist-dashboard`}
                         style={{
@@ -346,7 +322,7 @@ export default function Header() {
                     )}
 
                     {/* AUTHOR Dashboard Button */}
-                    {userRole === 'AUTHOR' && (
+                    {authState.role === 'AUTHOR' && (
                       <Link 
                         href={`/${currentLocale}/author-dashboard`}
                         style={{
@@ -374,7 +350,7 @@ export default function Header() {
                     )}
 
                     {/* USER Profile Button (default for users without specific role) */}
-                    {(!userRole || userRole === 'USER') && (
+                    {(!authState.role || authState.role === 'USER') && (
                       <Link
                         href={`/${currentLocale}/complete-profile`}
                         style={{
@@ -396,7 +372,7 @@ export default function Header() {
                         }}
                         className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                       >
-                        {hasPendingRequest ? t.requestPending : t.myProfile}
+                        {authState.hasPendingRequest ? t.requestPending : t.myProfile}
                       </Link>
                     )}
 
@@ -428,8 +404,6 @@ export default function Header() {
                       <LogOut className="w-4 h-4" />
                       {t.logout}
                     </button>
-                    </>
-                    )}
                   </>
                 ) : (
                   <>
@@ -529,19 +503,12 @@ export default function Header() {
                 ))}
 
                 {/* Mobile Auth Buttons */}
-                {!loading ? (
+                {!authState.loading ? (
                   <div className={`flex flex-col space-y-2 pt-4 border-t transition-colors duration-300 ${isDark ? 'border-white/10' : 'border-black/10'}`}>
-                    {user ? (
+                    {authState.user ? (
                       <>
-                        {/* Show loading or buttons based on roleLoading */}
-                        {roleLoading ? (
-                          <div className="px-4 py-2 text-base font-medium text-center" style={{ color: isDark ? '#FFFFFF' : '#000000' }}>
-                            Loading...
-                          </div>
-                        ) : (
-                          <>
                             {/* SUPER_ADMIN Dashboard Button for Mobile */}
-                            {userRole === 'SUPER_ADMIN' && (
+                            {authState.role === 'SUPER_ADMIN' && (
                           <Link
                             href={`/${currentLocale}/admin`}
                             onClick={toggleMenu}
@@ -560,7 +527,7 @@ export default function Header() {
                         )}
 
                         {/* ADMIN Dashboard Button for Mobile */}
-                        {userRole === 'ADMIN' && (
+                        {authState.role === 'ADMIN' && (
                           <Link
                             href={`/${currentLocale}/admin`}
                             onClick={toggleMenu}
@@ -579,7 +546,7 @@ export default function Header() {
                         )}
 
                         {/* MODERATOR Dashboard Button for Mobile */}
-                        {userRole === 'MODERATOR' && (
+                        {authState.role === 'MODERATOR' && (
                           <Link
                             href={`/${currentLocale}/moderator-dashboard`}
                             onClick={toggleMenu}
@@ -598,7 +565,7 @@ export default function Header() {
                         )}
 
                         {/* COMPANY Dashboard Button for Mobile */}
-                        {userRole === 'COMPANY' && (
+                        {authState.role === 'COMPANY' && (
                           <Link
                             href={`/${currentLocale}/company-dashboard`}
                             onClick={toggleMenu}
@@ -617,7 +584,7 @@ export default function Header() {
                         )}
 
                         {/* SOLO_SPECIALIST Dashboard Button for Mobile */}
-                        {userRole === 'SOLO_SPECIALIST' && (
+                        {authState.role === 'SOLO_SPECIALIST' && (
                           <Link
                             href={`/${currentLocale}/solo-specialist-dashboard`}
                             onClick={toggleMenu}
@@ -636,7 +603,7 @@ export default function Header() {
                         )}
 
                         {/* SPECIALIST Dashboard Button for Mobile */}
-                        {userRole === 'SPECIALIST' && (
+                        {authState.role === 'SPECIALIST' && (
                           <Link
                             href={`/${currentLocale}/specialist-dashboard`}
                             onClick={toggleMenu}
@@ -655,7 +622,7 @@ export default function Header() {
                         )}
 
                         {/* AUTHOR Dashboard Button for Mobile */}
-                        {userRole === 'AUTHOR' && (
+                        {authState.role === 'AUTHOR' && (
                           <Link
                             href={`/${currentLocale}/author-dashboard`}
                             onClick={toggleMenu}
@@ -674,7 +641,7 @@ export default function Header() {
                         )}
 
                         {/* USER Profile Button for Mobile (default for users without specific role) */}
-                        {(!userRole || userRole === 'USER') && (
+                        {(!authState.role || authState.role === 'USER') && (
                           <Link
                             href={`/${currentLocale}/complete-profile`}
                             onClick={toggleMenu}
@@ -687,7 +654,7 @@ export default function Header() {
                             }}
                             className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 active:scale-[0.98]"
                           >
-                            {hasPendingRequest ? t.requestPending : t.myProfile}
+                            {authState.hasPendingRequest ? t.requestPending : t.myProfile}
                           </Link>
                         )}
                         
@@ -707,8 +674,6 @@ export default function Header() {
                           <LogOut className="w-4 h-4" />
                           {t.logout}
                         </button>
-                        </>
-                        )}
                       </>
                     ) : (
                       <>
