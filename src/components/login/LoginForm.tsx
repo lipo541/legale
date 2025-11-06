@@ -179,16 +179,16 @@ export default function LoginForm() {
               {loading ? 'იტვირთება...' : 'შესვლა'}
               <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
             </button>
-          </form>
 
-          <div className={`mt-5 flex items-center justify-between text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
-            <Link href={`/${currentLocale}/forgot-password`} className={`transition-colors duration-300 ${isDark ? 'hover:text-white' : 'hover:text-black'}`}>
-              დაგავიწყდა პაროლი?
-            </Link>
-            <Link href={`/${currentLocale}/register`} className={`font-semibold transition-colors duration-300 ${isDark ? 'hover:text-white' : 'hover:text-black'}`}>
-              რეგისტრაცია
-            </Link>
-          </div>
+            <div className={`mt-5 flex items-center justify-between text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+              <Link href={`/${currentLocale}/forgot-password`} className={`transition-colors duration-300 ${isDark ? 'hover:text-white' : 'hover:text-black'}`}>
+                დაგავიწყდა პაროლი?
+              </Link>
+              <Link href={`/${currentLocale}/register`} className={`font-semibold transition-colors duration-300 ${isDark ? 'hover:text-white' : 'hover:text-black'}`}>
+                რეგისტრაცია
+              </Link>
+            </div>
+          </form>
 
           <div className="mt-8 space-y-4">
             <div className={`flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.3em] ${isDark ? 'text-white/50' : 'text-black/50'}`}>
