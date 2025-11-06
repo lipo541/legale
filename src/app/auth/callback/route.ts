@@ -12,27 +12,41 @@ export async function GET(request: NextRequest) {
   if (code) {
     const supabase = await createClient()
     
-    // Exchange the code for a session
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-    
-    if (!error && data.user) {
-      // Check user role from profiles table
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.user.id)
-        .single()
+    try {
+      // Exchange the code for a session
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code)
       
-      // Determine redirect based on role
-      if (!profileError && (profile?.role === 'SUPER_ADMIN' || profile?.role === 'ADMIN')) {
-        return NextResponse.redirect(`${origin}/ka/admin`)
+      if (error) {
+        console.error('Session exchange error:', error)
+        return NextResponse.redirect(`${origin}/ka/login?error=auth_failed`)
       }
-      
-      // Default redirect to home page
-      return NextResponse.redirect(`${origin}/ka`)
+
+      if (data.session && data.user) {
+        // Session is now stored in cookies by the Supabase client
+        console.log('Session created for user:', data.user.id)
+        
+        // Check user role from profiles table
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single()
+        
+        // Determine redirect based on role
+        if (!profileError && (profile?.role === 'SUPER_ADMIN' || profile?.role === 'ADMIN')) {
+          return NextResponse.redirect(`${origin}/ka/admin`)
+        }
+        
+        // Default redirect to home page
+        return NextResponse.redirect(`${origin}/ka`)
+      }
+    } catch (err) {
+      console.error('Unexpected error in auth callback:', err)
+      return NextResponse.redirect(`${origin}/ka/login?error=unexpected`)
     }
   }
 
   // If there was an error or no code, redirect to home
-  return NextResponse.redirect(`${origin}/ka`)
+  console.log('No auth code provided')
+  return NextResponse.redirect(`${origin}/ka/login`)
 }
