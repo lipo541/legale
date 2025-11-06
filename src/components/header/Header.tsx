@@ -34,59 +34,78 @@ export default function Header() {
   const currentLocale = (pathname.split('/')[1] as Locale) || 'ka'
   const t = headerTranslations[currentLocale] || headerTranslations.ka
 
-  // Check authentication status
+  // Check authentication status and user data
   useEffect(() => {
     let mounted = true
 
-    const loadUserData = async (user: { id: string; email?: string }) => {
-      if (!mounted) return
-      setRoleLoading(true)
-      try {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single()
-        
-        if (!mounted) return
-        setUserRole(profile?.role || null)
+    const fetchUserSession = async () => {
+      setLoading(true)
+      
+      // 1. Get the current session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
-        const { data: pendingRequest } = await supabase
-          .from('access_requests')
-          .select('id, status, company_id')
-          .eq('user_id', user.id)
-          .eq('status', 'PENDING')
-          .maybeSingle()
-        
-        if (!mounted) return
-        setHasPendingRequest(!!pendingRequest)
-      } catch (error) {
-        console.error('Error loading user data:', error)
-      } finally {
+      if (sessionError) {
+        console.error('Error fetching session:', sessionError)
         if (mounted) {
-          setRoleLoading(false)
+          setUser(null)
+          setUserRole(null)
+          setHasPendingRequest(false)
+          setLoading(false)
         }
+        return
+      }
+
+      const currentUser = session?.user
+      if (currentUser) {
+        if (mounted) setUser(currentUser)
+        
+        // 2. If user exists, get their profile and access request status
+        try {
+          const [profileRes, requestRes] = await Promise.all([
+            supabase.from('profiles').select('role').eq('id', currentUser.id).single(),
+            supabase.from('access_requests').select('id, status').eq('user_id', currentUser.id).eq('status', 'PENDING').maybeSingle()
+          ])
+
+          if (mounted) {
+            setUserRole(profileRes.data?.role || null)
+            setHasPendingRequest(!!requestRes.data)
+          }
+        } catch (error) {
+          console.error('Error fetching user profile or request status:', error)
+          if (mounted) {
+            setUserRole(null)
+            setHasPendingRequest(false)
+          }
+        }
+      } else {
+        // No user session
+        if (mounted) {
+          setUser(null)
+          setUserRole(null)
+          setHasPendingRequest(false)
+        }
+      }
+      
+      if (mounted) {
+        setLoading(false)
       }
     }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    fetchUserSession()
+
+    // Also, listen for future auth changes (login/logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return
-
-      const currentUser = session?.user
-      setUser(currentUser || null)
-
-      if (currentUser) {
-        loadUserData(currentUser)
-      } else {
-        setUserRole(null)
-        setHasPendingRequest(false)
+      
+      // On login or logout, re-fetch all user data
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+        fetchUserSession()
       }
-      setLoading(false)
     })
 
     return () => {
       mounted = false
-      subscription.unsubscribe()
+      subscription?.unsubscribe()
     }
   }, [])
 
