@@ -12,12 +12,14 @@ import type { Locale } from '@/lib/i18n/config'
 import { createClient } from '@/lib/supabase/client'
 import { headerTranslations } from '@/translations/header'
 
+// Create the Supabase client once, outside the component
+const supabase = createClient()
+
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { theme } = useTheme()
   const pathname = usePathname()
   const router = useRouter()
-  const supabase = createClient()
 
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
   const [userRole, setUserRole] = useState<string | null>(null)
@@ -34,7 +36,6 @@ export default function Header() {
 
   // Check authentication status
   useEffect(() => {
-    const supabase = createClient()
     let mounted = true
 
     const loadUserData = async (user: { id: string; email?: string }) => {
