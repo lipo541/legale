@@ -24,8 +24,8 @@ const socialProviders: SocialProvider[] = [
     badge: <SiGoogle className="h-4 w-4" aria-hidden="true" />,
   },
   {
-    id: 'icloud',
-    label: 'iCloud-ით შესვლა',
+    id: 'apple',
+    label: 'Apple-ით შესვლა',
     badge: <PiCloudBold className="h-4 w-4" aria-hidden="true" />,
   },
   {
@@ -86,6 +86,25 @@ export default function LoginForm() {
     } catch (err) {
       setError((err as Error).message || 'შესვლა ვერ მოხერხდა')
     } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'apple') => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      })
+
+      if (error) throw error
+    } catch (err) {
+      setError((err as Error).message || 'ავტორიზაცია ვერ მოხერხდა')
       setLoading(false)
     }
   }
@@ -184,7 +203,9 @@ export default function LoginForm() {
                 <button
                   key={provider.id}
                   type="button"
-                  className={`group flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-all duration-300 hover:-translate-y-0.5 focus:outline-none focus:ring-1 ${isDark ? 'border-white/10 bg-black text-white hover:border-white hover:bg-white hover:text-black focus:ring-white' : 'border-black/10 bg-white text-black hover:border-black hover:bg-black hover:text-white focus:ring-black'}`}
+                  onClick={() => handleSocialLogin(provider.id as 'google' | 'facebook' | 'apple')}
+                  disabled={loading}
+                  className={`group flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-all duration-300 hover:-translate-y-0.5 focus:outline-none focus:ring-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 ${isDark ? 'border-white/10 bg-black text-white hover:border-white hover:bg-white hover:text-black focus:ring-white' : 'border-black/10 bg-white text-black hover:border-black hover:bg-black hover:text-white focus:ring-black'}`}
                 >
                   <span className="flex items-center gap-3">
                     <span className={`flex h-9 w-9 items-center justify-center rounded-full border text-base transition-all duration-300 ${isDark ? 'border-white/10 bg-black text-white group-hover:border-black group-hover:bg-white group-hover:text-black' : 'border-black/10 bg-white text-black group-hover:border-white group-hover:bg-black group-hover:text-white'}`}>

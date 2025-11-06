@@ -24,8 +24,8 @@ const socialProviders: SocialProvider[] = [
     badge: <SiGoogle className="h-5 w-5" aria-hidden="true" />,
   },
   {
-    id: 'icloud',
-    label: 'Continue with iCloud',
+    id: 'apple',
+    label: 'Continue with Apple',
     badge: <PiCloudBold className="h-5 w-5" aria-hidden="true" />,
   },
   {
@@ -117,6 +117,25 @@ export default function RegisterForm() {
     }
   }
 
+  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'apple') => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      })
+
+      if (error) throw error
+    } catch (err) {
+      setError((err as Error).message || 'ავტორიზაცია ვერ მოხერხდა')
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="relative isolate flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-6">
@@ -146,7 +165,9 @@ export default function RegisterForm() {
           <div className="mt-8">
             <button
               type="button"
-              className={`group flex w-full items-center justify-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-1 ${isDark ? 'border-white/20 bg-transparent text-white hover:bg-white hover:text-black focus:ring-white' : 'border-black/20 bg-transparent text-black hover:bg-black hover:text-white focus:ring-black'}`}
+              onClick={() => handleSocialLogin('google')}
+              disabled={loading}
+              className={`group flex w-full items-center justify-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${isDark ? 'border-white/20 bg-transparent text-white hover:bg-white hover:text-black focus:ring-white' : 'border-black/20 bg-transparent text-black hover:bg-black hover:text-white focus:ring-black'}`}
             >
               <SiGoogle className="h-5 w-5" aria-hidden="true" />
               Continue with Google
