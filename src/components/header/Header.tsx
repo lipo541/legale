@@ -24,7 +24,6 @@ export default function Header() {
   const [hasPendingRequest, setHasPendingRequest] = useState(false)
   const [loading, setLoading] = useState(true)
   const [roleLoading, setRoleLoading] = useState(false)
-  const [draftPostsCount, setDraftPostsCount] = useState<number>(0)
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen)
   const isDark = theme === 'dark'
@@ -89,53 +88,6 @@ export default function Header() {
       subscription.unsubscribe()
     }
   }, [])
-
-  // Load draft posts count for SUPER_ADMIN and MODERATOR
-  useEffect(() => {
-    if (!user || !userRole) return
-    if (userRole !== 'SUPER_ADMIN' && userRole !== 'MODERATOR') return
-
-    const loadDraftPostsCount = async () => {
-      try {
-        const { count, error } = await supabase
-          .from('posts')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'draft')
-
-        if (error) {
-          console.error('Error loading draft posts count:', error)
-          return
-        }
-
-        setDraftPostsCount(count || 0)
-      } catch (error) {
-        console.error('Error loading draft posts count:', error)
-      }
-    }
-
-    loadDraftPostsCount()
-
-    // Set up realtime subscription for posts changes
-    const channel = supabase
-      .channel('posts-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'posts',
-          filter: 'status=eq.draft'
-        },
-        () => {
-          loadDraftPostsCount()
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [user, userRole, supabase])
 
   // Handle logout
   const handleLogout = async () => {
@@ -226,15 +178,10 @@ export default function Header() {
                           e.currentTarget.style.color = isDark ? '#FFFFFF' : '#000000'
                           e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'
                         }}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] relative"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                       >
                         <LayoutDashboard className="w-4 h-4" />
                         {t.adminDashboard}
-                        {draftPostsCount > 0 && (
-                          <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                            {draftPostsCount}
-                          </span>
-                        )}
                       </Link>
                     )}
 
@@ -287,15 +234,10 @@ export default function Header() {
                           e.currentTarget.style.color = isDark ? '#FFFFFF' : '#000000'
                           e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'
                         }}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] relative"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                       >
                         <LayoutDashboard className="w-4 h-4" />
                         {t.dashboard}
-                        {draftPostsCount > 0 && (
-                          <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                            {draftPostsCount}
-                          </span>
-                        )}
                       </Link>
                     )}
 
@@ -590,15 +532,10 @@ export default function Header() {
                               borderWidth: '1px',
                               borderStyle: 'solid'
                             }}
-                            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 active:scale-[0.98] relative"
+                            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 active:scale-[0.98]"
                           >
                             <LayoutDashboard className="w-4 h-4" />
                             {t.adminDashboard}
-                            {draftPostsCount > 0 && (
-                              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                                {draftPostsCount}
-                              </span>
-                            )}
                           </Link>
                         )}
 
@@ -633,15 +570,10 @@ export default function Header() {
                               borderWidth: '1px',
                               borderStyle: 'solid'
                             }}
-                            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 active:scale-[0.98] relative"
+                            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 active:scale-[0.98]"
                           >
                             <LayoutDashboard className="w-4 h-4" />
                             {t.dashboard}
-                            {draftPostsCount > 0 && (
-                              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                                {draftPostsCount}
-                              </span>
-                            )}
                           </Link>
                         )}
 

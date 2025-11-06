@@ -27,6 +27,10 @@ interface Post {
     title: string
     excerpt: string
     content: string
+    og_title?: string
+    og_description?: string
+    og_image?: string
+    social_hashtags?: string
   }>
 }
 
@@ -61,7 +65,11 @@ export default function MyPostsPage() {
             language,
             title,
             excerpt,
-            content
+            content,
+            og_title,
+            og_description,
+            og_image,
+            social_hashtags
           )
         `)
         .eq('author_id', user.id)
