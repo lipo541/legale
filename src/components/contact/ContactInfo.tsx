@@ -19,13 +19,13 @@ export default function ContactInfo({ locale }: ContactInfoProps) {
       icon: Phone,
       title: t.info.phone,
       content: t.info.phoneNumber,
-      href: 'tel:+995XXXXXXXXX',
+      href: 'tel:+995551911961',
     },
     {
       icon: Mail,
       title: t.info.email,
       content: t.info.emailAddress,
-      href: 'mailto:info@legalge.ge',
+      href: 'mailto:contact@legal.ge',
     },
     {
       icon: MapPin,

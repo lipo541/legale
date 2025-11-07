@@ -156,10 +156,10 @@ export default function Footer() {
             </h3>
             <div className="space-y-2 text-sm">
               <p className={isDark ? 'text-white/60' : 'text-black/60'}>
-                info@legalge.ge
+                contact@legal.ge
               </p>
               <p className={isDark ? 'text-white/60' : 'text-black/60'}>
-                +995 XXX XXX XXX
+                +995 551 911 961
               </p>
               <p className={isDark ? 'text-white/60' : 'text-black/60'}>
                 თბილისი, საქართველო
