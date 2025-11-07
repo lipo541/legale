@@ -70,7 +70,11 @@ export function LanguageSwitcher() {
 
       {isOpen && (
         <div
-          className={`absolute top-full left-0 -mt-px rounded-b-lg border-x border-b shadow-2xl w-full z-50 overflow-hidden transition-all duration-150 ${isDark ? 'bg-white/10 border-white/10' : 'bg-black/5 border-black/10'}`}
+          className={`absolute top-full left-0 -mt-px rounded-b-lg border-x border-b shadow-2xl w-full z-50 overflow-hidden backdrop-blur-md transition-all duration-150 ${
+            isDark 
+              ? 'bg-gray-900/95 border-white/20' 
+              : 'bg-white/95 border-black/20'
+          }`}
         >
           {locales
             .filter(lang => lang !== currentLang)
@@ -80,8 +84,8 @@ export function LanguageSwitcher() {
               onClick={() => switchLanguage(lang)}
               className={`w-full px-4 py-3 text-center text-sm font-medium transition-all duration-150 ${
                 isDark
-                  ? 'text-white hover:bg-white/20 hover:text-white'
-                  : 'text-black hover:bg-black/10 hover:text-black'
+                  ? 'text-white/90 hover:bg-white/10 hover:text-white'
+                  : 'text-black/90 hover:bg-black/5 hover:text-black'
               }`}
             >
               {localeLabels[lang]}

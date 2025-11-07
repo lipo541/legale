@@ -15,6 +15,7 @@ import Position7 from './positions/Position7'
 import Position9 from './positions/Position9'
 import Position10 from './positions/Position10'
 import AllPostsSection from './AllPostsSection'
+import NewsBanner from './newsbanner/NewsBanner'
 import { newsTranslations } from '@/translations/news'
 
 export default function NewsLayout() {
@@ -84,13 +85,18 @@ export default function NewsLayout() {
         {t.postsLoaded?.replace('{count}', posts.length.toString()) || `${posts.length} posts loaded`}
       </div>
 
-      <div className={`min-h-screen py-4 md:py-8 lg:py-12 transition-colors duration-300 ${
+      <div className={`min-h-screen pt-2 pb-4 md:pt-3 md:pb-8 lg:pt-4 lg:pb-12 transition-colors duration-300 ${
         isDark ? 'bg-black' : 'bg-white'
       }`}>
         {/* Container - Max Width 1200px (Apple style) */}
         <div className="mx-auto max-w-[1200px] px-6 sm:px-8 lg:px-10">
           {/* Main content area */}
           <main id="main-content" tabIndex={-1} className="focus:outline-none">
+            {/* News Banner - Top Section */}
+            <div className="mb-6">
+              <NewsBanner />
+            </div>
+
             {/* Main Grid Layout - Apple minimalist approach */}
             <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-2.5 md:gap-3.5 lg:gap-4">
           {/* TOP ROW - 3 POSITIONS */}

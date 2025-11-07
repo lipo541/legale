@@ -25,10 +25,10 @@ export async function getTranslatedUrl(
   }
 
   // Extract page type and slug from dynamic URLs
-  const [pageType, slug] = pathWithoutLocale
+  const [pageType, subType, slug] = pathWithoutLocale
 
   // If no slug (e.g., /specialists without specific specialist)
-  if (!slug) {
+  if (!subType && !slug) {
     return `/${newLocale}/${pageType}`
   }
 
@@ -38,13 +38,43 @@ export async function getTranslatedUrl(
   try {
     let translatedSlug: string | null = null
 
+    // Handle news/category/[slug] route
+    if (pageType === 'news' && subType === 'category' && slug) {
+      // Find category_id from current slug
+      const { data: currentData } = await supabase
+        .from('post_category_translations')
+        .select('category_id')
+        .eq('slug', slug)
+        .eq('language', currentLocale)
+        .single()
+
+      if (currentData?.category_id) {
+        // Get translated slug
+        const { data: translatedData } = await supabase
+          .from('post_category_translations')
+          .select('slug')
+          .eq('category_id', currentData.category_id)
+          .eq('language', newLocale)
+          .single()
+
+        if (translatedData?.slug) {
+          return `/${newLocale}/news/category/${translatedData.slug}`
+        }
+      }
+      // If translation not found, redirect to news home
+      return `/${newLocale}/news`
+    }
+
+    // Use the slug from pathWithoutLocale for simple routes
+    const simpleSlug = subType || slug
+
     switch (pageType) {
       case 'specialists': {
         // Find specialist_id from current slug
         const { data: currentData } = await supabase
           .from('specialist_translations')
           .select('specialist_id')
-          .eq('slug', slug)
+          .eq('slug', simpleSlug)
           .eq('language', currentLocale)
           .single()
 
@@ -70,7 +100,7 @@ export async function getTranslatedUrl(
           const { data: profileData } = await supabase
             .from('profiles')
             .select('id')
-            .eq('company_slug', slug)
+            .eq('company_slug', simpleSlug)
             .eq('role', 'COMPANY')
             .single()
 
@@ -80,7 +110,7 @@ export async function getTranslatedUrl(
           const { data: currentData } = await supabase
             .from('company_translations')
             .select('company_id')
-            .eq('slug', slug)
+            .eq('slug', simpleSlug)
             .eq('language', currentLocale)
             .single()
 
@@ -113,11 +143,16 @@ export async function getTranslatedUrl(
       }
 
       case 'news': {
+        // Skip if it's a category route (already handled above)
+        if (subType === 'category') {
+          break
+        }
+        
         // Find post_id from current slug
         const { data: currentData } = await supabase
           .from('post_translations')
           .select('post_id')
-          .eq('slug', slug)
+          .eq('slug', simpleSlug)
           .eq('language', currentLocale)
           .single()
 
@@ -140,7 +175,7 @@ export async function getTranslatedUrl(
         const { data: currentData } = await supabase
           .from('practice_translations')
           .select('practice_id')
-          .eq('slug', slug)
+          .eq('slug', simpleSlug)
           .eq('language', currentLocale)
           .single()
 
@@ -163,7 +198,7 @@ export async function getTranslatedUrl(
         const { data: currentData } = await supabase
           .from('service_translations')
           .select('service_id')
-          .eq('slug', slug)
+          .eq('slug', simpleSlug)
           .eq('language', currentLocale)
           .single()
 

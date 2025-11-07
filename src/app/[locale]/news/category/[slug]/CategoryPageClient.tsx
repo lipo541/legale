@@ -4,6 +4,7 @@ import { useTheme } from '@/contexts/ThemeContext'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowLeft, Calendar, User, Clock } from 'lucide-react'
+import { useState, useEffect } from 'react'
 
 interface Translation {
   language: string
@@ -50,8 +51,18 @@ interface CategoryPageClientProps {
 export default function CategoryPageClient({ category, posts, locale }: CategoryPageClientProps) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   const formatDate = (dateString: string) => {
+    if (!isClient) {
+      // Server-side: return ISO date
+      return new Date(dateString).toISOString().split('T')[0]
+    }
+    // Client-side: format with locale
     const date = new Date(dateString)
     return new Intl.DateTimeFormat(locale, {
       day: 'numeric',

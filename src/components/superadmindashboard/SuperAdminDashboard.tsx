@@ -29,6 +29,7 @@ import CompaniesPage from './companies/CompaniesPage'
 import AuthorsPage from './authors/AuthorsPage'
 import ModeratorsPage from './moderators/ModeratorsPage'
 import PostsPage from './posts/PostsPage'
+import NewsBannerPage from './newsbanner/NewsBannerPage'
 import { createClient } from '@/lib/supabase/client'
 import CacheClearButton from './common/CacheClearButton'
 
@@ -105,6 +106,7 @@ export default function SuperAdminDashboard() {
     { id: 'categories', label: 'Categories', icon: Grid },
     { id: 'slider', label: 'Slider', icon: Presentation },
     { id: 'legal-pages', label: 'Legal Pages', icon: FileStack },
+    { id: 'newsbanner', label: 'News Banner', icon: Presentation },
   ]
 
   const renderContent = () => {
@@ -177,6 +179,8 @@ export default function SuperAdminDashboard() {
             {/* TODO: Legal Pages მართვა */}
           </div>
         )
+      case 'newsbanner':
+        return <NewsBannerPage />
       default:
         return null
     }
