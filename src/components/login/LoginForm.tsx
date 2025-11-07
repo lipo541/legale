@@ -1,12 +1,12 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { ArrowRight, Lock, Mail } from 'lucide-react'
-import { SiGoogle, SiFacebook } from 'react-icons/si'
-import { PiCloudBold } from 'react-icons/pi'
+import { SiGoogle } from 'react-icons/si'
 import { useTheme } from '@/contexts/ThemeContext'
 import type { Locale } from '@/lib/i18n/config'
 import { createClient } from '@/lib/supabase/client'
@@ -22,16 +22,6 @@ const socialProviders: SocialProvider[] = [
     id: 'google',
     label: 'Google-ით შესვლა',
     badge: <SiGoogle className="h-4 w-4" aria-hidden="true" />,
-  },
-  {
-    id: 'apple',
-    label: 'Apple-ით შესვლა',
-    badge: <PiCloudBold className="h-4 w-4" aria-hidden="true" />,
-  },
-  {
-    id: 'facebook',
-    label: 'Facebook-ით შესვლა',
-    badge: <SiFacebook className="h-4 w-4" aria-hidden="true" />,
   },
 ]
 
@@ -90,7 +80,7 @@ export default function LoginForm() {
     }
   }
 
-  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'apple') => {
+  const handleSocialLogin = async (provider: 'google') => {
     try {
       setLoading(true)
       setError(null)
@@ -113,12 +103,17 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="relative isolate flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center">
-          <span className={`text-xs font-semibold uppercase tracking-[0.3em] transition-colors duration-300 ${isDark ? 'text-white' : 'text-black'}`}>
-            LegalGE
-          </span>
+    <div className="relative isolate flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md space-y-4">
+        <div className="flex justify-center">
+          <Image
+            src={isDark ? "/asset/Legal.ge.png" : "/asset/legal.ge.black.png"}
+            alt="LegalGE"
+            width={140}
+            height={40}
+            className="object-contain h-8 sm:h-9"
+            priority
+          />
         </div>
 
         <div className={`rounded-3xl border p-8 transition-all duration-300 sm:p-10 ${isDark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
@@ -206,7 +201,7 @@ export default function LoginForm() {
                 <button
                   key={provider.id}
                   type="button"
-                  onClick={() => handleSocialLogin(provider.id as 'google' | 'facebook' | 'apple')}
+                  onClick={() => handleSocialLogin(provider.id as 'google')}
                   disabled={loading}
                   className={`group flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-all duration-300 hover:-translate-y-0.5 focus:outline-none focus:ring-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 ${isDark ? 'border-white/10 bg-black text-white hover:border-white hover:bg-white hover:text-black focus:ring-white' : 'border-black/10 bg-white text-black hover:border-black hover:bg-black hover:text-white focus:ring-black'}`}
                 >

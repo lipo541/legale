@@ -132,13 +132,14 @@ export default function CompanyCard({
             isDark ? 'sm:border-white/10' : 'sm:border-black/10'
           }`}>
             <div
-              className={`rounded-lg px-4 py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
+              className={`rounded-lg px-2 py-1.5 sm:px-4 sm:py-2 text-[10px] sm:text-sm font-medium transition-all text-center leading-tight ${
                 isDark
                   ? 'bg-white/10 text-white group-hover:bg-white group-hover:text-black'
                   : 'bg-black/10 text-black group-hover:bg-black group-hover:text-white'
               }`}
             >
-              {t.viewProfile}
+              <span className="hidden sm:inline">{t.viewProfile}</span>
+              <span className="sm:hidden">ნახვა</span>
             </div>
           </div>
         </div>
