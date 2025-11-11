@@ -134,3 +134,92 @@ export interface Translation {
   created_at: string
   updated_at: string
 }
+
+// ============================================================================
+// Global Messages System Types
+// ============================================================================
+
+export interface GlobalMessage {
+  id: string
+  title_ka: string
+  title_en: string
+  title_ru: string
+  content_ka: string
+  content_en: string
+  content_ru: string
+  created_by: string
+  is_active: boolean
+  priority: 'low' | 'normal' | 'high' | 'urgent'
+  created_at: string
+  updated_at: string
+  expires_at: string | null
+}
+
+export interface MessageTargetRole {
+  message_id: string
+  target_role: 'USER' | 'AUTHOR' | 'SPECIALIST' | 'SOLO_SPECIALIST' | 'COMPANY' | 'MODERATOR'
+}
+
+export interface UserReadMessage {
+  user_id: string
+  message_id: string
+  read_at: string
+}
+
+// Combined type for displaying messages with all related data
+export interface MessageWithStatus {
+  message_id: string
+  title: string
+  content: string
+  priority: 'low' | 'normal' | 'high' | 'urgent'
+  created_at: string
+  is_read: boolean
+  read_at: string | null
+  target_roles?: string[]
+}
+
+// Type for creating new messages (SuperAdmin only)
+export interface CreateMessageData {
+  title_ka: string
+  title_en: string
+  title_ru: string
+  content_ka: string
+  content_en: string
+  content_ru: string
+  target_roles: Array<'USER' | 'AUTHOR' | 'SPECIALIST' | 'SOLO_SPECIALIST' | 'COMPANY' | 'MODERATOR'>
+  priority?: 'low' | 'normal' | 'high' | 'urgent'
+  expires_at?: string | null
+}
+
+// Type for message form state
+export interface MessageFormData {
+  titles: {
+    ka: string
+    en: string
+    ru: string
+  }
+  contents: {
+    ka: string
+    en: string
+    ru: string
+  }
+  target_roles: Set<string>
+  priority: 'low' | 'normal' | 'high' | 'urgent'
+  expires_at?: Date | null
+}
+
+// Type for message read statistics
+export interface MessageReadStat {
+  user_id: string
+  full_name: string | null
+  email: string
+  role: string
+  read_at: string
+}
+
+// Type for message with statistics
+export interface MessageWithStats {
+  read_count: number
+  target_count: number
+  read_users?: MessageReadStat[]
+}

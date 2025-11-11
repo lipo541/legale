@@ -1,11 +1,30 @@
 // User Roles
 export enum UserRole {
+  USER = 'USER',
   SPECIALIST = 'SPECIALIST',
   SOLO_SPECIALIST = 'SOLO_SPECIALIST',
   COMPANY = 'COMPANY',
   AUTHOR = 'AUTHOR',
   SUPER_ADMIN = 'SUPER_ADMIN',
   MODERATOR = 'MODERATOR'
+}
+
+// Message Target Roles (excluding SUPER_ADMIN as they send messages)
+export enum MessageTargetRole {
+  USER = 'USER',
+  AUTHOR = 'AUTHOR',
+  SPECIALIST = 'SPECIALIST',
+  SOLO_SPECIALIST = 'SOLO_SPECIALIST',
+  COMPANY = 'COMPANY',
+  MODERATOR = 'MODERATOR'
+}
+
+// Message Priority
+export enum MessagePriority {
+  LOW = 'low',
+  NORMAL = 'normal',
+  HIGH = 'high',
+  URGENT = 'urgent'
 }
 
 // Specialist Status

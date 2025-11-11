@@ -8,6 +8,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useTheme } from '@/contexts/ThemeContext'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { LanguageSwitcher } from '@/components/language/LanguageSwitcher'
+import NotificationBell from './NotificationBell'
 import type { Locale } from '@/lib/i18n/config'
 import { createClient } from '@/lib/supabase/client'
 import { headerTranslations } from '@/translations/header'
@@ -153,6 +154,11 @@ export default function Header() {
               <div className="hidden md:flex items-center gap-3 ml-2">
                 {authState.user ? (
                   <>
+                        {/* Notification Bell - For all roles except SUPER_ADMIN */}
+                        {authState.role && authState.role !== 'SUPER_ADMIN' && (
+                          <NotificationBell locale={currentLocale} />
+                        )}
+                        
                         {/* SUPER_ADMIN Dashboard Button */}
                         {authState.role === 'SUPER_ADMIN' && (
                       <Link 

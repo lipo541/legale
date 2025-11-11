@@ -18,7 +18,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldAlert,
-  UserPlus
+  UserPlus,
+  Bell
 } from 'lucide-react'
 import PracticesPage from './practices/PracticesPage'
 import ServicesPage from './services/ServicesPage'
@@ -32,6 +33,7 @@ import ModeratorsPage from './moderators/ModeratorsPage'
 import PostsPage from './posts/PostsPage'
 import NewsBannerPage from './newsbanner/NewsBannerPage'
 import TeamCreatePage from './teamcreate/TeamCreatePage'
+import MessagesPage from './messages/MessagesPage'
 import { createClient } from '@/lib/supabase/client'
 import CacheClearButton from './common/CacheClearButton'
 
@@ -95,6 +97,7 @@ export default function SuperAdminDashboard() {
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'messages', label: 'Messages', icon: Bell },
     { id: 'practices', label: 'Practices', icon: Briefcase },
     { id: 'services', label: 'Services', icon: Wrench },
     { id: 'users', label: 'Users', icon: Users },
@@ -126,6 +129,8 @@ export default function SuperAdminDashboard() {
             {/* TODO: Dashboard კომპონენტი */}
           </div>
         )
+      case 'messages':
+        return <MessagesPage />
       case 'practices':
         return <PracticesPage />
       case 'services':
