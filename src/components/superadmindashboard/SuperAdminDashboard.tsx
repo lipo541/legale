@@ -17,7 +17,8 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  ShieldAlert
+  ShieldAlert,
+  UserPlus
 } from 'lucide-react'
 import PracticesPage from './practices/PracticesPage'
 import ServicesPage from './services/ServicesPage'
@@ -30,6 +31,7 @@ import AuthorsPage from './authors/AuthorsPage'
 import ModeratorsPage from './moderators/ModeratorsPage'
 import PostsPage from './posts/PostsPage'
 import NewsBannerPage from './newsbanner/NewsBannerPage'
+import TeamCreatePage from './teamcreate/TeamCreatePage'
 import { createClient } from '@/lib/supabase/client'
 import CacheClearButton from './common/CacheClearButton'
 
@@ -107,6 +109,7 @@ export default function SuperAdminDashboard() {
     { id: 'slider', label: 'Slider', icon: Presentation },
     { id: 'legal-pages', label: 'Legal Pages', icon: FileStack },
     { id: 'newsbanner', label: 'News Banner', icon: Presentation },
+    { id: 'create-team', label: 'Create Team', icon: UserPlus },
   ]
 
   const renderContent = () => {
@@ -181,6 +184,8 @@ export default function SuperAdminDashboard() {
         )
       case 'newsbanner':
         return <NewsBannerPage />
+      case 'create-team':
+        return <TeamCreatePage />
       default:
         return null
     }

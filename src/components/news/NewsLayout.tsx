@@ -16,6 +16,7 @@ import Position9 from './positions/Position9'
 import Position10 from './positions/Position10'
 import AllPostsSection from './AllPostsSection'
 import NewsBanner from './newsbanner/NewsBanner'
+import TeamBannerSlider from './TeamBannerSlider'
 import { newsTranslations } from '@/translations/news'
 
 export default function NewsLayout() {
@@ -92,9 +93,9 @@ export default function NewsLayout() {
         <div className="mx-auto max-w-[1200px] px-6 sm:px-8 lg:px-10">
           {/* Main content area */}
           <main id="main-content" tabIndex={-1} className="focus:outline-none">
-            {/* News Banner - Top Section */}
+            {/* Team Banners Slider - Top Section */}
             <div className="mb-6">
-              <NewsBanner />
+              <TeamBannerSlider language={locale} />
             </div>
 
             {/* Main Grid Layout - Apple minimalist approach */}
@@ -142,7 +143,15 @@ export default function NewsLayout() {
               <Position7 posts={position7Posts} />
             </div>
           </div>
+        </div>
 
+        {/* News Banner - After Position 6 & 7 */}
+        <div className="my-6">
+          <NewsBanner />
+        </div>
+
+        {/* Second Grid Section */}
+        <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-2.5 md:gap-3.5 lg:gap-4">
           {/* BOTTOM ROW - 3 EQUAL CARDS (below Position 1) */}
           {/* Position 2 - Vertical News Feed */}
           <div className="md:col-span-2 lg:col-span-4">

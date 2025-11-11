@@ -216,6 +216,29 @@ export async function getTranslatedUrl(
         break
       }
 
+      case 'teams': {
+        // Find team_id from current slug
+        const { data: currentData } = await supabase
+          .from('team_translations')
+          .select('team_id')
+          .eq('slug', simpleSlug)
+          .eq('language', currentLocale)
+          .single()
+
+        if (currentData?.team_id) {
+          // Get translated slug
+          const { data: translatedData } = await supabase
+            .from('team_translations')
+            .select('slug')
+            .eq('team_id', currentData.team_id)
+            .eq('language', newLocale)
+            .single()
+
+          translatedSlug = translatedData?.slug || null
+        }
+        break
+      }
+
       default:
         // Unknown page type, just replace locale
         return `/${newLocale}/${pathWithoutLocale.join('/')}`

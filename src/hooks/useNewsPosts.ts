@@ -76,6 +76,7 @@ export function useNewsPosts(locale: string): UseNewsPostsResult {
       setPosts(uniquePosts)
     } catch (err) {
       console.error('Error fetching news posts:', err)
+      console.error('Full error details:', JSON.stringify(err, null, 2))
       setError(err instanceof Error ? err : new Error('Failed to fetch posts'))
     } finally {
       setLoading(false)

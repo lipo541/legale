@@ -23,6 +23,23 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      // TODO: Add 301 redirects from old URLs to new ones.
+      // This is crucial for SEO migration.
+      // Example:
+      // {
+      //   source: '/old-path/:slug',
+      //   destination: '/new-path/:slug',
+      //   permanent: true,
+      // },
+      {
+        source: '/ka-ge/services/intellectual-property-strategy-and-portfolio-management',
+        destination: '/services/intellectual-property-strategy-and-portfolio-management',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
