@@ -1,13 +1,13 @@
 import { MetadataRoute } from 'next'
 import { createClient } from '@supabase/supabase-js'
 
-const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://legal.ge'
-
-// Create Supabase client for server-side operations
+// Note: Using service_role key for server-side generation to bypass RLS
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
+
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://legal.ge'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const sitemap: MetadataRoute.Sitemap = []
@@ -45,170 +45,214 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   addMultiLocaleUrls('/cookies', new Date(), 'yearly', 0.3)
 
   try {
-    // Fetch ALL specialists (company specialists, solo specialists - approved only)
-    const { data: specialists } = await supabase
-      .from('profiles')
-      .select('company_slug, updated_at')
-      .in('role', ['specialist', 'solo_specialist'])
-      .eq('is_approved', true)
-      .not('company_slug', 'is', null)
+    // Fetch ALL specialists from specialist_translations (contains slug per language)
+    const { data: specialistTranslations } = await supabase
+      .from('specialist_translations')
+      .select('slug, language, updated_at')
+      .not('slug', 'is', null)
 
-    if (specialists) {
-      specialists.forEach((specialist) => {
-        locales.forEach((locale) => {
-          const url = locale === 'ka' 
-            ? `${baseUrl}/specialists/${specialist.company_slug}` 
-            : `${baseUrl}/${locale}/specialists/${specialist.company_slug}`
-          sitemap.push({
-            url,
-            lastModified: specialist.updated_at ? new Date(specialist.updated_at) : new Date(),
-            changeFrequency: 'weekly',
-            priority: 0.7,
-          })
-        })
-      })
-    }
-
-    // Fetch companies (approved only)
-    const { data: companies } = await supabase
-      .from('profiles')
-      .select('company_slug, updated_at')
-      .eq('role', 'company')
-      .eq('is_approved', true)
-      .not('company_slug', 'is', null)
-
-    if (companies) {
-      companies.forEach((company) => {
-        locales.forEach((locale) => {
-          const url = locale === 'ka'
-            ? `${baseUrl}/companies/${company.company_slug}`
-            : `${baseUrl}/${locale}/companies/${company.company_slug}`
-          sitemap.push({
-            url,
-            lastModified: company.updated_at ? new Date(company.updated_at) : new Date(),
-            changeFrequency: 'weekly',
-            priority: 0.7,
-          })
-        })
-      })
-    }
-
-    // Fetch practices
-    const { data: practices } = await supabase
-      .from('practices')
-      .select('slug, updated_at')
-      .eq('is_active', true)
-
-    if (practices) {
-      practices.forEach((practice) => {
-        locales.forEach((locale) => {
-          const url = locale === 'ka'
-            ? `${baseUrl}/practices/${practice.slug}`
-            : `${baseUrl}/${locale}/practices/${practice.slug}`
-          sitemap.push({
-            url,
-            lastModified: practice.updated_at ? new Date(practice.updated_at) : new Date(),
-            changeFrequency: 'monthly',
-            priority: 0.6,
-          })
-        })
-      })
-    }
-
-    // Fetch services with translations in ONE query (fixing N+1 problem)
-    const { data: serviceTranslations } = await supabase
-      .from('service_translations')
-      .select('slug, language, service_id, services!inner(status, updated_at)')
-      .eq('services.status', 'published')
-
-    if (serviceTranslations) {
-      serviceTranslations.forEach((translation) => {
+    if (specialistTranslations) {
+      specialistTranslations.forEach((translation) => {
         const locale = translation.language
-        const url = locale === 'ka'
-          ? `${baseUrl}/services/${translation.slug}`
-          : `${baseUrl}/${locale}/services/${translation.slug}`
+        const slug = translation.slug
         
-        // Access the first element of services array
-        const service = Array.isArray(translation.services) && translation.services.length > 0 
-          ? translation.services[0] 
-          : null
+        if (slug) {
+          const url = locale === 'ka' 
+            ? `${baseUrl}/specialists/${slug}` 
+            : `${baseUrl}/${locale}/specialists/${slug}`
+          sitemap.push({
+            url,
+            lastModified: translation.updated_at ? new Date(translation.updated_at) : new Date(),
+            changeFrequency: 'weekly',
+            priority: 0.7,
+          })
+        }
+      })
+    }
+
+    // Fetch companies: Georgian slug from profiles, other languages from company_translations
+    // First, get Georgian companies from profiles
+    const { data: companiesKa } = await supabase
+      .from('profiles')
+      .select('company_slug, updated_at')
+      .eq('role', 'COMPANY')
+      .not('company_slug', 'is', null)
+
+    if (companiesKa) {
+      companiesKa.forEach((company) => {
+        const url = `${baseUrl}/companies/${company.company_slug}`
+        sitemap.push({
+          url,
+          lastModified: company.updated_at ? new Date(company.updated_at) : new Date(),
+          changeFrequency: 'weekly',
+          priority: 0.7,
+        })
+      })
+    }
+
+    // Then, get English and Russian translations from company_translations
+    const { data: companyTranslations } = await supabase
+      .from('company_translations')
+      .select('slug, language, updated_at')
+      .not('slug', 'is', null)
+
+    if (companyTranslations) {
+      companyTranslations.forEach((translation) => {
+        const url = `${baseUrl}/${translation.language}/companies/${translation.slug}`
+        sitemap.push({
+          url,
+          lastModified: translation.updated_at ? new Date(translation.updated_at) : new Date(),
+          changeFrequency: 'weekly',
+          priority: 0.7,
+        })
+      })
+    }
+
+    // Fetch practices from practice_translations (all languages including Georgian)
+    const { data: practiceTranslations } = await supabase
+      .from('practice_translations')
+      .select('slug, language, updated_at')
+      .not('slug', 'is', null)
+
+    if (practiceTranslations) {
+      practiceTranslations.forEach((translation) => {
+        const locale = translation.language
+        const url = `${baseUrl}/${locale}/practices/${translation.slug}`
         
         sitemap.push({
           url,
-          lastModified: service?.updated_at 
-            ? new Date(service.updated_at) 
-            : new Date(),
+          lastModified: translation.updated_at ? new Date(translation.updated_at) : new Date(),
           changeFrequency: 'monthly',
           priority: 0.6,
         })
       })
     }
 
-    // Fetch news posts (published only)
-    const { data: posts } = await supabase
-      .from('posts')
-      .select('slug, updated_at')
-      .eq('status', 'published')
-      .order('updated_at', { ascending: false })
+    // Fetch services with practice slug (hierarchical URL: /practices/{practice_slug}/{service_slug})
+    // Need to join: service_translations -> services -> practices -> practice_translations
+    const { data: serviceTranslations } = await supabase
+      .from('service_translations')
+      .select(`
+        slug, 
+        language, 
+        updated_at,
+        services!inner(
+          status,
+          practices!inner(
+            practice_translations!inner(slug, language)
+          )
+        )
+      `)
+      .eq('services.status', 'published')
+      .not('slug', 'is', null)
 
-    if (posts) {
-      posts.forEach((post) => {
-        locales.forEach((locale) => {
-          const url = locale === 'ka'
-            ? `${baseUrl}/news/${post.slug}`
-            : `${baseUrl}/${locale}/news/${post.slug}`
+    if (serviceTranslations) {
+      serviceTranslations.forEach((translation) => {
+        const locale = translation.language
+        
+        // Extract nested data from Supabase join with proper type handling
+        const servicesData = translation.services as unknown as Record<string, unknown> | Record<string, unknown>[]
+        const service = Array.isArray(servicesData) && servicesData.length > 0 
+          ? servicesData[0] 
+          : servicesData as Record<string, unknown>
+
+        const practicesData = (service as Record<string, unknown>).practices as unknown as Record<string, unknown> | Record<string, unknown>[]
+        const practice = Array.isArray(practicesData) && practicesData.length > 0
+          ? practicesData[0]
+          : practicesData as Record<string, unknown>
+
+        const practiceTranslationsData = (practice as Record<string, unknown>).practice_translations as unknown as Array<{ slug: string; language: string }> | { slug: string; language: string }
+        
+        // Find practice translation matching the service's language
+        const practiceTranslation = Array.isArray(practiceTranslationsData)
+          ? practiceTranslationsData.find((pt) => pt.language === locale)
+          : practiceTranslationsData?.language === locale 
+            ? practiceTranslationsData 
+            : null
+
+        const practiceSlug = practiceTranslation?.slug
+        
+        if (translation.slug && practiceSlug) {
+          // Build hierarchical URL: /{locale}/practices/{practice_slug}/{service_slug}
+          const url = `${baseUrl}/${locale}/practices/${practiceSlug}/${translation.slug}`
+
           sitemap.push({
             url,
-            lastModified: new Date(post.updated_at),
-            changeFrequency: 'weekly',
+            lastModified: translation.updated_at 
+              ? new Date(translation.updated_at) 
+              : new Date(),
+            changeFrequency: 'monthly',
             priority: 0.6,
           })
+        }
+      })
+    }
+
+    // Fetch teams from team_translations (all languages)
+    const { data: teamTranslations } = await supabase
+      .from('team_translations')
+      .select('slug, language, updated_at, teams!inner(is_active)')
+      .eq('teams.is_active', true)
+      .not('slug', 'is', null)
+
+    if (teamTranslations) {
+      teamTranslations.forEach((translation) => {
+        const locale = translation.language
+        const url = `${baseUrl}/${locale}/teams/${translation.slug}`
+        
+        sitemap.push({
+          url,
+          lastModified: translation.updated_at ? new Date(translation.updated_at) : new Date(),
+          changeFrequency: 'monthly',
+          priority: 0.7,
         })
       })
     }
 
-    // Fetch news categories
-    const { data: categories } = await supabase
-      .from('categories')
-      .select('slug')
+    // Fetch news posts (published only) from post_translations
+    const { data: postTranslations } = await supabase
+      .from('post_translations')
+      .select('slug, language, updated_at, posts!inner(status, published_at)')
+      .eq('posts.status', 'published')
+      .not('slug', 'is', null)
+      .order('updated_at', { ascending: false })
 
-    if (categories) {
-      categories.forEach((category) => {
-        locales.forEach((locale) => {
-          const url = locale === 'ka'
-            ? `${baseUrl}/news/category/${category.slug}`
-            : `${baseUrl}/${locale}/news/category/${category.slug}`
-          sitemap.push({
-            url,
-            lastModified: new Date(),
-            changeFrequency: 'weekly',
-            priority: 0.5,
-          })
+    if (postTranslations) {
+      postTranslations.forEach((translation) => {
+        const locale = translation.language
+        const url = `${baseUrl}/${locale}/news/${translation.slug}`
+        
+        sitemap.push({
+          url,
+          lastModified: translation.updated_at ? new Date(translation.updated_at) : new Date(),
+          changeFrequency: 'weekly',
+          priority: 0.6,
         })
       })
     }
 
-    // Fetch news authors (who have published posts)
-    const { data: authors } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('role', 'author')
+    // Fetch news categories from post_category_translations
+    const { data: categoryTranslations } = await supabase
+      .from('post_category_translations')
+      .select('slug, language')
+      .not('slug', 'is', null)
 
-    if (authors) {
-      authors.forEach((author) => {
-        locales.forEach((locale) => {
-          const url = locale === 'ka'
-            ? `${baseUrl}/news/author/${author.id}`
-            : `${baseUrl}/${locale}/news/author/${author.id}`
-          sitemap.push({
-            url,
-            lastModified: new Date(),
-            changeFrequency: 'monthly',
-            priority: 0.4,
-          })
+    if (categoryTranslations) {
+      categoryTranslations.forEach((translation) => {
+        const locale = translation.language
+        const url = `${baseUrl}/${locale}/news/category/${translation.slug}`
+        
+        sitemap.push({
+          url,
+          lastModified: new Date(),
+          changeFrequency: 'weekly',
+          priority: 0.5,
         })
       })
     }
+
+    // Note: Author pages are excluded from sitemap as they use UUID-based URLs
+    // and are less important for SEO. Users can find authors through their posts.
   } catch (error) {
     console.error('Error generating sitemap:', error)
   }
