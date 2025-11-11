@@ -7,6 +7,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
+        allow: '/', // Explicitly allow all other pages
         disallow: [
           // Admin and Dashboard pages (all locales)
           '/admin/*',
