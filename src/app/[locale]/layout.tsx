@@ -23,9 +23,19 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     ru: 'Найдите лучших юристов и юридические компании в Грузии',
   }
 
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://legal.ge'
+
   return {
     title: titles[locale] || titles.ka,
     description: descriptions[locale] || descriptions.ka,
+    alternates: {
+      canonical: `${baseUrl}/${locale}`,
+      languages: {
+        'ka': `${baseUrl}/ka`,
+        'en': `${baseUrl}/en`,
+        'ru': `${baseUrl}/ru`,
+      },
+    },
     other: {
       'lang': locale,
     },
