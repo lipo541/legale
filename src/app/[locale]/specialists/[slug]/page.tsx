@@ -98,6 +98,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     description,
     alternates: {
       canonical: canonicalUrl,
+      languages: {
+        'ka': `${baseUrl}/ka/specialists/${slug}`,
+        'en': `${baseUrl}/en/specialists/${slug}`,
+        'ru': `${baseUrl}/ru/specialists/${slug}`,
+      },
     },
     openGraph: {
       title,

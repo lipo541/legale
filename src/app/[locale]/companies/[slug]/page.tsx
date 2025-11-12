@@ -71,6 +71,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     keywords: (companyTranslation?.meta_keywords || companyData.meta_keywords) as string | string[] | undefined,
     alternates: {
       canonical: canonicalUrl,
+      languages: {
+        'ka': `https://legal.ge/ka/companies/${slug}`,
+        'en': `https://legal.ge/en/companies/${slug}`,
+        'ru': `https://legal.ge/ru/companies/${slug}`,
+      },
     },
     openGraph: {
       title: `${title} | Legal`,
