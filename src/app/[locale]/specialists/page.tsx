@@ -7,7 +7,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>
 }): Promise<Metadata> {
   const { locale } = await params
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://legal.ge'
+  const baseUrl = 'https://www.legal.ge'
 
   const metadata: Record<
     string,

@@ -7,7 +7,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://legal.ge'
+  const baseUrl = 'https://www.legal.ge'
 
   const metadata: Record<string, { title: string; description: string; ogImage: string }> = {
     ka: {

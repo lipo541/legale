@@ -63,7 +63,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const languageAlternates: { [key: string]: string } = {};
   if (allTranslations) {
     allTranslations.forEach(trans => {
-      languageAlternates[trans.language] = `https://legal.ge/${trans.language}/practices/${trans.slug}`;
+      languageAlternates[trans.language] = `https://www.legal.ge/${trans.language}/practices/${trans.slug}`;
     });
   }
 
@@ -72,8 +72,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = translationData.meta_description || 'პროფესიონალური იურიდიული კონსულტაცია და მომსახურება Legal.ge-ზე';
   const ogTitle = translationData.og_title || translationData.meta_title || translationData.title;
   const ogDescription = translationData.og_description || description;
-  const ogImage = translationData.og_image_url || 'https://legal.ge/asset/images/og-image.jpg';
-  const canonicalUrl = `https://legal.ge/${locale}/practices/${slug}`;
+  const ogImage = translationData.og_image_url || 'https://www.legal.ge/asset/images/og-image.jpg';
+  const canonicalUrl = `https://www.legal.ge/${locale}/practices/${slug}`;
 
   // Service Schema Markup
   const serviceSchema = {

@@ -10,7 +10,7 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const resolvedParams = await params
   const { slug, locale } = resolvedParams
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://legal.ge'
+  const baseUrl = 'https://www.legal.ge'
   const supabase = await createClient()
 
   // Fetch specialist data with translations and company info

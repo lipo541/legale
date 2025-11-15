@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     isPartOf: {
       '@type': 'WebSite',
       name: 'Legal.ge',
-      url: 'https://legal.ge',
+      url: 'https://www.legal.ge',
     },
   }
 

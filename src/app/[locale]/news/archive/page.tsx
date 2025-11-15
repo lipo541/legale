@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const currentLocale = (locale as keyof typeof metadata) || 'ka'
   const meta = metadata[currentLocale] || metadata.ka
 
-  const baseUrl = 'https://legal.ge'
+  const baseUrl = 'https://www.legal.ge'
   const canonicalUrl = `${baseUrl}/${locale}/news/archive`
 
   return {

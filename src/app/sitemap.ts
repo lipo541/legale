@@ -7,7 +7,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://legal.ge'
+const baseUrl = 'https://www.legal.ge'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const sitemap: MetadataRoute.Sitemap = []

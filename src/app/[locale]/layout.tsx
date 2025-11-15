@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     ru: 'Найдите лучших юристов и юридические компании в Грузии',
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://legal.ge'
+  const baseUrl = 'https://www.legal.ge'
 
   return {
     title: titles[locale] || titles.ka,
@@ -44,7 +44,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 export default async function LocaleLayout({ children, params }: LocaleLayoutProps) {
   const { locale } = await params
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://legal.ge'
+  const baseUrl = 'https://www.legal.ge'
 
   const organizationSchema = {
     '@context': 'https://schema.org',

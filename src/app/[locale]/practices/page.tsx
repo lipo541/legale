@@ -24,8 +24,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const currentMetadata = metadata[locale] || metadata.ka
-  const canonicalUrl = `https://legal.ge/${locale}/practices`
-  const ogImage = 'https://legal.ge/asset/images/og-image.jpg'
+  const canonicalUrl = `https://www.legal.ge/${locale}/practices`
+  const ogImage = 'https://www.legal.ge/asset/images/og-image.jpg'
 
   return {
     title: currentMetadata.title,
@@ -33,9 +33,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: {
       canonical: canonicalUrl,
       languages: {
-        'ka': 'https://legal.ge/ka/practices',
-        'en': 'https://legal.ge/en/practices',
-        'ru': 'https://legal.ge/ru/practices',
+        'ka': 'https://www.legal.ge/ka/practices',
+        'en': 'https://www.legal.ge/en/practices',
+        'ru': 'https://www.legal.ge/ru/practices',
       },
     },
     openGraph: {

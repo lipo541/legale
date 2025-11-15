@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = String(companyTranslation?.meta_title || companyData.meta_title || companyTranslation?.company_name || companyData.company_name || 'Company')
   const description = String(companyTranslation?.meta_description || companyData.meta_description || companyTranslation?.summary || companyData.summary || '')
   const ogImage = String(companyData.social_image_url || companyData.logo_url || '/asset/images/og-image.jpg')
-  const canonicalUrl = `https://legal.ge/${locale}/companies/${slug}`
+  const canonicalUrl = `https://www.legal.ge/${locale}/companies/${slug}`
 
   const corporationSchema = {
     '@context': 'https://schema.org',
@@ -72,9 +72,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     alternates: {
       canonical: canonicalUrl,
       languages: {
-        'ka': `https://legal.ge/ka/companies/${slug}`,
-        'en': `https://legal.ge/en/companies/${slug}`,
-        'ru': `https://legal.ge/ru/companies/${slug}`,
+        'ka': `https://www.legal.ge/ka/companies/${slug}`,
+        'en': `https://www.legal.ge/en/companies/${slug}`,
+        'ru': `https://www.legal.ge/ru/companies/${slug}`,
       },
     },
     openGraph: {

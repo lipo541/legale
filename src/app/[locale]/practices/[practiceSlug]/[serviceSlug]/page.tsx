@@ -82,11 +82,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: [ogImage],
     },
     alternates: {
-      canonical: `https://legal.ge/${locale}/practices/${practiceSlug}/${serviceSlug}`,
+      canonical: `https://www.legal.ge/${locale}/practices/${practiceSlug}/${serviceSlug}`,
       languages: {
-        'ka': `https://legal.ge/ka/practices/${practiceSlug}/${serviceSlug}`,
-        'en': `https://legal.ge/en/practices/${practiceSlug}/${serviceSlug}`,
-        'ru': `https://legal.ge/ru/practices/${practiceSlug}/${serviceSlug}`,
+        'ka': `https://www.legal.ge/ka/practices/${practiceSlug}/${serviceSlug}`,
+        'en': `https://www.legal.ge/en/practices/${practiceSlug}/${serviceSlug}`,
+        'ru': `https://www.legal.ge/ru/practices/${practiceSlug}/${serviceSlug}`,
       },
     },
   }

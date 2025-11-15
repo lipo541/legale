@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const meta = metadata[locale] || metadata.ka
-  const canonicalUrl = `https://legal.ge/${locale}/terms`
+  const canonicalUrl = `https://www.legal.ge/${locale}/terms`
 
   return {
     title: meta.title,
@@ -39,9 +39,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: {
       canonical: canonicalUrl,
       languages: {
-        ka: 'https://legal.ge/ka/terms',
-        en: 'https://legal.ge/en/terms',
-        ru: 'https://legal.ge/ru/terms',
+        ka: 'https://www.legal.ge/ka/terms',
+        en: 'https://www.legal.ge/en/terms',
+        ru: 'https://www.legal.ge/ru/terms',
       },
     },
   }
