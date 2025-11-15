@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createBrowserClient } from '@/lib/supabase/client'
+import { Locale } from '@/lib/enums'
 import PracticeDetail from '@/components/practice/PracticeDetail'
 
 // Enable Incremental Static Regeneration - revalidate every 1 hour
@@ -9,7 +10,7 @@ export const revalidate = 3600
 
 type Props = {
   params: Promise<{
-    locale: 'ka' | 'en' | 'ru'
+    locale: Locale
     practiceSlug: string
   }>
 }

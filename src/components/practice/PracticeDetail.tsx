@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
+import { Locale, getWindowWidth } from '@/lib/enums'
 import Image from 'next/image'
 import Link from 'next/link'
-import { IoTimeOutline, IoCalendarOutline, IoArrowBack, IoDocumentTextOutline, IoChevronForward, IoBriefcaseOutline, IoLogoFacebook, IoLogoLinkedin, IoLogoTwitter } from 'react-icons/io5'
+import { IoTimeOutline, IoCalendarOutline, IoArrowBack, IoDocumentTextOutline, IoChevronForward, IoBriefcaseOutline, IoLogoFacebook, IoLogoLinkedin, IoLogoTwitter, IoChevronDown, IoChevronUp } from 'react-icons/io5'
 import { createClient } from '@/lib/supabase/client'
 
 interface Service {
@@ -37,7 +38,7 @@ interface PracticeDetailProps {
     ogDescription: string | null
     ogImageUrl: string | null
   }
-  locale: 'ka' | 'en' | 'ru'
+  locale: Locale
 }
 
 export default function PracticeDetail({ 
@@ -54,6 +55,8 @@ export default function PracticeDetail({
   const [servicesLoading, setServicesLoading] = useState(true)
   const [formattedCreatedAt, setFormattedCreatedAt] = useState<string>('')
   const [formattedUpdatedAt, setFormattedUpdatedAt] = useState<string>('')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [isServicesOpen, setIsServicesOpen] = useState(false) // Mobile dropdown state
 
   // Fetch services for this practice
   useEffect(() => {
@@ -116,6 +119,11 @@ export default function PracticeDetail({
     fetchServices()
   }, [practice.id, locale, supabase])
 
+  // Filter services based on search term
+  const filteredServices = services.filter(s => 
+    s.title.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
   // Format dates on client side to avoid hydration mismatch
   useEffect(() => {
     const formatDate = (dateString: string): string => {
@@ -174,10 +182,11 @@ export default function PracticeDetail({
 
   // Localized text
   const text = {
-    services: locale === 'ka' ? 'Services' : locale === 'en' ? 'Services' : 'Услуги',
-    servicesAvailable: locale === 'ka' ? `${services.length} სერვისი ხელმისაწვდომია` : locale === 'en' ? `${services.length} services available` : `${services.length} услуг доступно`,
+    services: locale === 'ka' ? 'სერვისები' : locale === 'en' ? 'Services' : 'Услуги',
+    servicesAvailable: (count: number) => locale === 'ka' ? `${count} სერვისი ხელმისაწვდომია` : locale === 'en' ? `${count} services available` : `${count} услуг доступно`,
     searchServices: locale === 'ka' ? 'სერვისების ძებნა...' : locale === 'en' ? 'Search services...' : 'Поиск услуг...',
     noServices: locale === 'ka' ? 'სერვისები არ მოიძებნა' : locale === 'en' ? 'No services found' : 'Услуги не найдены',
+    noSearchResults: locale === 'ka' ? 'ძებნის შედეგები არ მოიძებნა' : locale === 'en' ? 'No search results found' : 'Результаты поиска не найдены',
     loading: locale === 'ka' ? 'იტვირთება...' : locale === 'en' ? 'Loading...' : 'Загрузка...',
     back: locale === 'ka' ? 'უკან' : locale === 'en' ? 'Back' : 'Назад',
     share: locale === 'ka' ? 'გაზიარება' : locale === 'en' ? 'Share' : 'Поделиться',
@@ -186,6 +195,8 @@ export default function PracticeDetail({
     published: locale === 'ka' ? 'გამოქვეყნდა' : locale === 'en' ? 'Published' : 'Опубликовано',
     updated: locale === 'ka' ? 'განახლდა' : locale === 'en' ? 'Updated' : 'Обновлено',
     wordCount: locale === 'ka' ? 'სიტყვების რაოდენობა' : locale === 'en' ? 'Word Count' : 'Количество слов',
+    openServices: locale === 'ka' ? 'სერვისების გახსნა' : locale === 'en' ? 'Open services' : 'Открыть услуги',
+    closeServices: locale === 'ka' ? 'სერვისების დახურვა' : locale === 'en' ? 'Close services' : 'Закрыть услуги',
   }
 
   return (
@@ -209,70 +220,130 @@ export default function PracticeDetail({
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           
-          {/* LEFT SIDEBAR - Services (Static) */}
+          {/* LEFT SIDEBAR - Services */}
           <aside className="lg:col-span-4 xl:col-span-3">
-            <div className={`sticky top-20 rounded-2xl p-6 border ${
+            <div id="services-sidebar" className={`sticky top-20 rounded-2xl border ${
               isDark 
                 ? 'border-white/10' 
                 : 'border-gray-200'
             }`}>
-              {/* Services Header */}
-              <div className="mb-6">
-                <div className="flex items-center gap-3 mb-2">
+              {/* Services Header - Clickable on mobile */}
+              <button
+                onClick={() => setIsServicesOpen(!isServicesOpen)}
+                aria-expanded={isServicesOpen}
+                aria-controls="services-list-content"
+                aria-label={isServicesOpen ? text.closeServices : text.openServices}
+                className={`w-full p-6 flex items-center justify-between lg:pointer-events-none ${
+                  isDark ? 'hover:bg-white/5 lg:hover:bg-transparent' : 'hover:bg-black/5 lg:hover:bg-transparent'
+                } transition-colors rounded-t-2xl`}
+              >
+                <div className="flex items-center gap-3">
                   <IoBriefcaseOutline className={`h-5 w-5 ${isDark ? 'text-white' : 'text-black'}`} />
-                  <h2 className="text-xl font-bold">{text.services}</h2>
+                  <div className="text-left">
+                    <h2 className="text-xl font-bold">{text.services}</h2>
+                    <p className={`text-sm ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
+                      {text.servicesAvailable(services.length)}
+                    </p>
+                  </div>
                 </div>
-                <p className={`text-sm ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
-                  {text.servicesAvailable}
-                </p>
-              </div>
-
-              {/* Search Bar */}
-              <div className="mb-6">
-                <div className={`relative rounded-lg border ${
-                  isDark ? 'border-white/10' : 'border-gray-200'
-                }`}>
-                  <input
-                    type="text"
-                    placeholder={text.searchServices}
-                    className={`w-full px-4 py-2.5 pr-10 text-sm rounded-lg bg-transparent outline-none ${
-                      isDark 
-                        ? 'text-white placeholder:text-white/40' 
-                        : 'text-black placeholder:text-gray-500'
-                    }`}
-                  />
-                  <svg 
-                    className={`absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 ${
-                      isDark ? 'text-white/40' : 'text-gray-400'
-                    }`} 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
+                <div className="lg:hidden">
+                  {isServicesOpen ? (
+                    <IoChevronUp className={`h-5 w-5 ${isDark ? 'text-white' : 'text-black'}`} />
+                  ) : (
+                    <IoChevronDown className={`h-5 w-5 ${isDark ? 'text-white' : 'text-black'}`} />
+                  )}
                 </div>
-              </div>
+              </button>
 
-              {/* Services List */}
-              <div className="space-y-2">
+              {/* Collapsible Content - Always open on desktop, collapsible on mobile */}
+              <div 
+                id="services-list-content"
+                className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                  isServicesOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
+                } lg:!max-h-none lg:!opacity-100 px-6 ${isServicesOpen ? 'pb-6' : 'pb-0'} lg:pb-6`}
+              >
+                {/* Search Bar */}
+                <div className="mb-6">
+                  <div className={`relative rounded-lg border ${
+                    isDark ? 'border-white/10' : 'border-gray-200'
+                  }`}>
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder={text.searchServices}
+                      role="search"
+                      aria-label={text.searchServices}
+                      className={`w-full px-4 py-2.5 pr-10 text-sm rounded-lg bg-transparent outline-none ${
+                        isDark 
+                          ? 'text-white placeholder:text-white/40' 
+                          : 'text-black placeholder:text-gray-500'
+                      }`}
+                    />
+                    <svg 
+                      className={`absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 ${
+                        isDark ? 'text-white/40' : 'text-gray-400'
+                      }`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Services List */}
+                <div className={`space-y-2 max-h-[calc(100vh-320px)] overflow-y-auto pr-2 
+                scrollbar-thin
+                [&::-webkit-scrollbar]:w-2
+                [&::-webkit-scrollbar-track]:bg-transparent
+                [&::-webkit-scrollbar-thumb]:rounded-full
+                ${isDark 
+                  ? '[&::-webkit-scrollbar-thumb]:bg-white/20 hover:[&::-webkit-scrollbar-thumb]:bg-white/30 scrollbar-thumb-white/20 scrollbar-track-transparent' 
+                  : '[&::-webkit-scrollbar-thumb]:bg-black/20 hover:[&::-webkit-scrollbar-thumb]:bg-black/30 scrollbar-thumb-black/20 scrollbar-track-transparent'
+                }
+              `}>
                 {servicesLoading ? (
                   <div className="text-center py-8">
                     <p className={`text-sm ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
                       {text.loading}
                     </p>
                   </div>
-                ) : services.length === 0 ? (
+                ) : filteredServices.length === 0 ? (
                   <div className="text-center py-8">
                     <p className={`text-sm ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
-                      {text.noServices}
+                      {searchTerm ? text.noSearchResults : text.noServices}
                     </p>
                   </div>
                 ) : (
-                  services.map((service) => (
+                  filteredServices.map((service) => (
                     <Link
                       key={service.id}
                       href={`/${locale}/practices/${translation.slug}/${service.slug}`}
+                      scroll={false}
+                      onClick={() => {
+                        // On mobile, close sidebar and scroll to content after navigation
+                        const isMobile = getWindowWidth() < 1024
+                        if (isMobile) {
+                          setIsServicesOpen(false)
+                        }
+                        
+                        // Wait for navigation to complete, then scroll to content
+                        setTimeout(() => {
+                          const contentElement = document.getElementById('practice-content')
+                          if (contentElement) {
+                            const offset = 80 // Account for header
+                            const elementPosition = contentElement.getBoundingClientRect().top
+                            const offsetPosition = elementPosition + window.pageYOffset - offset
+
+                            window.scrollTo({
+                              top: offsetPosition,
+                              behavior: 'smooth'
+                            })
+                          }
+                        }, 300)
+                      }}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-sm transition-all group ${
                         isDark 
                           ? 'hover:bg-white/5 text-white/80 hover:text-white' 
@@ -289,14 +360,15 @@ export default function PracticeDetail({
                     </Link>
                   ))
                 )}
+                </div>
               </div>
             </div>
           </aside>
 
-          {/* RIGHT CONTENT - Practice Details (Dynamic) */}
-          <main className="lg:col-span-8 xl:col-span-9">
-            {/* Title */}
-            <div className={`rounded-2xl p-4 md:p-6 mb-6 border ${
+          {/* RIGHT CONTENT - Practice Details */}
+          <main id="practice-content" className="lg:col-span-8 xl:col-span-9">
+            {/* Title Card */}
+            <div className={`rounded-2xl p-4 md:p-6 mb-8 border ${
               isDark 
                 ? 'border-white/10' 
                 : 'border-gray-200'
@@ -306,19 +378,23 @@ export default function PracticeDetail({
               </h1>
             </div>
 
-            {/* Hero Image */}
-            <div className={`relative rounded-2xl overflow-hidden mb-6 ${
+            {/* Practice Image */}
+            <div className={`relative rounded-2xl overflow-hidden mb-8 ${
               isDark ? 'border border-white/10' : 'border border-gray-200'
             }`}>
-              <div className="relative w-full h-[300px] md:h-[400px] lg:h-[500px]">
+              <div className="relative w-full aspect-[21/9]">
                 <Image
                   src={practice.pageHeroImageUrl}
                   alt={translation.pageHeroImageAlt}
                   fill
-                  priority
                   className="object-cover"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 66vw, 60vw"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 66vw, 50vw"
+                  priority
                   quality={90}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = '/images/placeholder-news.svg';
+                  }}
                 />
               </div>
             </div>
@@ -329,71 +405,74 @@ export default function PracticeDetail({
                 ? 'border-white/10' 
                 : 'border-gray-200'
             }`}>
-              <div className="flex items-center justify-between gap-4">
-                {/* Reading Time */}
-                <div className="flex items-center gap-2">
-                  <div className={`p-2 rounded-lg ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
-                    <IoTimeOutline className={`h-4 w-4 ${isDark ? 'text-white' : 'text-black'}`} />
+              {/* Meta Info - Stacked on mobile, horizontal on desktop */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  {/* Reading Time */}
+                  <div className="flex items-center gap-2">
+                    <div className={`p-2 rounded-lg ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
+                      <IoTimeOutline className={`h-4 w-4 ${isDark ? 'text-white' : 'text-black'}`} />
+                    </div>
+                    <div>
+                      <p className={`text-xs ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
+                        {text.readingTime}
+                      </p>
+                      <p className="text-xs font-semibold">
+                        {translation.readingTime} {text.minutes}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className={`text-xs ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
-                      {text.readingTime}
-                    </p>
-                    <p className="text-xs font-semibold">
-                      {translation.readingTime} {text.minutes}
-                    </p>
+
+                  {/* Published Date */}
+                  <div className="flex items-center gap-2">
+                    <div className={`p-2 rounded-lg ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
+                      <IoCalendarOutline className={`h-4 w-4 ${isDark ? 'text-white' : 'text-black'}`} />
+                    </div>
+                    <div>
+                      <p className={`text-xs ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
+                        {text.published}
+                      </p>
+                      <p className="text-xs font-semibold whitespace-nowrap">
+                        {formattedCreatedAt || '...'}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                {/* Published Date */}
-                <div className="flex items-center gap-2">
-                  <div className={`p-2 rounded-lg ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
-                    <IoCalendarOutline className={`h-4 w-4 ${isDark ? 'text-white' : 'text-black'}`} />
-                  </div>
-                  <div>
-                    <p className={`text-xs ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
-                      {text.published}
-                    </p>
-                    <p className="text-xs font-semibold">
-                      {formattedCreatedAt || '...'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Share Buttons */}
-                <div className="flex items-center gap-2">
+                {/* Share Buttons - Below on mobile, right side on desktop */}
+                <div className="flex gap-2">
                   <button
                     onClick={() => handleShare('facebook')}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                    className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                       isDark 
                         ? 'bg-white/5 hover:bg-white/10 text-white border border-white/10' 
                         : 'bg-black/5 hover:bg-black/10 text-black border border-black/10'
                     }`}
                   >
-                    <IoLogoFacebook className="h-4 w-4" />
-                    <span className="hidden sm:inline">Facebook</span>
+                    <IoLogoFacebook className="h-3.5 w-3.5" />
+                    <span className="sm:inline">Facebook</span>
                   </button>
                   <button
                     onClick={() => handleShare('linkedin')}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                    className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                       isDark 
                         ? 'bg-white/5 hover:bg-white/10 text-white border border-white/10' 
                         : 'bg-black/5 hover:bg-black/10 text-black border border-black/10'
                     }`}
                   >
-                    <IoLogoLinkedin className="h-4 w-4" />
-                    <span className="hidden sm:inline">LinkedIn</span>
+                    <IoLogoLinkedin className="h-3.5 w-3.5" />
+                    <span className="sm:inline">LinkedIn</span>
                   </button>
                   <button
                     onClick={() => handleShare('twitter')}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                    className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                       isDark 
                         ? 'bg-white/5 hover:bg-white/10 text-white border border-white/10' 
                         : 'bg-black/5 hover:bg-black/10 text-black border border-black/10'
                     }`}
                   >
-                    <IoLogoTwitter className="h-4 w-4" />
-                    <span className="hidden sm:inline">Twitter</span>
+                    <IoLogoTwitter className="h-3.5 w-3.5" />
+                    <span className="sm:inline">Twitter</span>
                   </button>
                 </div>
               </div>
