@@ -26,6 +26,8 @@ interface CompanySpecialist {
   role_title: string | null;
   company: string;
   company_slug?: string;
+  company_email?: string | null;
+  company_phone?: string | null;
   bio: string | null;
   avatar_url?: string | null;
   slug?: string;
@@ -283,11 +285,11 @@ export default function SpecialistsPage() {
             
             const { data: companiesData } = await supabase
               .from('profiles')
-              .select('id, full_name, company_slug')
+              .select('id, full_name, company_slug, email, phone_number')
               .in('id', companyIds)
               .eq('role', 'COMPANY');
             
-            const companyMap = new Map(companiesData?.map(c => [c.id, { name: c.full_name, slug: c.company_slug }]) || []);
+            const companyMap = new Map(companiesData?.map(c => [c.id, { name: c.full_name, slug: c.company_slug, email: c.email, phone: c.phone_number }]) || []);
             
             // Fetch full translation data (not just slug) from specialist_translations for current locale
             const { data: companyTranslations } = await supabase
@@ -321,6 +323,8 @@ export default function SpecialistsPage() {
                 avatar_url: s.avatar_url,
                 company: companyInfo?.name || 'Company',
                 company_slug: companyInfo?.slug,
+                company_email: companyInfo?.email,
+                company_phone: companyInfo?.phone,
                 slug: translation?.slug || s.slug
               };
             });
@@ -353,7 +357,8 @@ export default function SpecialistsPage() {
       
       const { count: servicesCount } = await supabase
         .from('services')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'published');
       
       setTotalServices(servicesCount || 0);
     } catch (error) {

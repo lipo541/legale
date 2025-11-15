@@ -21,6 +21,10 @@ interface Post {
   id: string
   featured_image_url?: string
   post_translations: PostTranslation[]
+  display_settings?: {
+    focal_point_x: number
+    focal_point_y: number
+  }
 }
 
 interface Position1Props {
@@ -65,6 +69,10 @@ export default function Position1({ posts }: Position1Props) {
         {posts.map((post) => {
           const translation = post.post_translations[0]
           
+          // Get focal point from display_settings or use default (50%, 50% = center)
+          const focalPointX = post.display_settings?.focal_point_x ?? 50
+          const focalPointY = post.display_settings?.focal_point_y ?? 50
+          
           return (
             <SwiperSlide key={post.id}>
               <Link 
@@ -81,6 +89,9 @@ export default function Position1({ posts }: Position1Props) {
                         alt={translation.title}
                         fill
                         className="object-cover"
+                        style={{
+                          objectPosition: `${focalPointX}% ${focalPointY}%`
+                        }}
                         quality={90}
                         priority
                         sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"

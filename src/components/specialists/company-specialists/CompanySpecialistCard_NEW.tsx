@@ -12,6 +12,8 @@ interface CompanySpecialist {
   role_title: string | null;
   company: string;
   company_slug?: string;
+  company_email?: string | null;
+  company_phone?: string | null;
   slug?: string;
   bio: string | null;
   avatar_url?: string | null;
@@ -28,8 +30,15 @@ export default function CompanySpecialistCard({ specialist, viewMode = 'grid' }:
   const params = useParams();
   const locale = params?.locale || 'ka';
 
-  const COMPANY_EMAIL = 'contact@legalsandbox.ge';
-  const COMPANY_PHONE = '+995 555 123 456';
+  // Clean phone number from any non-numeric characters except +, spaces, and hyphens
+  const cleanPhone = (phone: string | null | undefined): string => {
+    if (!phone) return '';
+    return phone.replace(/[^0-9+\s-]/g, '');
+  };
+
+  // Use company contact info from database, fallback to generic if not available
+  const companyEmail = specialist?.company_email || 'info@legal.ge';
+  const companyPhone = cleanPhone(specialist?.company_phone) || '+995 32 2 00 00 00';
 
   if (!specialist) return null;
 
@@ -152,12 +161,12 @@ export default function CompanySpecialistCard({ specialist, viewMode = 'grid' }:
       {/* Contact - Compact */}
       <div className={`px-4 py-2 border-y my-2 ${isDark ? 'border-white/10' : 'border-black/10'}`}>
         <div className="flex items-center justify-between text-xs">
-          <a href={`mailto:${COMPANY_EMAIL}`} className={`flex items-center gap-1 transition-colors hover:underline ${isDark ? 'text-white/60 hover:text-white/80' : 'text-black/60 hover:text-black/80'}`} title="Email">
+          <a href={`mailto:${companyEmail}`} className={`flex items-center gap-1 transition-colors hover:underline ${isDark ? 'text-white/60 hover:text-white/80' : 'text-black/60 hover:text-black/80'}`} title="Email">
             <Mail size={10} />
             <span>Email</span>
           </a>
           <span className={isDark ? 'text-white/20' : 'text-black/20'}>•</span>
-          <a href={`tel:${COMPANY_PHONE.replace(/\s/g, '')}`} className={`flex items-center gap-1 transition-colors hover:underline ${isDark ? 'text-white/60 hover:text-white/80' : 'text-black/60 hover:text-black/80'}`} title="Phone">
+          <a href={`tel:${companyPhone.replace(/\s/g, '')}`} className={`flex items-center gap-1 transition-colors hover:underline ${isDark ? 'text-white/60 hover:text-white/80' : 'text-black/60 hover:text-black/80'}`} title="Phone">
             <Phone size={10} />
             <span>Tel</span>
           </a>

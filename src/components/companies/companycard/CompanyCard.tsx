@@ -34,6 +34,14 @@ export default function CompanyCard({
   const locale = pathname?.split('/')[1] || 'ka';
   const t = companiesTranslations[locale as keyof typeof companiesTranslations] || companiesTranslations.ka;
 
+  // Clean phone number from any non-numeric characters except +, spaces, and hyphens
+  const cleanPhone = (phone: string | null | undefined): string => {
+    if (!phone) return '';
+    return phone.replace(/[^0-9+\s-]/g, '');
+  };
+
+  const cleanedPhone = cleanPhone(phone_number);
+
   // List view layout
   if (viewMode === 'list') {
     return (
@@ -106,11 +114,11 @@ export default function CompanyCard({
               )}
               
               {/* Phone */}
-              {phone_number && (
+              {cleanedPhone && (
                 <div className="flex items-center gap-2">
                   <Phone size={12} strokeWidth={2} className={isDark ? 'text-white/50' : 'text-black/50'} />
                   <span className={`text-xs ${isDark ? 'text-white/70' : 'text-black/70'}`}>
-                    {phone_number}
+                    {cleanedPhone}
                   </span>
                 </div>
               )}
@@ -227,7 +235,7 @@ export default function CompanyCard({
             </div>
           )}
 
-          {phone_number && (
+          {cleanedPhone && (
             <div className="flex items-center gap-2">
               <Phone
                 className={`flex-shrink-0 ${isDark ? 'text-white/40' : 'text-black/40'}`}
@@ -239,7 +247,7 @@ export default function CompanyCard({
                   isDark ? 'text-white/50' : 'text-black/50'
                 }`}
               >
-                {phone_number}
+                {cleanedPhone}
               </span>
             </div>
           )}

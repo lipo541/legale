@@ -37,12 +37,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   addMultiLocaleUrls('/companies', new Date(), 'weekly', 0.9)
   addMultiLocaleUrls('/practices', new Date(), 'monthly', 0.8)
   addMultiLocaleUrls('/services', new Date(), 'monthly', 0.8)
-  addMultiLocaleUrls('/news', new Date(), 'daily', 0.8)
-  addMultiLocaleUrls('/news/archive', new Date(), 'weekly', 0.5)
+  addMultiLocaleUrls('/news', new Date(), 'daily', 0.9)
+  addMultiLocaleUrls('/news/archive', new Date(), 'weekly', 0.4)
   addMultiLocaleUrls('/contact', new Date(), 'monthly', 0.7)
-  addMultiLocaleUrls('/privacy', new Date(), 'yearly', 0.3)
-  addMultiLocaleUrls('/terms', new Date(), 'yearly', 0.3)
-  addMultiLocaleUrls('/cookies', new Date(), 'yearly', 0.3)
+  addMultiLocaleUrls('/privacy', new Date(), 'yearly', 0.2)
+  addMultiLocaleUrls('/terms', new Date(), 'yearly', 0.2)
+  addMultiLocaleUrls('/cookies', new Date(), 'yearly', 0.2)
 
   try {
     // Fetch ALL specialists from specialist_translations (contains slug per language)
@@ -64,7 +64,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             url,
             lastModified: translation.updated_at ? new Date(translation.updated_at) : new Date(),
             changeFrequency: 'weekly',
-            priority: 0.7,
+            priority: 0.8,
           })
         }
       })
@@ -85,7 +85,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           url,
           lastModified: company.updated_at ? new Date(company.updated_at) : new Date(),
           changeFrequency: 'weekly',
-          priority: 0.7,
+          priority: 0.8,
         })
       })
     }
@@ -103,7 +103,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           url,
           lastModified: translation.updated_at ? new Date(translation.updated_at) : new Date(),
           changeFrequency: 'weekly',
-          priority: 0.7,
+          priority: 0.8,
         })
       })
     }
@@ -123,7 +123,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           url,
           lastModified: translation.updated_at ? new Date(translation.updated_at) : new Date(),
           changeFrequency: 'monthly',
-          priority: 0.6,
+          priority: 0.9,
         })
       })
     }
@@ -182,7 +182,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
               ? new Date(translation.updated_at) 
               : new Date(),
             changeFrequency: 'monthly',
-            priority: 0.6,
+            priority: 0.9,
           })
         }
       })
@@ -226,7 +226,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           url,
           lastModified: translation.updated_at ? new Date(translation.updated_at) : new Date(),
           changeFrequency: 'weekly',
-          priority: 0.6,
+          priority: 0.7,
         })
       })
     }

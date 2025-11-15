@@ -14,6 +14,8 @@ interface CompanySpecialist {
   role_title: string | null;
   company: string;
   company_slug?: string;
+  company_email?: string | null;
+  company_phone?: string | null;
   slug?: string;
   bio: string | null;
   avatar_url?: string | null;
@@ -31,9 +33,15 @@ export default function CompanySpecialistCard({ specialist, viewMode = 'grid' }:
   const locale = params?.locale || 'ka';
   const t = specialistsTranslations[locale as keyof typeof specialistsTranslations] || specialistsTranslations.ka;
 
-  // Static contact info - same for all specialists
-  const COMPANY_EMAIL = 'contact@legalsandbox.ge';
-  const COMPANY_PHONE = '+995 555 123 456';
+  // Clean phone number from any non-numeric characters except +, spaces, and hyphens
+  const cleanPhone = (phone: string | null | undefined): string => {
+    if (!phone) return '';
+    return phone.replace(/[^0-9+\s-]/g, '');
+  };
+
+  // Use company contact info from database, fallback to generic if not available
+  const companyEmail = specialist?.company_email || 'info@legal.ge';
+  const companyPhone = cleanPhone(specialist?.company_phone) || '+995 32 2 00 00 00';
 
   if (!specialist) return null;
 
@@ -126,13 +134,13 @@ export default function CompanySpecialistCard({ specialist, viewMode = 'grid' }:
                 <div className="flex items-center gap-1.5">
                   <Mail size={12} strokeWidth={2} className={isDark ? 'text-white/50' : 'text-black/50'} />
                   <span className={`text-xs ${isDark ? 'text-white/70' : 'text-black/70'}`}>
-                    {COMPANY_EMAIL}
+                    {companyEmail}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Phone size={12} strokeWidth={2} className={isDark ? 'text-white/50' : 'text-black/50'} />
                   <span className={`text-xs ${isDark ? 'text-white/70' : 'text-black/70'}`}>
-                    {COMPANY_PHONE}
+                    {companyPhone}
                   </span>
                 </div>
               </div>
@@ -273,13 +281,13 @@ export default function CompanySpecialistCard({ specialist, viewMode = 'grid' }:
               className={isDark ? 'text-white/50' : 'text-black/50'}
             />
             <a 
-              href={`mailto:${COMPANY_EMAIL}`}
+              href={`mailto:${companyEmail}`}
               className={`text-xs transition-colors hover:underline ${
                 isDark ? 'text-white/70 hover:text-white/90' : 'text-black/70 hover:text-black/90'
               }`}
               title="Send email"
             >
-              {COMPANY_EMAIL}
+              {companyEmail}
             </a>
           </div>
 
@@ -291,13 +299,13 @@ export default function CompanySpecialistCard({ specialist, viewMode = 'grid' }:
               className={isDark ? 'text-white/50' : 'text-black/50'}
             />
             <a
-              href={`tel:${COMPANY_PHONE.replace(/\s/g, '')}`}
+              href={`tel:${companyPhone.replace(/\s/g, '')}`}
               className={`text-xs font-medium transition-colors hover:underline ${
                 isDark ? 'text-white/70 hover:text-white/90' : 'text-black/70 hover:text-black/90'
               }`}
               title="Call phone"
             >
-              {COMPANY_PHONE}
+              {companyPhone}
             </a>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { useState, useEffect, Fragment } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useTheme } from '@/contexts/ThemeContext'
 import CreatePostPage from './createpost/CreatePostPage'
+import FocalPointSelector from '@/components/moderatordashboard/FocalPointSelector'
 import { 
   FileText, 
   Eye, 
@@ -75,6 +76,21 @@ export default function PostsPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [categories, setCategories] = useState<Array<{ id: string; georgian: string; english: string; russian: string }>>([])
   const [loadingCategories, setLoadingCategories] = useState(true)
+  
+  // Focal Point Selector state
+  const [focalPointModal, setFocalPointModal] = useState<{
+    isOpen: boolean
+    postId: string | null
+    imageUrl: string
+    postTitle: string
+    currentFocalPoint: { x: number; y: number }
+  }>({
+    isOpen: false,
+    postId: null,
+    imageUrl: '',
+    postTitle: '',
+    currentFocalPoint: { x: 50, y: 50 }
+  })
 
   // Fetch posts
   const fetchPosts = async () => {
@@ -273,6 +289,42 @@ export default function PostsPage() {
     }
   }
 
+  // Fetch focal point for a post
+  const fetchFocalPoint = async (postId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('post_display_settings')
+        .select('focal_point_x, focal_point_y')
+        .eq('post_id', postId)
+        .single()
+
+      if (error && error.code !== 'PGRST116') throw error // PGRST116 = no rows
+      
+      return data ? { x: data.focal_point_x, y: data.focal_point_y } : { x: 50, y: 50 }
+    } catch (error) {
+      console.error('Error fetching focal point:', error)
+      return { x: 50, y: 50 }
+    }
+  }
+
+  // Save focal point
+  const saveFocalPoint = async (postId: string, x: number, y: number) => {
+    try {
+      // UPSERT: insert or update if exists
+      const { error } = await supabase
+        .from('post_display_settings')
+        .upsert(
+          { post_id: postId, focal_point_x: x, focal_point_y: y },
+          { onConflict: 'post_id' }
+        )
+
+      if (error) throw error
+    } catch (error) {
+      console.error('Error saving focal point:', error)
+      throw error
+    }
+  }
+
   // Update post position
   const handlePositionChange = async (postId: string, newPosition: string) => {
     try {
@@ -287,6 +339,30 @@ export default function PostsPage() {
         return
       }
 
+      // If Position 1 selected, open Focal Point Selector
+      if (positionValue === 1) {
+        const post = posts.find(p => p.id === postId)
+        if (!post || !post.featured_image_url) {
+          alert('პოსტს არ აქვს სურათი. Focal Point-ის დასაყენებლად სურათი აუცილებელია.')
+          return
+        }
+
+        const georgianTranslation = post.post_translations.find(t => t.language === 'ka')
+        const focalPoint = await fetchFocalPoint(postId)
+
+        setFocalPointModal({
+          isOpen: true,
+          postId,
+          imageUrl: post.featured_image_url,
+          postTitle: georgianTranslation?.title || 'უსათაურო',
+          currentFocalPoint: focalPoint
+        })
+
+        // Position will be updated after focal point is saved
+        return
+      }
+
+      // For other positions, update directly
       const { error } = await supabase
         .from('posts')
         .update({ display_position: positionValue })
@@ -303,6 +379,34 @@ export default function PostsPage() {
     } catch (error) {
       console.error('Error updating position:', error)
       alert('შეცდომა პოზიციის შეცვლისას')
+    }
+  }
+
+  // Handle focal point save and update position
+  const handleFocalPointSave = async (x: number, y: number) => {
+    if (!focalPointModal.postId) return
+
+    try {
+      // Save focal point
+      await saveFocalPoint(focalPointModal.postId, x, y)
+
+      // Update position to 1
+      const { error } = await supabase
+        .from('posts')
+        .update({ display_position: 1 })
+        .eq('id', focalPointModal.postId)
+
+      if (error) throw error
+
+      setPosts(posts.map(p => 
+        p.id === focalPointModal.postId ? { ...p, display_position: 1 } : p
+      ))
+
+      alert('Focal Point და პოზიცია წარმატებით შეინახა')
+      fetchPosts()
+    } catch (error) {
+      console.error('Error saving focal point and position:', error)
+      throw error
     }
   }
 
@@ -929,6 +1033,16 @@ export default function PostsPage() {
           </div>
         )}
       </div>
+
+      {/* Focal Point Selector Modal */}
+      <FocalPointSelector
+        isOpen={focalPointModal.isOpen}
+        onClose={() => setFocalPointModal({ ...focalPointModal, isOpen: false })}
+        imageUrl={focalPointModal.imageUrl}
+        postTitle={focalPointModal.postTitle}
+        currentFocalPoint={focalPointModal.currentFocalPoint}
+        onSave={handleFocalPointSave}
+      />
     </div>
   )
 }

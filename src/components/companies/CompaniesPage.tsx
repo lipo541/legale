@@ -215,7 +215,8 @@ export default function CompaniesPage() {
         // Fetch services count from services table
         const { count: servicesCount, error: servicesError } = await supabase
           .from('services')
-          .select('*', { count: 'exact', head: true });
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'published');
 
         if (servicesError) {
           console.error('Error fetching services:', servicesError.message, servicesError);

@@ -75,6 +75,12 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
   const [company, setCompany] = useState<Company | null>(null)
   const [cities, setCities] = useState<Array<{ id: string; name_ka: string; name_en: string; name_ru: string }>>([])
   const [loading, setLoading] = useState(true)
+
+  // Clean phone number from any non-numeric characters except +, spaces, and hyphens
+  const cleanPhone = (phone: string | null | undefined): string => {
+    if (!phone) return '';
+    return phone.replace(/[^0-9+\s-]/g, '');
+  };
   const [slugsByLocale, setSlugsByLocale] = useState<Record<string, string>>({})
 
   useEffect(() => {
@@ -352,9 +358,9 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
                   <span className="max-w-[200px] truncate">{company.email}</span>
                 </a>
               )}
-              {company.phone_number && (
+              {company.phone_number && cleanPhone(company.phone_number) && (
                 <a
-                  href={`tel:${company.phone_number}`}
+                  href={`tel:${cleanPhone(company.phone_number)}`}
                   className={`group flex items-center gap-2 px-4 py-2 rounded-full text-sm font-light transition-all ${
                     isDark 
                       ? 'bg-white/5 hover:bg-white/10 ring-1 ring-white/10' 
@@ -362,7 +368,7 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
                   }`}
                 >
                   <Phone className="h-4 w-4 opacity-50" />
-                  {company.phone_number}
+                  {cleanPhone(company.phone_number)}
                 </a>
               )}
               {company.website && (

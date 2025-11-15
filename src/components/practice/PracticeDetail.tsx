@@ -140,17 +140,36 @@ export default function PracticeDetail({
   }, [practice.createdAt, practice.updatedAt, locale])
 
   // Share functionality
-  const handleShare = (platform: 'facebook' | 'linkedin' | 'twitter') => {
-    const url = encodeURIComponent(window.location.href)
-    const title = encodeURIComponent(translation.ogTitle || translation.metaTitle || translation.title)
+  const handleShare = async (platform: 'facebook' | 'linkedin' | 'twitter') => {
+    const url = window.location.href
+    const title = translation.ogTitle || translation.metaTitle || translation.title
+    const description = translation.ogDescription || translation.metaDescription || ''
 
-    const shareUrls = {
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
-      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
-      twitter: `https://twitter.com/intent/tweet?url=${url}&text=${title}`
+    // Check if Web Share API is supported (mobile devices)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: title,
+          text: description,
+          url: url
+        })
+        return // Success - native share dialog shown
+      } catch (err: unknown) {
+        // User cancelled or error - fall back to URL method
+        if (err instanceof Error && err.name !== 'AbortError') {
+          console.log('Share failed:', err)
+        }
+      }
     }
 
-    window.open(shareUrls[platform], '_blank', 'noopener,noreferrer')
+    // Fallback for desktop or if Web Share API not supported
+    const shareUrls = {
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
+      twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`
+    }
+
+    window.open(shareUrls[platform], '_blank', 'width=600,height=500,noopener,noreferrer')
   }
 
   // Localized text

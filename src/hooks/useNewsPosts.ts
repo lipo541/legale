@@ -26,6 +26,10 @@ interface Post {
   published_at: string
   status: string
   post_translations: PostTranslation[]
+  display_settings?: {
+    focal_point_x: number
+    focal_point_y: number
+  }
   author?: {
     email: string
     full_name?: string
@@ -60,6 +64,7 @@ export function useNewsPosts(locale: string): UseNewsPostsResult {
         .select(`
           *,
           post_translations!inner (*),
+          display_settings:post_display_settings(focal_point_x, focal_point_y),
           author:profiles!posts_author_id_fkey(email, full_name)
         `)
         .eq('status', 'published')

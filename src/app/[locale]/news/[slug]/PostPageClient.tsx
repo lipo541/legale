@@ -88,16 +88,34 @@ export default function PostPageClient({ post, author, category, relatedPosts, l
     setFormattedDate(formatDate(post.publishedAt))
   }, [post.publishedAt, locale])
 
-  const shareUrl = typeof window !== 'undefined' ? window.location.href : ''
+  const handleShare = async (platform: string) => {
+    const url = typeof window !== 'undefined' ? window.location.href : ''
+    
+    // Check if Web Share API is supported (mobile devices)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: post.title,
+          text: post.excerpt || '',
+          url: url
+        })
+        return // Success - native share dialog shown
+      } catch (err: unknown) {
+        // User cancelled or error - fall back to URL method
+        if (err instanceof Error && err.name !== 'AbortError') {
+          console.log('Share failed:', err)
+        }
+      }
+    }
 
-  const handleShare = (platform: string) => {
+    // Fallback for desktop or if Web Share API not supported
     const urls = {
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
-      twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(post.title)}`,
-      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+      twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(post.title)}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`
     }
     
-    window.open(urls[platform as keyof typeof urls], '_blank', 'width=600,height=400')
+    window.open(urls[platform as keyof typeof urls], '_blank', 'width=600,height=500,noopener,noreferrer')
   }
 
   return (
