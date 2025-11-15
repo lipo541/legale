@@ -39,6 +39,18 @@ export default function Header() {
 
   // Fetch user session and profile data
   const fetchUserSession = useCallback(async () => {
+    // Prevent rapid successive calls (rate limiting protection)
+    const now = Date.now()
+    const lastFetch = (fetchUserSession as unknown as { lastFetchTime?: number }).lastFetchTime || 0
+    const MIN_INTERVAL = 1000 // Minimum 1 second between fetches
+    
+    if (now - lastFetch < MIN_INTERVAL) {
+      console.log('Skipping session fetch - too soon after last fetch')
+      return
+    }
+    
+    (fetchUserSession as unknown as { lastFetchTime: number }).lastFetchTime = now
+    
     setAuthState(prev => ({ ...prev, loading: true }))
     
     // Get the current session
@@ -46,6 +58,21 @@ export default function Header() {
 
     if (sessionError) {
       console.error('Error fetching session:', sessionError)
+      
+      // If it's an invalid refresh token error, sign out completely to clear bad state
+      if (
+        sessionError.message?.includes('Invalid Refresh Token') ||
+        sessionError.message?.includes('Refresh Token Not Found') ||
+        sessionError.message?.includes('refresh_token_not_found')
+      ) {
+        console.log('Invalid refresh token detected - signing out to clear state')
+        try {
+          await supabase.auth.signOut()
+        } catch (signOutError) {
+          console.error('Error during signOut:', signOutError)
+        }
+      }
+      
       setAuthState({ user: null, role: null, hasPendingRequest: false, loading: false })
       return
     }
@@ -82,7 +109,17 @@ export default function Header() {
     fetchUserSession()
 
     // Listen for auth state changes (only SIGNED_IN and SIGNED_OUT)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state change:', event)
+      
+      // Handle token refresh errors
+      if (event === 'TOKEN_REFRESHED' && !session) {
+        console.log('Token refresh failed - signing out')
+        supabase.auth.signOut()
+        setAuthState({ user: null, role: null, hasPendingRequest: false, loading: false })
+        return
+      }
+      
       // Only re-fetch on actual sign in/out events, NOT on token refresh
       if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
         fetchUserSession()
@@ -378,7 +415,16 @@ export default function Header() {
                         }}
                         className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                       >
-                        {authState.hasPendingRequest ? t.requestPending : t.myProfile}
+                        {authState.hasPendingRequest ? (
+                          <>
+                            {t.requestPending}
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-600 dark:text-yellow-400">
+                              განხილვაშია
+                            </span>
+                          </>
+                        ) : (
+                          t.myProfile
+                        )}
                       </Link>
                     )}
 
@@ -660,7 +706,16 @@ export default function Header() {
                             }}
                             className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-300 active:scale-[0.98]"
                           >
-                            {authState.hasPendingRequest ? t.requestPending : t.myProfile}
+                            {authState.hasPendingRequest ? (
+                              <>
+                                {t.requestPending}
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-600 dark:text-yellow-400">
+                                  განხილვაშია
+                                </span>
+                              </>
+                            ) : (
+                              t.myProfile
+                            )}
                           </Link>
                         )}
                         

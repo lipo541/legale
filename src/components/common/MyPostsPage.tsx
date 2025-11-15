@@ -43,6 +43,26 @@ export default function MyPostsPage() {
   const [loading, setLoading] = useState(true)
   const [showEditor, setShowEditor] = useState(false)
   const [editingPost, setEditingPost] = useState<Post | null>(null)
+  const [verificationStatus, setVerificationStatus] = useState<string | null>(null)
+
+  // Check verification status
+  useEffect(() => {
+    const checkVerification = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('verification_status')
+          .eq('id', user.id)
+          .single()
+        
+        setVerificationStatus(profile?.verification_status || null)
+      }
+    }
+    
+    checkVerification()
+  }, [supabase])
 
   // Fetch user's posts
   const fetchPosts = async () => {
@@ -161,6 +181,32 @@ export default function MyPostsPage() {
           featured_image_url: editingPost.featured_image_url || undefined
         } : undefined}
       />
+    )
+  }
+
+  // If not verified, show message
+  if (verificationStatus !== 'verified') {
+    return (
+      <div className={`min-h-screen ${isDark ? 'bg-black' : 'bg-gray-50'}`}>
+        <div className="mx-auto max-w-2xl px-4 py-16">
+          <div className={`rounded-2xl border p-8 text-center ${
+            isDark ? 'border-amber-500/20 bg-amber-500/10' : 'border-amber-500/20 bg-amber-50'
+          }`}>
+            <AlertCircle className={`mx-auto h-16 w-16 mb-4 ${isDark ? 'text-amber-400' : 'text-amber-600'}`} />
+            <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
+              ვერიფიკაცია საჭიროა
+            </h2>
+            <p className={`text-lg mb-4 ${isDark ? 'text-white/70' : 'text-black/70'}`}>
+              პოსტების შესაქმნელად თქვენი პროფილი უნდა იყოს ვერიფიცირებული.
+            </p>
+            <p className={`text-sm ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+              {verificationStatus === 'pending' 
+                ? 'თქვენი ვერიფიკაციის მოთხოვნა განხილვაშია. გთხოვთ დაელოდოთ ადმინისტრატორის დასტურს.'
+                : 'გთხოვთ შეავსოთ პროფილი და გაიაროთ ვერიფიკაცია Profile სექციაში.'}
+            </p>
+          </div>
+        </div>
+      </div>
     )
   }
 

@@ -6,6 +6,8 @@ import { z } from "zod";
 import { useState, useEffect } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { User, Phone, FileText } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
+import type { Locale } from "@/lib/i18n/config";
 
 interface Company {
   id: string
@@ -25,8 +27,14 @@ export default function CompleteRegisterForm() {
   const [requestType, setRequestType] = useState<"specialist" | "company">("specialist");
   const [companies, setCompanies] = useState<Company[]>([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
+  const [accessRequestStatus, setAccessRequestStatus] = useState<'PENDING' | 'APPROVED' | 'REJECTED' | null>(null);
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const router = useRouter();
+  const pathname = usePathname();
+  const currentLocale = (pathname.split('/')[1] as Locale) || 'ka';
   
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -41,6 +49,61 @@ export default function CompleteRegisterForm() {
 
   // Fetch approved companies when component mounts
   useEffect(() => {
+    const checkAccessRequest = async () => {
+      const supabase = createClient();
+      
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      // Check user's role first - if not USER, redirect to dashboard
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profile && profile.role !== 'USER') {
+        // User already has a role, redirect to appropriate dashboard
+        const roleRedirects: Record<string, string> = {
+          'SUPER_ADMIN': `/${currentLocale}/admin`,
+          'ADMIN': `/${currentLocale}/admin`,
+          'SOLO_SPECIALIST': `/${currentLocale}/solo-specialist-dashboard`,
+          'SPECIALIST': `/${currentLocale}/specialist-dashboard`,
+          'COMPANY': `/${currentLocale}/company-dashboard`,
+          'AUTHOR': `/${currentLocale}/author-dashboard`,
+        };
+        const redirectPath = roleRedirects[profile.role] || `/${currentLocale}`;
+        router.push(redirectPath);
+        return;
+      }
+
+      // Check if user has pending access request
+      const { data: accessRequest } = await supabase
+        .from('access_requests')
+        .select('status, rejection_reason')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (accessRequest) {
+        setAccessRequestStatus(accessRequest.status as 'PENDING' | 'APPROVED' | 'REJECTED');
+        setRejectionReason(accessRequest.rejection_reason);
+        
+        if (accessRequest.status === 'APPROVED') {
+          // Should have been updated already, but redirect just in case
+          router.push(`/${currentLocale}`);
+          return;
+        }
+      }
+
+      setLoading(false);
+    };
+
     const fetchCompanies = async () => {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -57,8 +120,9 @@ export default function CompleteRegisterForm() {
       }
     };
 
+    checkAccessRequest();
     fetchCompanies();
-  }, []);
+  }, [router, currentLocale]);
 
   // Auto-generate slug from company name (same logic as admin panel)
   const generateSlug = (text: string) => {
@@ -114,7 +178,7 @@ export default function CompleteRegisterForm() {
           window.location.href = "/";
         }
       } 
-      // Solo Specialist - Direct role assignment without approval
+      // Solo Specialist - Create access request for admin approval
       else if (requestType === 'specialist' && !selectedCompanyId) {
         // Validate full_name
         if (!data.full_name || data.full_name.trim() === '') {
@@ -122,42 +186,27 @@ export default function CompleteRegisterForm() {
           return;
         }
         
-        console.log("Registering solo specialist - direct role assignment");
-        console.log("Current user ID:", user.id);
+        console.log("Submitting solo specialist request for admin approval");
         
-        // First, check current profile
-        const { data: currentProfile, error: fetchError } = await supabase
-          .from("profiles")
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        
-        console.log("Current profile:", currentProfile);
-        console.log("Fetch error:", fetchError);
-        
-        // Update profile directly with SOLO_SPECIALIST role
-        const { data: updateData, error: profileError } = await supabase
-          .from("profiles")
-          .update({
-            role: 'SOLO_SPECIALIST',
+        // Create access request for solo specialist
+        const { error: requestError } = await supabase
+          .from("access_requests")
+          .insert({
+            user_id: user.id,
+            request_type: 'SOLO_SPECIALIST',
             full_name: data.full_name,
             phone_number: data.phone_number,
-          })
-          .eq('id', user.id)
-          .select();
+            about: data.about,
+            status: 'PENDING'
+          });
 
-        console.log("Update result:", updateData);
-        console.log("Update error:", profileError);
-
-        if (profileError) {
-          console.error("Error updating profile:", profileError);
-          alert(`შეცდომა პროფილის განახლებისას: ${JSON.stringify(profileError)}`);
+        if (requestError) {
+          console.error("Error creating access request:", requestError);
+          alert(`შეცდომა მოთხოვნის გაგზავნისას: ${requestError.message}`);
         } else {
-          console.log("Solo specialist role assigned successfully!");
-          alert("მობრძანდით! თქვენი სოლო სპეციალისტის პროფილი წარმატებით შეიქმნა.");
-          // Get current locale from pathname
-          const currentLocale = window.location.pathname.split('/')[1] || 'ka';
-          window.location.href = `/${currentLocale}/solo-specialist-dashboard`;
+          console.log("Solo specialist request created successfully!");
+          alert("თქვენი მოთხოვნა წარმატებით გაიგზავნა! ადმინისტრატორი განიხილავს მოთხოვნას და დაგიკავშირდებათ.");
+          window.location.href = "/";
         }
       }
       // Company registration - requires admin approval
@@ -208,208 +257,72 @@ export default function CompleteRegisterForm() {
         </div>
 
         <div className={`rounded-3xl border p-8 transition-all duration-300 sm:p-10 ${isDark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
-          <div className="space-y-2 text-center">
-            <h1 className={`text-[30px] font-semibold transition-all duration-300 ${isDark ? 'text-white' : 'text-black'}`}>
-              Complete Your Profile
-            </h1>
-            <p className={`text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-              Fill out the form below to request specialist or company access
-            </p>
-          </div>
-
-          <form onSubmit={form.handleSubmit(onSubmit)} className="mt-8 space-y-6">
-            {/* Request Type */}
-            <div className="space-y-3">
-              <label className={`block text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>
-                Request Type
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setRequestType("specialist")}
-                  className={`flex items-center gap-3 p-4 rounded-xl border transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${
-                    requestType === "specialist"
-                      ? isDark 
-                        ? "bg-white/5 border-white/20" 
-                        : "bg-black/5 border-black/20"
-                      : isDark
-                        ? "bg-transparent border-white/10 hover:border-white/20"
-                        : "bg-transparent border-black/10 hover:border-black/20"
-                  }`}
-                >
-                  <div className={`flex items-center justify-center w-10 h-10 rounded-full ${isDark ? 'bg-white' : 'bg-black'}`}>
-                    <svg className={`w-5 h-5 ${isDark ? 'text-black' : 'text-white'}`} fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                    </svg>
-                  </div>
-                  <div className="text-left">
-                    <div className={`text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>Solo Specialist</div>
-                    <div className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>Individual legal practitioner</div>
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRequestType("company")}
-                  className={`flex items-center gap-3 p-4 rounded-xl border transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${
-                    requestType === "company"
-                      ? isDark 
-                        ? "bg-white/5 border-white/20" 
-                        : "bg-black/5 border-black/20"
-                      : isDark
-                        ? "bg-transparent border-white/10 hover:border-white/20"
-                        : "bg-transparent border-black/10 hover:border-black/20"
-                  }`}
-                >
-                  <div className={`flex items-center justify-center w-10 h-10 rounded-full ${isDark ? 'bg-white' : 'bg-black'}`}>
-                    <svg className={`w-5 h-5 ${isDark ? 'text-black' : 'text-white'}`} fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/>
-                    </svg>
-                  </div>
-                  <div className="text-left">
-                    <div className={`text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>Company</div>
-                    <div className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>Legal firm or company</div>
-                  </div>
-                </button>
-              </div>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className={`h-8 w-8 animate-spin rounded-full border-2 border-t-transparent ${isDark ? 'border-white' : 'border-black'}`}></div>
             </div>
-
-            {/* Join Existing Company - Only show for specialist type */}
-            {requestType === "specialist" && companies.length > 0 && (
-              <div className="space-y-2">
-                <label htmlFor="existing_company" className={`block text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>
-                  Join Existing Company (Optional)
-                </label>
-                <select
-                  id="existing_company"
-                  value={selectedCompanyId}
-                  onChange={(e) => setSelectedCompanyId(e.target.value)}
-                  className={`w-full rounded-xl border px-4 py-3 text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 ${isDark ? 'border-white/10 bg-black text-white focus:border-white/30 focus:ring-white/20' : 'border-black/10 bg-white text-black focus:border-black/30 focus:ring-black/20'}`}
-                >
-                  <option value="">Select a company (optional)</option>
-                  {companies.map((company) => (
-                    <option key={company.id} value={company.id}>
-                      {company.full_name}
-                    </option>
-                  ))}
-                </select>
-                <p className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-                  Join an existing approved company or leave blank to be a solo practitioner
+          ) : accessRequestStatus === 'PENDING' ? (
+            <div className="space-y-4 text-center">
+              <div className="mx-auto w-16 h-16 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                <svg className="w-8 h-8 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h2 className={`text-2xl font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
+                მოთხოვნა განხილვაშია
+              </h2>
+              <p className={`text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                თქვენი მოთხოვნა ადმინისტრატორის განხილვაშია. მიიღებთ შეტყობინებას შედეგის შესახებ.
+              </p>
+            </div>
+          ) : accessRequestStatus === 'REJECTED' ? (
+            <div className="space-y-6">
+              <div className="space-y-4 text-center">
+                <div className="mx-auto w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                <h2 className={`text-2xl font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
+                  მოთხოვნა უარყოფილია
+                </h2>
+                {rejectionReason && (
+                  <div className={`rounded-lg p-4 ${isDark ? 'bg-red-500/10' : 'bg-red-50'}`}>
+                    <p className={`text-sm ${isDark ? 'text-red-400' : 'text-red-700'}`}>
+                      <strong>მიზეზი:</strong> {rejectionReason}
+                    </p>
+                  </div>
+                )}
+                <p className={`text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                  შეგიძლიათ ხელახლა შეავსოთ ფორმა და გაგზავნოთ ახალი მოთხოვნა.
                 </p>
               </div>
-            )}
 
-            {/* Full Name / Company Name - Hide Company Name if joining existing company */}
-            {!(requestType === "specialist" && selectedCompanyId) && (
-              <div className="space-y-2">
-                <label htmlFor="full_name" className={`block text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>
-                  {requestType === "company" ? "Company Name" : "Full Name"} *
-                </label>
-                <div className="relative">
-                  <User className={`absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 ${isDark ? 'text-white/40' : 'text-black/40'}`} aria-hidden="true" />
-                  <input
-                    id="full_name"
-                    {...form.register("full_name")}
-                    placeholder={requestType === "company" ? "Your legal company name" : "Enter your full name"}
-                    className={`w-full rounded-xl border px-12 py-3 text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 ${
-                      form.formState.errors.full_name 
-                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
-                        : isDark
-                          ? 'border-white/10 bg-black text-white placeholder:text-white/40 focus:border-white/30 focus:ring-white/20'
-                          : 'border-black/10 bg-white text-black placeholder:text-black/40 focus:border-black/30 focus:ring-black/20'
-                    }`}
-                  />
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="text-center space-y-2">
+                  <p className={`text-sm ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+                    თქვენ შეგიძლიათ შეავსოთ ფორმა თავიდან
+                  </p>
                 </div>
-                {form.formState.errors.full_name && (
-                  <p className="text-xs text-red-500">{form.formState.errors.full_name.message}</p>
-                )}
-              </div>
-            )}
-
-            {/* Phone Number */}
-            <div className="space-y-2">
-              <label htmlFor="phone_number" className={`block text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>
-                Phone Number *
-              </label>
-              <div className="relative">
-                <Phone className={`absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 ${isDark ? 'text-white/40' : 'text-black/40'}`} aria-hidden="true" />
-                <input
-                  id="phone_number"
-                  {...form.register("phone_number")}
-                  placeholder="+995 XXX XXX XXX"
-                  className={`w-full rounded-xl border px-12 py-3 text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 ${
-                    form.formState.errors.phone_number 
-                      ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
-                      : isDark
-                        ? 'border-white/10 bg-black text-white placeholder:text-white/40 focus:border-white/30 focus:ring-white/20'
-                        : 'border-black/10 bg-white text-black placeholder:text-black/40 focus:border-black/30 focus:ring-black/20'
-                  }`}
-                />
-              </div>
-              {form.formState.errors.phone_number && (
-                <p className="text-xs text-red-500">{form.formState.errors.phone_number.message}</p>
-              )}
+                {/* TODO: Add form fields here */}
+              </form>
             </div>
-
-            {/* Tell us about yourself */}
-            <div className="space-y-2">
-              <label htmlFor="about" className={`block text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>
-                Tell us about yourself *
-              </label>
-              <div className="relative">
-                <FileText className={`absolute left-4 top-4 h-5 w-5 ${isDark ? 'text-white/40' : 'text-black/40'}`} aria-hidden="true" />
-                <textarea
-                  id="about"
-                  {...form.register("about")}
-                  placeholder="Please describe your legal background, experience, and why you'd like to join our platform..."
-                  rows={5}
-                  className={`w-full rounded-xl border px-12 py-3 text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 resize-none ${
-                    form.formState.errors.about 
-                      ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
-                      : isDark
-                        ? 'border-white/10 bg-black text-white placeholder:text-white/40 focus:border-white/30 focus:ring-white/20'
-                        : 'border-black/10 bg-white text-black placeholder:text-black/40 focus:border-black/30 focus:ring-black/20'
-                  }`}
-                />
+          ) : (
+            <>
+              <div className="space-y-2 text-center">
+                <h1 className={`text-[30px] font-semibold transition-all duration-300 ${isDark ? 'text-white' : 'text-black'}`}>
+                  Complete Your Profile
+                </h1>
+                <p className={`text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                  Fill out the form below to request specialist or company access
+                </p>
               </div>
-              {form.formState.errors.about && (
-                <p className="text-xs text-red-500">{form.formState.errors.about.message}</p>
-              )}
-            </div>
-            
-            {/* Submit Button */}
-            <button 
-              type="submit" 
-              className={`group flex w-full items-center justify-center gap-2 rounded-xl border px-5 py-3 text-sm font-semibold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-1 ${isDark ? 'border-white bg-white text-black hover:bg-black hover:text-white focus:ring-white' : 'border-black bg-black text-white hover:bg-white hover:text-black focus:ring-black'}`}
-            >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-              </svg>
-              Submit Request
-            </button>
-          </form>
 
-          {/* What happens next */}
-          <div className={`mt-8 rounded-2xl border p-6 ${isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/5'}`}>
-            <h3 className={`text-sm font-semibold mb-3 ${isDark ? 'text-white' : 'text-black'}`}>What happens next?</h3>
-            <ul className={`space-y-2 text-xs ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-              <li className="flex items-start gap-2">
-                <span className={isDark ? 'text-white/40' : 'text-black/40'}>•</span>
-                <span>We&apos;ll review your application within 2-3 business days</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className={isDark ? 'text-white/40' : 'text-black/40'}>•</span>
-                <span>If approved, you&apos;ll receive access to your personalized CMS</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className={isDark ? 'text-white/40' : 'text-black/40'}>•</span>
-                <span>You&apos;ll be able to manage your profile and publish content</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className={isDark ? 'text-white/40' : 'text-black/40'}>•</span>
-                <span>We&apos;ll contact you via email with the decision</span>
-              </li>
-            </ul>
-          </div>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="mt-8 space-y-6">
+                {/* TODO: Add form fields here - same as REJECTED state */}
+              </form>
+            </>
+          )}
         </div>
       </div>
     </div>

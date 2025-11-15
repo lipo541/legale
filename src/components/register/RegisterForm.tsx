@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import type { ReactNode } from 'react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { ArrowRight, Lock, Mail, User, Eye, EyeOff } from 'lucide-react'
 import { SiGoogle } from 'react-icons/si'
@@ -43,6 +43,17 @@ export default function RegisterForm() {
 
   // Extract current locale from pathname
   const currentLocale = (pathname.split('/')[1] as Locale) || 'ka'
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        router.push(`/${currentLocale}`)
+      }
+    }
+    checkAuth()
+  }, [supabase, router, currentLocale])
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -108,6 +119,11 @@ export default function RegisterForm() {
   }
 
   const handleSocialLogin = async (provider: 'google') => {
+    // Prevent rapid successive OAuth attempts
+    if (loading) {
+      return
+    }
+    
     try {
       setLoading(true)
       setError(null)
@@ -124,7 +140,14 @@ export default function RegisterForm() {
 
       if (error) throw error
     } catch (err) {
-      setError((err as Error).message || 'ავტორიზაცია ვერ მოხერხდა')
+      const error = err as Error & { status?: number }
+      
+      // Handle rate limiting specifically
+      if (error.status === 429 || error.message?.includes('429') || error.message?.includes('rate limit')) {
+        setError('ძალიან ბევრი მცდელობა. გთხოვთ დაელოდოთ რამდენიმე წუთს და სცადოთ თავიდან.')
+      } else {
+        setError(error.message || 'ავტორიზაცია ვერ მოხერხდა')
+      }
       setLoading(false)
     }
   }

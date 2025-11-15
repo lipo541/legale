@@ -336,24 +336,24 @@ export default function ProfilePage() {
   return (
     <div className="pb-10">
       {/* Header with Verification Status */}
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-4 lg:mb-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 lg:gap-0">
         <div>
-          <h1 className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>Solo Specialist Profile</h1>
-          <p className={`mt-2 text-lg ${isDark ? 'text-white/60' : 'text-black/60'}`}>პროფესიული პროფილის მართვა</p>
+          <h1 className={`text-2xl lg:text-4xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>Solo Specialist Profile</h1>
+          <p className={`mt-1 lg:mt-2 text-sm lg:text-lg ${isDark ? 'text-white/60' : 'text-black/60'}`}>პროფესიული პროფილის მართვა</p>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 lg:gap-3 w-full lg:w-auto">
           {profile.verification_status === 'verified' && (
-            <div className="flex items-center gap-2 rounded-lg bg-emerald-500/20 px-4 py-2 border border-emerald-500/30">
-              <CheckCircle className="h-5 w-5 text-emerald-500" />
-              <span className="font-semibold text-emerald-500">ვერიფიცირებული</span>
+            <div className="flex items-center gap-2 rounded-lg bg-emerald-500/20 px-3 lg:px-4 py-1.5 lg:py-2 border border-emerald-500/30">
+              <CheckCircle className="h-4 lg:h-5 w-4 lg:w-5 text-emerald-500" />
+              <span className="text-xs lg:text-sm font-semibold text-emerald-500">ვერიფიცირებული</span>
             </div>
           )}
           
           {profile.verification_status === 'pending' && (
-            <div className="flex items-center gap-2 rounded-lg bg-amber-500/20 px-4 py-2 border border-amber-500/30">
-              <Clock className="h-5 w-5 text-amber-500" />
-              <span className="font-semibold text-amber-500">განხილვაში</span>
+            <div className="flex items-center gap-2 rounded-lg bg-amber-500/20 px-3 lg:px-4 py-1.5 lg:py-2 border border-amber-500/30">
+              <Clock className="h-4 lg:h-5 w-4 lg:w-5 text-amber-500" />
+              <span className="text-xs lg:text-sm font-semibold text-amber-500">განხილვაში</span>
             </div>
           )}
           
@@ -361,11 +361,11 @@ export default function ProfilePage() {
             <button
               onClick={handleRequestVerification}
               disabled={requestingVerification || !isProfileComplete()}
-              className={`flex items-center gap-2 rounded-xl px-6 py-3 font-semibold transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed ${
+              className={`flex items-center gap-2 rounded-lg lg:rounded-xl px-4 lg:px-6 py-2 lg:py-3 text-xs lg:text-sm font-semibold transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed ${
                 isDark ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/30' : 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border border-blue-500/20'
               }`}
             >
-              {requestingVerification ? <><Loader2 className="h-4 w-4 animate-spin" />იგზავნება...</> : <><CheckCircle className="h-4 w-4" />ვერიფიკაციის მოთხოვნა</>}
+              {requestingVerification ? <><Loader2 className="h-3 lg:h-4 w-3 lg:w-4 animate-spin" />იგზავნება...</> : <><CheckCircle className="h-3 lg:h-4 w-3 lg:w-4" />ვერიფიკაცია</>}
             </button>
           )}
         </div>
@@ -373,34 +373,34 @@ export default function ProfilePage() {
 
       {/* Verification Info Banner */}
       {profile.verification_status !== 'verified' && (
-        <div className={`mb-6 rounded-xl border p-6 ${
+        <div className={`mb-4 lg:mb-6 rounded-lg lg:rounded-xl border p-4 lg:p-6 ${
           profile.verification_status === 'pending' ? isDark ? 'border-amber-500/30 bg-amber-500/10' : 'border-amber-500/30 bg-amber-500/5'
           : profile.verification_status === 'rejected' ? isDark ? 'border-red-500/30 bg-red-500/10' : 'border-red-500/30 bg-red-500/5'
           : isDark ? 'border-blue-500/30 bg-blue-500/10' : 'border-blue-500/30 bg-blue-500/5'
         }`}>
-          <div className="flex items-start gap-4">
-            {profile.verification_status === 'pending' ? <Clock className="h-6 w-6 text-amber-500 flex-shrink-0 mt-1" />
-            : profile.verification_status === 'rejected' ? <X className="h-6 w-6 text-red-500 flex-shrink-0 mt-1" />
-            : <CheckCircle className="h-6 w-6 text-blue-500 flex-shrink-0 mt-1" />}
+          <div className="flex items-start gap-3 lg:gap-4">
+            {profile.verification_status === 'pending' ? <Clock className="h-5 lg:h-6 w-5 lg:w-6 text-amber-500 flex-shrink-0 mt-0.5 lg:mt-1" />
+            : profile.verification_status === 'rejected' ? <X className="h-5 lg:h-6 w-5 lg:w-6 text-red-500 flex-shrink-0 mt-0.5 lg:mt-1" />
+            : <CheckCircle className="h-5 lg:h-6 w-5 lg:w-6 text-blue-500 flex-shrink-0 mt-0.5 lg:mt-1" />}
             <div className="flex-1">
               {profile.verification_status === 'pending' ? (
                 <>
-                  <h3 className={`font-semibold text-lg mb-2 ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>ვერიფიკაცია განხილვაშია</h3>
-                  <p className={`text-sm ${isDark ? 'text-amber-300/80' : 'text-amber-700/80'}`}>თქვენი პროფილი განიხილება ადმინისტრატორის მიერ.</p>
+                  <h3 className={`font-semibold text-base lg:text-lg mb-1 lg:mb-2 ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>ვერიფიკაცია განხილვაშია</h3>
+                  <p className={`text-xs lg:text-sm ${isDark ? 'text-amber-300/80' : 'text-amber-700/80'}`}>თქვენი პროფილი განიხილება ადმინისტრატორის მიერ.</p>
                 </>
               ) : profile.verification_status === 'rejected' ? (
                 <>
-                  <h3 className={`font-semibold text-lg mb-2 ${isDark ? 'text-red-400' : 'text-red-600'}`}>ვერიფიკაცია უარყოფილია</h3>
-                  <p className={`text-sm ${isDark ? 'text-red-300/80' : 'text-red-700/80'}`}>
+                  <h3 className={`font-semibold text-base lg:text-lg mb-1 lg:mb-2 ${isDark ? 'text-red-400' : 'text-red-600'}`}>ვერიფიკაცია უარყოფილია</h3>
+                  <p className={`text-xs lg:text-sm ${isDark ? 'text-red-300/80' : 'text-red-700/80'}`}>
                     {profile.verification_notes || 'შეგიძლიათ განაახლოთ პროფილი და ხელახლა მოითხოვოთ ვერიფიკაცია.'}
                   </p>
                 </>
               ) : (
                 <>
-                  <h3 className={`font-semibold text-lg mb-2 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>ვერიფიკაცია საჭიროა</h3>
-                  <div className={`mt-3 text-sm ${isDark ? 'text-blue-300/80' : 'text-blue-700/80'}`}>
+                  <h3 className={`font-semibold text-base lg:text-lg mb-1 lg:mb-2 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>ვერიფიკაცია საჭიროა</h3>
+                  <div className={`mt-2 lg:mt-3 text-xs lg:text-sm ${isDark ? 'text-blue-300/80' : 'text-blue-700/80'}`}>
                     <p className="font-medium mb-1">აუცილებელი ველები:</p>
-                    <ul className="list-disc list-inside space-y-1">
+                    <ul className="list-disc list-inside space-y-0.5 lg:space-y-1">
                       <li className={profile.full_name ? 'line-through opacity-50' : ''}>სრული სახელი</li>
                       <li className={profile.role_title ? 'line-through opacity-50' : ''}>პოზიცია</li>
                       <li className={profile.phone_number ? 'line-through opacity-50' : ''}>ტელეფონი</li>
@@ -416,27 +416,27 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <div className={`rounded-xl border p-8 ${isDark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
+      <div className={`rounded-lg lg:rounded-xl border p-4 lg:p-8 ${isDark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
         {/* Profile Image Section */}
-        <div className="mb-8 pb-8 border-b border-white/10">
-          <h2 className={`text-2xl font-bold mb-6 ${isDark ? 'text-white' : 'text-black'}`}>Profile Image</h2>
-          <div className="flex items-center gap-6">
+        <div className="mb-6 lg:mb-8 pb-6 lg:pb-8 border-b border-white/10">
+          <h2 className={`text-lg lg:text-2xl font-bold mb-4 lg:mb-6 ${isDark ? 'text-white' : 'text-black'}`}>Profile Image</h2>
+          <div className="flex items-center gap-4 lg:gap-6">
             <div 
               onClick={() => profile.avatar_url && setShowPhotoPreview(true)}
-              className={`flex h-24 w-24 items-center justify-center rounded-full ${isDark ? 'bg-white/10' : 'bg-black/10'} ${profile.avatar_url ? 'cursor-pointer hover:ring-2 hover:ring-white/20 transition-all' : ''}`}
+              className={`flex h-20 w-20 lg:h-24 lg:w-24 items-center justify-center rounded-full ${isDark ? 'bg-white/10' : 'bg-black/10'} ${profile.avatar_url ? 'cursor-pointer hover:ring-2 hover:ring-white/20 transition-all' : ''}`}
             >
               {profile.avatar_url ? (
                 <img src={profile.avatar_url} alt={profile.full_name || 'Profile'} className="h-full w-full rounded-full object-cover" />
               ) : (
-                <User className={`h-12 w-12 ${isDark ? 'text-white/60' : 'text-black/60'}`} />
+                <User className={`h-10 w-10 lg:h-12 lg:w-12 ${isDark ? 'text-white/60' : 'text-black/60'}`} />
               )}
             </div>
             <div className="flex-1">
-              <label htmlFor="avatar-upload" className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all cursor-pointer hover:scale-[1.02] ${uploadingPhoto ? 'opacity-50 cursor-not-allowed' : ''} ${isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-black/10 text-black hover:bg-black/20'}`}>
-                {uploadingPhoto ? <><Loader2 className="h-4 w-4 animate-spin" />ატვირთვა...</> : <><Upload className="h-4 w-4" />{profile.avatar_url ? 'ფოტოს შეცვლა' : 'ფოტოს ატვირთვა'}</>}
+              <label htmlFor="avatar-upload" className={`inline-flex items-center gap-2 rounded-lg px-3 lg:px-4 py-1.5 lg:py-2 text-xs lg:text-sm font-medium transition-all cursor-pointer hover:scale-[1.02] ${uploadingPhoto ? 'opacity-50 cursor-not-allowed' : ''} ${isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-black/10 text-black hover:bg-black/20'}`}>
+                {uploadingPhoto ? <><Loader2 className="h-3 lg:h-4 w-3 lg:w-4 animate-spin" />ატვირთვა...</> : <><Upload className="h-3 lg:h-4 w-3 lg:w-4" />{profile.avatar_url ? 'ფოტოს შეცვლა' : 'ფოტოს ატვირთვა'}</>}
               </label>
               <input id="avatar-upload" type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarUpload} disabled={uploadingPhoto} className="hidden" />
-              <p className={`text-xs mt-2 ${isDark ? 'text-white/40' : 'text-black/40'}`}>JPEG, PNG, WebP (მაქს. 5MB)</p>
+              <p className={`text-[10px] lg:text-xs mt-1 lg:mt-2 ${isDark ? 'text-white/40' : 'text-black/40'}`}>JPEG, PNG, WebP (მაქს. 5MB)</p>
             </div>
           </div>
         </div>
@@ -459,26 +459,26 @@ export default function ProfilePage() {
             <FormField label="Phone Number" icon={Phone} value={getValue('phone_number')} isEditing={isEditing('basic')} onChange={(v) => setValue('phone_number', v)} placeholder="+995 551 911 951" type="tel" required isDark={isDark} />
             
             <div>
-              <label className={`mb-3 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-                <Globe className="h-4 w-4" />Languages *
+              <label className={`mb-2 lg:mb-3 flex items-center gap-1.5 lg:gap-2 text-xs lg:text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                <Globe className="h-3 lg:h-4 w-3 lg:w-4" />Languages *
               </label>
               {isEditing('basic') ? (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5 lg:gap-2">
                   {AVAILABLE_LANGUAGES.map((lang) => {
                     const currentLangs = tempSectionData.languages !== undefined ? tempSectionData.languages as string[] : profile.languages || []
                     const isSelected = currentLangs.includes(lang)
                     return (
-                      <button key={lang} type="button" onClick={() => toggleLanguage(lang)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${isSelected ? isDark ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30' : isDark ? 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10' : 'bg-black/5 text-black/60 border border-black/10 hover:bg-black/10'}`}>
+                      <button key={lang} type="button" onClick={() => toggleLanguage(lang)} className={`px-2 lg:px-3 py-1 lg:py-1.5 rounded-lg text-xs lg:text-sm font-medium transition-all ${isSelected ? isDark ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30' : isDark ? 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10' : 'bg-black/5 text-black/60 border border-black/10 hover:bg-black/10'}`}>
                         {lang}
                       </button>
                     )
                   })}
                 </div>
               ) : (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5 lg:gap-2">
                   {profile.languages && profile.languages.length > 0 ? profile.languages.map((lang) => (
-                    <span key={lang} className={`px-3 py-1.5 rounded-lg text-sm font-medium ${isDark ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30'}`}>{lang}</span>
-                  )) : <p className={`text-base ${isDark ? 'text-white/80' : 'text-black/80'}`}>N/A</p>}
+                    <span key={lang} className={`px-2 lg:px-3 py-1 lg:py-1.5 rounded-lg text-xs lg:text-sm font-medium ${isDark ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30'}`}>{lang}</span>
+                  )) : <p className={`text-sm lg:text-base ${isDark ? 'text-white/80' : 'text-black/80'}`}>N/A</p>}
                 </div>
               )}
             </div>
@@ -493,15 +493,15 @@ export default function ProfilePage() {
         </FormSection>
 
         {/* Cities Section */}
-        <div className={`rounded-xl border p-6 ${isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/5'}`}>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className={`text-2xl font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-black'}`}>
-              <MapPin className="h-6 w-6" />
+        <div className={`rounded-lg lg:rounded-xl border p-3 lg:p-6 mb-4 lg:mb-6 ${isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/5'}`}>
+          <div className="flex items-center justify-between mb-3 lg:mb-6">
+            <h2 className={`text-base lg:text-2xl font-bold flex items-center gap-1 lg:gap-2 ${isDark ? 'text-white' : 'text-black'}`}>
+              <MapPin className="h-3.5 lg:h-6 w-3.5 lg:w-6" />
               ქალაქები
             </h2>
             <button
               onClick={() => setShowCityPicker(true)}
-              className={`text-sm font-medium transition-colors px-4 py-2 rounded-lg ${
+              className={`text-xs lg:text-sm font-medium transition-colors px-3 lg:px-4 py-1.5 lg:py-2 rounded-lg ${
                 isDark 
                   ? 'text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20' 
                   : 'text-emerald-600 hover:text-emerald-700 bg-emerald-500/10 hover:bg-emerald-500/20'
@@ -512,17 +512,17 @@ export default function ProfilePage() {
           </div>
 
           {selectedCities.length === 0 ? (
-            <div className={`text-center py-8 ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-              <MapPin className="h-12 w-12 mx-auto mb-3 opacity-20" />
-              <p className="text-sm">არჩეული ქალაქები არ არის</p>
-              <p className="text-xs mt-1">აირჩიეთ ქალაქები სადაც მუშაობთ</p>
+            <div className={`text-center py-6 lg:py-8 ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+              <MapPin className="h-8 lg:h-12 w-8 lg:w-12 mx-auto mb-2 lg:mb-3 opacity-20" />
+              <p className="text-xs lg:text-sm">არჩეული ქალაქები არ არის</p>
+              <p className="text-[10px] lg:text-xs mt-0.5 lg:mt-1">აირჩიეთ ქალაქები სადაც მუშაობთ</p>
             </div>
           ) : (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5 lg:gap-2">
               {selectedCities.map(city => (
                 <span
                   key={city.id}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                  className={`px-2.5 lg:px-4 py-1 lg:py-2 rounded-md lg:rounded-lg text-xs lg:text-sm font-medium ${
                     isDark 
                       ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
                       : 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'

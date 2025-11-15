@@ -2,13 +2,16 @@
 
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { ToastProvider } from '@/contexts/ToastContext'
+import { AuthErrorProvider } from '@/contexts/AuthErrorContext'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider>
-      <ToastProvider>
-        {children}
-      </ToastProvider>
-    </ThemeProvider>
+    <AuthErrorProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          {children}
+        </ToastProvider>
+      </ThemeProvider>
+    </AuthErrorProvider>
   )
 }

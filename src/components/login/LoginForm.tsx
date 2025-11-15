@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import type { ReactNode } from 'react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { ArrowRight, Lock, Mail } from 'lucide-react'
 import { SiGoogle } from 'react-icons/si'
@@ -40,8 +40,25 @@ export default function LoginForm() {
   // Extract current locale from pathname
   const currentLocale = (pathname.split('/')[1] as Locale) || 'ka'
 
+  // Redirect if already authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        router.push(`/${currentLocale}`)
+      }
+    }
+    checkAuth()
+  }, [supabase, router, currentLocale])
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Prevent rapid successive login attempts (rate limiting protection)
+    if (loading) {
+      return
+    }
+    
     setLoading(true)
     setError(null)
 
@@ -74,13 +91,25 @@ export default function LoginForm() {
         }
       }
     } catch (err) {
-      setError((err as Error).message || 'შესვლა ვერ მოხერხდა')
+      const error = err as Error & { status?: number }
+      
+      // Handle rate limiting specifically
+      if (error.status === 429 || error.message?.includes('429') || error.message?.includes('rate limit')) {
+        setError('ძალიან ბევრი მცდელობა. გთხოვთ დაელოდოთ რამდენიმე წუთს და სცადოთ თავიდან.')
+      } else {
+        setError(error.message || 'შესვლა ვერ მოხერხდა')
+      }
     } finally {
       setLoading(false)
     }
   }
 
   const handleSocialLogin = async (provider: 'google') => {
+    // Prevent rapid successive OAuth attempts
+    if (loading) {
+      return
+    }
+    
     try {
       setLoading(true)
       setError(null)
@@ -97,7 +126,14 @@ export default function LoginForm() {
 
       if (error) throw error
     } catch (err) {
-      setError((err as Error).message || 'ავტორიზაცია ვერ მოხერხდა')
+      const error = err as Error & { status?: number }
+      
+      // Handle rate limiting specifically
+      if (error.status === 429 || error.message?.includes('429') || error.message?.includes('rate limit')) {
+        setError('ძალიან ბევრი მცდელობა. გთხოვთ დაელოდოთ რამდენიმე წუთს და სცადოთ თავიდან.')
+      } else {
+        setError(error.message || 'ავტორიზაცია ვერ მოხერხდა')
+      }
       setLoading(false)
     }
   }

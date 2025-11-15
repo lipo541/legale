@@ -493,15 +493,15 @@ export default function ProfilePage() {
         </FormSection>
 
         {/* Cities Section */}
-        <div className={`rounded-xl border p-6 ${isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/5'}`}>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className={`text-2xl font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-black'}`}>
-              <MapPin className="h-6 w-6" />
+        <div className={`rounded-lg lg:rounded-xl border p-3 lg:p-6 mb-4 lg:mb-6 ${isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/5'}`}>
+          <div className="flex items-center justify-between mb-3 lg:mb-6">
+            <h2 className={`text-base lg:text-2xl font-bold flex items-center gap-1 lg:gap-2 ${isDark ? 'text-white' : 'text-black'}`}>
+              <MapPin className="h-3.5 lg:h-6 w-3.5 lg:w-6" />
               ქალაქები
             </h2>
             <button
               onClick={() => setShowCityPicker(true)}
-              className={`text-sm font-medium transition-colors px-4 py-2 rounded-lg ${
+              className={`text-xs lg:text-sm font-medium transition-colors px-3 lg:px-4 py-1.5 lg:py-2 rounded-lg ${
                 isDark 
                   ? 'text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20' 
                   : 'text-emerald-600 hover:text-emerald-700 bg-emerald-500/10 hover:bg-emerald-500/20'
@@ -512,17 +512,17 @@ export default function ProfilePage() {
           </div>
 
           {selectedCities.length === 0 ? (
-            <div className={`text-center py-8 ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-              <MapPin className="h-12 w-12 mx-auto mb-3 opacity-20" />
-              <p className="text-sm">არჩეული ქალაქები არ არის</p>
-              <p className="text-xs mt-1">აირჩიეთ ქალაქები სადაც მუშაობთ</p>
+            <div className={`text-center py-6 lg:py-8 ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+              <MapPin className="h-8 lg:h-12 w-8 lg:w-12 mx-auto mb-2 lg:mb-3 opacity-20" />
+              <p className="text-xs lg:text-sm">არჩეული ქალაქები არ არის</p>
+              <p className="text-[10px] lg:text-xs mt-0.5 lg:mt-1">აირჩიეთ ქალაქები სადაც მუშაობთ</p>
             </div>
           ) : (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5 lg:gap-2">
               {selectedCities.map(city => (
                 <span
                   key={city.id}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                  className={`px-2.5 lg:px-4 py-1 lg:py-2 rounded-md lg:rounded-lg text-xs lg:text-sm font-medium ${
                     isDark 
                       ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
                       : 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
@@ -566,6 +566,7 @@ export default function ProfilePage() {
             profileId={profile.id} 
             isDark={isDark} 
             isEditing={isEditing('services')}
+            showActions={false}
           />
         </FormSection>
 

@@ -33,11 +33,26 @@ export async function GET(request: NextRequest) {
           .single()
         
         // Determine redirect based on role
-        if (!profileError && (profile?.role === 'SUPER_ADMIN' || profile?.role === 'ADMIN')) {
-          return NextResponse.redirect(`${origin}/ka/admin`)
+        if (!profileError && profile?.role) {
+          switch (profile.role) {
+            case 'SUPER_ADMIN':
+            case 'ADMIN':
+              return NextResponse.redirect(`${origin}/ka/admin`)
+            case 'SOLO_SPECIALIST':
+              return NextResponse.redirect(`${origin}/ka/solo-specialist-dashboard`)
+            case 'SPECIALIST':
+              return NextResponse.redirect(`${origin}/ka/specialist-dashboard`)
+            case 'COMPANY':
+              return NextResponse.redirect(`${origin}/ka/company-dashboard`)
+            case 'AUTHOR':
+              return NextResponse.redirect(`${origin}/ka/author-dashboard`)
+            default:
+              // USER role or unknown - redirect to home
+              return NextResponse.redirect(`${origin}/ka`)
+          }
         }
         
-        // Default redirect to home page
+        // Default redirect to home page if no profile or error
         return NextResponse.redirect(`${origin}/ka`)
       }
     } catch (err) {

@@ -24,7 +24,7 @@ import { createClient } from '@/lib/supabase/client'
 interface AccessRequest {
   id: string
   user_id: string
-  request_type: 'SPECIALIST' | 'COMPANY'
+  request_type: 'SPECIALIST' | 'COMPANY' | 'SOLO_SPECIALIST'
   full_name: string
   company_slug: string | null
   phone_number: string
@@ -219,7 +219,11 @@ export default function RequestsPage() {
       }
 
       // Update user role in profiles
-      const newRole = request.request_type === 'SPECIALIST' ? 'SPECIALIST' : 'COMPANY'
+      const newRole = request.request_type === 'SOLO_SPECIALIST' 
+        ? 'SOLO_SPECIALIST' 
+        : request.request_type === 'SPECIALIST' 
+        ? 'SPECIALIST' 
+        : 'COMPANY'
       
       const updateData: {
         role: string

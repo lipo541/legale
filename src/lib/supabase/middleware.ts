@@ -26,8 +26,26 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Refresh session if expired
-  await supabase.auth.getUser();
+  // Refresh session if expired - with error handling
+  try {
+    const { error } = await supabase.auth.getUser();
+    
+    // If there's an auth error (invalid token, etc), clear the session
+    if (error) {
+      console.error('Auth error in middleware:', error.message);
+      
+      // Clear all auth cookies
+      const authCookies = request.cookies.getAll().filter(cookie => 
+        cookie.name.includes('supabase') || cookie.name.includes('auth')
+      );
+      
+      authCookies.forEach(cookie => {
+        response.cookies.delete(cookie.name);
+      });
+    }
+  } catch (err) {
+    console.error('Unexpected error in middleware auth:', err);
+  }
 
   return response;
 }

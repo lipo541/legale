@@ -29,8 +29,8 @@ export default function TextAreaField({
 }: TextAreaFieldProps) {
   return (
     <div>
-      <label className={`mb-3 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-        {Icon && <Icon className="h-4 w-4" />}
+      <label className={`mb-2 lg:mb-3 flex items-center gap-1.5 lg:gap-2 text-xs lg:text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+        {Icon && <Icon className="h-3 lg:h-4 w-3 lg:w-4" />}
         {label} {required && '*'}
       </label>
       {isEditing ? (
@@ -39,8 +39,8 @@ export default function TextAreaField({
           onChange={(e) => onChange?.(e.target.value)}
           placeholder={placeholder}
           rows={rows}
-          className={`w-full rounded-lg border px-4 py-3 transition-colors resize-none ${
-            mono ? 'font-mono text-sm' : ''
+          className={`w-full rounded-lg border px-3 lg:px-4 py-2 lg:py-3 text-sm lg:text-base transition-colors resize-none ${
+            mono ? 'font-mono text-xs lg:text-sm' : ''
           } ${
             isDark 
               ? 'border-white/10 bg-white/5 text-white focus:border-white/20' 
@@ -48,7 +48,7 @@ export default function TextAreaField({
           }`}
         />
       ) : (
-        <p className={`text-base whitespace-pre-wrap ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+        <p className={`text-xs lg:text-base whitespace-pre-wrap ${isDark ? 'text-white/80' : 'text-black/80'}`}>
           {value || 'N/A'}
         </p>
       )}
