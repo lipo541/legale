@@ -193,6 +193,7 @@ export async function createPost(data: {
   displayPosition: number | null
   positionOrder: number
   status: 'draft' | 'pending' | 'published' | 'archived'
+  publishedAt?: string | null
   featuredImageFile?: File | string
   ogImageFile?: File | null
   categoryId?: string | null
@@ -214,6 +215,17 @@ export async function createPost(data: {
       .single()
 
     // 3. Create post record
+    // Determine published_at value:
+    // 1. If custom publishedAt is provided, use it
+    // 2. If status is 'published' and no custom date, use current time
+    // 3. Otherwise, use null (draft/pending posts)
+    let publishedAtValue: string | null = null
+    if (data.publishedAt) {
+      publishedAtValue = data.publishedAt
+    } else if (data.status === 'published') {
+      publishedAtValue = new Date().toISOString()
+    }
+
     const { data: post, error: postError } = await supabase
       .from('posts')
       .insert({
@@ -222,7 +234,7 @@ export async function createPost(data: {
         display_position: data.displayPosition,
         position_order: data.positionOrder,
         status: data.status,
-        published_at: data.status === 'published' ? new Date().toISOString() : null,
+        published_at: publishedAtValue,
         category_id: data.categoryId || null,
       })
       .select()
@@ -364,6 +376,7 @@ export async function updatePost(
     displayPosition: number | null
     positionOrder: number
     status: 'draft' | 'pending' | 'published' | 'archived'
+    publishedAt?: string | null
     featuredImageFile?: File | string
     ogImageFile?: File | null
     categoryId?: string | null
@@ -388,9 +401,16 @@ export async function updatePost(
       category_id: data.categoryId || null,
     }
 
-    // Set published_at if changing to published
-    if (data.status === 'published') {
+    // Set published_at based on custom date or status:
+    // 1. If custom publishedAt is provided, use it
+    // 2. If status is 'published' and no custom date, use current time
+    // 3. If status is not 'published', set to null
+    if (data.publishedAt) {
+      updateData.published_at = data.publishedAt
+    } else if (data.status === 'published') {
       updateData.published_at = new Date().toISOString()
+    } else {
+      updateData.published_at = undefined // Don't update if draft/pending and no custom date
     }
 
     const { error: postError } = await supabase

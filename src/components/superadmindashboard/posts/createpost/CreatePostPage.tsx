@@ -44,6 +44,8 @@ function CreatePostContent({ onCancel, editMode, postData }: CreatePostPageProps
     savePost,
     status,
     setStatus,
+    publishedAt,
+    setPublishedAt,
   } = usePostTranslations()
 
   return (
@@ -156,9 +158,41 @@ function CreatePostContent({ onCancel, editMode, postData }: CreatePostPageProps
       {/* Language Tabs */}
       {activeTab !== 'category' && (
         <div className="mb-4">
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center justify-between gap-4 mb-2">
             <div className={`text-xs font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
               🌐 ენის არჩევა
+            </div>
+            
+            {/* Publication Date Picker */}
+            <div className="flex items-center gap-2">
+              <label className={`text-xs font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                📅 გამოქვეყნების თარიღი:
+              </label>
+              <input
+                type="datetime-local"
+                value={publishedAt ? new Date(publishedAt).toISOString().slice(0, 16) : ''}
+                onChange={(e) => setPublishedAt(e.target.value ? new Date(e.target.value).toISOString() : null)}
+                disabled={saving}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                  isDark
+                    ? 'bg-white/10 text-white border border-white/10 hover:bg-white/20 focus:outline-none focus:ring-1 focus:ring-white/20'
+                    : 'bg-black/10 text-black border border-black/10 hover:bg-black/20 focus:outline-none focus:ring-1 focus:ring-black/20'
+                }`}
+              />
+              {publishedAt && (
+                <button
+                  onClick={() => setPublishedAt(null)}
+                  disabled={saving}
+                  className={`px-2 py-1 rounded text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                    isDark
+                      ? 'text-white/60 hover:text-white/80 hover:bg-white/10'
+                      : 'text-black/60 hover:text-black/80 hover:bg-black/10'
+                  }`}
+                  title="Clear date"
+                >
+                  ✕
+                </button>
+              )}
             </div>
           </div>
           <div className="flex gap-1.5">

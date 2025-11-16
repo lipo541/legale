@@ -49,6 +49,7 @@ interface PostContextType {
   status: 'draft' | 'pending' | 'published' | 'archived'
   postId: string | null // For editing existing posts
   categoryId: string | null // Category ID (language-independent)
+  publishedAt: string | null // Publication date/time (ISO string)
   // OG Image upload state
   ogImageFile: File | null
   ogImagePreview: string | null
@@ -61,6 +62,7 @@ interface PostContextType {
   setStatus: (status: 'draft' | 'pending' | 'published' | 'archived') => void
   setPostId: (id: string | null) => void
   setCategoryId: (id: string | null) => void
+  setPublishedAt: (date: string | null) => void
   setOgImageFile: (file: File | null) => void
   setOgImagePreview: (preview: string | null) => void
   savePost: () => Promise<void>
@@ -92,6 +94,7 @@ interface InitialPostData {
   status?: string
   display_position?: number | null
   position_order?: number
+  published_at?: string | null
   featured_image_url?: string
   post_translations?: Array<{
     language: string
@@ -133,6 +136,7 @@ export function PostTranslationsProvider({
   const [status, setStatus] = useState<'draft' | 'pending' | 'published' | 'archived'>('draft')
   const [postId, setPostId] = useState<string | null>(null) // null = new post, string = editing existing
   const [categoryId, setCategoryId] = useState<string | null>(null) // Category ID
+  const [publishedAt, setPublishedAt] = useState<string | null>(null) // Publication date/time
   
   // OG Image upload state
   const [ogImageFile, setOgImageFile] = useState<File | null>(null)
@@ -152,6 +156,7 @@ export function PostTranslationsProvider({
       setStatus((initialData.status as 'draft' | 'pending' | 'published' | 'archived') || 'draft')
       setDisplayPosition(initialData.display_position ?? null)
       setPositionOrder(initialData.position_order || 0)
+      setPublishedAt(initialData.published_at || null)
 
       // Load translations
       if (initialData.post_translations && Array.isArray(initialData.post_translations)) {
@@ -260,6 +265,7 @@ export function PostTranslationsProvider({
         displayPosition,
         positionOrder,
         status,
+        publishedAt,
         featuredImageFile,
         ogImageFile, // Add OG image file
         categoryId, // Add category ID
@@ -299,6 +305,7 @@ export function PostTranslationsProvider({
         status,
         postId,
         categoryId,
+        publishedAt,
         ogImageFile,
         ogImagePreview,
         setActiveTab,
@@ -310,6 +317,7 @@ export function PostTranslationsProvider({
         setStatus,
         setPostId,
         setCategoryId,
+        setPublishedAt,
         setOgImageFile,
         setOgImagePreview,
         savePost,
