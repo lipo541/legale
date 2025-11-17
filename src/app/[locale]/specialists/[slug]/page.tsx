@@ -74,10 +74,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     ? specialist.bio.substring(0, 160) + (specialist.bio.length > 160 ? '...' : '')
     : `Professional profile of ${specialist.full_name} on Legal.`
 
-  const canonicalUrl =
-    locale === 'ka'
-      ? `${baseUrl}/specialists/${slug}`
-      : `${baseUrl}/${locale}/specialists/${slug}`
+  const canonicalUrl = `${baseUrl}/${locale}/specialists/${slug}`
 
   // Use social_image_url for OG image (fallback to avatar_url)
   const socialImageUrl = specialist.social_image_url || specialist.profiles?.avatar_url
