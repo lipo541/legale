@@ -25,11 +25,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       specialist_id,
       social_title,
       social_description,
+      social_image_url,
       seo_title,
       seo_description,
       profiles!inner(
         avatar_url,
-        social_image_url,
         company_id,
         role
       )
@@ -80,7 +80,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       : `${baseUrl}/${locale}/specialists/${slug}`
 
   // Use social_image_url for OG image (fallback to avatar_url)
-  const socialImageUrl = specialist.profiles?.social_image_url || specialist.profiles?.avatar_url
+  const socialImageUrl = specialist.social_image_url || specialist.profiles?.avatar_url
   
   // Construct proper Supabase Storage URL for social_image_url
   let ogImage: string
