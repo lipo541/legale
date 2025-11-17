@@ -31,7 +31,7 @@ export default function SoloSpecialistCard({ specialist, viewMode = 'grid' }: So
 
   // Static contact info - same for all specialists
   const COMPANY_EMAIL = 'contact@legalsandbox.ge';
-  const COMPANY_PHONE = '+995 555 123 456';
+  const COMPANY_PHONE = '+995 551 911 961';
 
   if (!specialist) return null;
 

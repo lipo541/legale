@@ -420,15 +420,15 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
                   <span className="sm:hidden">Email</span>
                 </a>
               )}
-              {specialist.phone_number && (
+              {(specialist.phone_number || specialist.role === 'SOLO_SPECIALIST') && (
                 <a
-                  href={`tel:${specialist.phone_number}`}
+                  href={`tel:${specialist.role === 'SOLO_SPECIALIST' ? '+995551911961' : specialist.phone_number}`}
                   className={`flex items-center gap-2 text-sm font-light transition-colors ${
                     isDark ? 'text-white/50 hover:text-white' : 'text-black/50 hover:text-black'
                   }`}
                 >
                   <Phone className="h-4 w-4" />
-                  {specialist.phone_number}
+                  {specialist.role === 'SOLO_SPECIALIST' ? '+995 551 911 961' : specialist.phone_number}
                 </a>
               )}
               {cities.length > 0 && (
