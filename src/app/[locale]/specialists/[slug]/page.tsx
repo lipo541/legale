@@ -82,7 +82,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   // Use social_image_url for OG image (fallback to avatar_url)
   const socialImageUrl = specialist.profiles?.social_image_url || specialist.profiles?.avatar_url
   const ogImage = socialImageUrl
-    ? (socialImageUrl.startsWith('http') ? socialImageUrl : `${baseUrl}${socialImageUrl}`)
+    ? (socialImageUrl.startsWith('http') ? socialImageUrl : `${baseUrl}/${socialImageUrl}`)
     : `${baseUrl}/asset/images/og-image.jpg`
 
   // Use social_title and social_description for OpenGraph (with fallbacks)
