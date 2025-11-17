@@ -4,6 +4,7 @@ import { useEffect, useCallback, memo } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { PostTranslationsProvider, usePostTranslations } from '@/contexts/PostTranslationsContext'
 import { FileText, Search, Share2, Loader2, ArrowLeft, Save } from 'lucide-react'
+import DateTimePicker from '@/components/common/DateTimePicker'
 import ContentTab from './ContentTab'
 import SeoTab from './SeoTab'
 import SocialTab from './SocialTab'
@@ -207,18 +208,6 @@ function CreatePostContent({ onCancel, editMode }: CreatePostPageProps) {
   }, [saving])
 
   // ============================================================================
-  // Date Handler
-  // ============================================================================
-  
-  const handleDateChange = useCallback((value: string) => {
-    setPublishedAt(value ? new Date(value).toISOString() : null)
-  }, [setPublishedAt])
-
-  const clearDate = useCallback(() => {
-    setPublishedAt(null)
-  }, [setPublishedAt])
-
-  // ============================================================================
   // Render
   // ============================================================================
 
@@ -334,51 +323,12 @@ function CreatePostContent({ onCancel, editMode }: CreatePostPageProps) {
           </div>
 
           {/* Publication Date Picker */}
-          <div className="flex items-center gap-2">
-            <label 
-              htmlFor="publication-date"
-              className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-white/60' : 'text-black/60'}`}
-            >
-              📅 გამოქვეყნების თარიღი
-            </label>
-            <input
-              id="publication-date"
-              type="datetime-local"
-              value={publishedAt ? new Date(publishedAt).toISOString().slice(0, 16) : ''}
-              onChange={(e) => handleDateChange(e.target.value)}
-              disabled={saving}
-              className={`
-                rounded-lg px-3 py-1.5 text-xs font-medium 
-                transition-all border
-                disabled:opacity-50 disabled:cursor-not-allowed
-                focus:outline-none focus:ring-2
-                ${isDark
-                  ? 'bg-white/10 text-white border-white/10 hover:bg-white/20 focus:ring-white/20'
-                  : 'bg-black/10 text-black border-black/10 hover:bg-black/20 focus:ring-black/20'
-                }
-              `}
-              aria-label="Select publication date and time"
-            />
-            {publishedAt && (
-              <button
-                onClick={clearDate}
-                disabled={saving}
-                className={`
-                  px-2 py-1 rounded text-xs transition-all
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                  focus:outline-none focus:ring-2
-                  ${isDark
-                    ? 'text-white/60 hover:text-white/80 hover:bg-white/10 focus:ring-white/20'
-                    : 'text-black/60 hover:text-black/80 hover:bg-black/10 focus:ring-black/20'
-                  }
-                `}
-                aria-label="Clear publication date"
-                title="Clear date"
-              >
-                ✕
-              </button>
-            )}
-          </div>
+          <DateTimePicker
+            value={publishedAt}
+            onChange={(date) => setPublishedAt(date)}
+            disabled={saving}
+            label="📅 გამოქვეყნების თარიღი"
+          />
         </div>
       )}
 

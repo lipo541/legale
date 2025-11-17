@@ -154,21 +154,83 @@ export default function SoloSpecialistsPage() {
   })
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('დარწმუნებული ხართ რომ გსურთ სპეციალისტის წაშლა?')) return
+    if (!window.confirm('დარწმუნებული ხართ რომ გსურთ სპეციალისტის წაშლა?\n\nგაფრთხილება: წაიშლება ყველა დაკავშირებული მონაცემი (თარგმანები, სერვისები, ქალაქები და ა.შ.)')) return
 
     setDeletingId(id)
     try {
+      // Step 1: Check if specialist is a team leader
+      const { data: teamsData } = await supabase
+        .from('teams')
+        .select('id, name')
+        .eq('leader_id', id)
+        .limit(1)
+      
+      if (teamsData && teamsData.length > 0) {
+        alert(`შეცდომა: ეს სპეციალისტი არის გუნდის "${teamsData[0].name}" ლიდერი!\n\nჯერ უნდა წაშალოთ გუნდი ან შეცვალოთ ლიდერი.`)
+        setDeletingId(null)
+        return
+      }
+
+      // Step 2: Check if specialist has posts as author
+      const { data: postsData } = await supabase
+        .from('posts')
+        .select('id, title')
+        .eq('author_id', id)
+        .limit(1)
+      
+      if (postsData && postsData.length > 0) {
+        const confirmDeleteWithPosts = confirm(
+          `გაფრთხილება: ამ სპეციალისტს აქვს ${postsData.length} პოსტი!\n\n` +
+          `პოსტების ავტორი შეიცვლება NULL-ით. გაგრძელება?`
+        )
+        if (!confirmDeleteWithPosts) {
+          setDeletingId(null)
+          return
+        }
+      }
+
+      // Step 3: Check if specialist has team_members entry
+      const { data: teamMembersData } = await supabase
+        .from('team_members')
+        .select('team_id')
+        .eq('profile_id', id)
+      
+      if (teamMembersData && teamMembersData.length > 0) {
+        const confirmRemoveFromTeams = confirm(
+          `ეს სპეციალისტი არის ${teamMembersData.length} გუნდის წევრი.\n\n` +
+          `ის ამოიშლება ყველა გუნდიდან. გაგრძელება?`
+        )
+        if (!confirmRemoveFromTeams) {
+          setDeletingId(null)
+          return
+        }
+      }
+
+      // Step 4: Attempt deletion (CASCADE will handle dependent records)
       const { error } = await supabase.from('profiles').delete().eq('id', id)
       
       if (error) {
-        alert('შეცდომა წაშლისას: ' + error.message)
+        console.error('Delete error:', error)
+        
+        // More specific error messages
+        if (error.code === '23503') {
+          alert(
+            `შეცდომა: სპეციალისტი ვერ იშლება, რადგან დაკავშირებულია სხვა ჩანაწერებთან.\n\n` +
+            `დეტალები: ${error.message}\n\n` +
+            `გთხოვთ დაუკავშირდეთ ადმინისტრატორს.`
+          )
+        } else if (error.code === '42501') {
+          alert('შეცდომა: არ გაქვთ ამ სპეციალისტის წაშლის უფლება.')
+        } else {
+          alert(`შეცდომა წაშლისას: ${error.message}\n\nკოდი: ${error.code || 'N/A'}`)
+        }
       } else {
         await fetchSpecialists()
-        alert('სპეციალისტი წაშლილია!')
+        alert('სპეციალისტი წარმატებით წაიშალა! ✅')
       }
     } catch (err) {
       console.error('Delete error:', err)
-      alert('შეცდომა წაშლისას')
+      alert('შეცდომა წაშლისას: ' + (err instanceof Error ? err.message : 'უცნობი შეცდომა'))
     } finally {
       setDeletingId(null)
     }
