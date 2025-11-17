@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTheme } from '@/contexts/ThemeContext'
 import CreatePostPage from './createpost/CreatePostPage'
 import FocalPointSelector from '@/components/moderatordashboard/FocalPointSelector'
+import Modal from '@/components/common/Modal'
 import { 
   FileText, 
   Eye, 
@@ -261,6 +262,33 @@ export default function PostsPage() {
     postTitle: '',
     currentFocalPoint: { x: 50, y: 50 }
   })
+
+  // Modal state
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean
+    type: 'info' | 'success' | 'warning' | 'error' | 'confirm'
+    message: string
+    onConfirm?: () => void
+  }>({
+    isOpen: false,
+    type: 'info',
+    message: '',
+    onConfirm: undefined
+  })
+
+  // Helper to show modal
+  const showModal = useCallback((
+    type: 'info' | 'success' | 'warning' | 'error' | 'confirm',
+    message: string,
+    onConfirm?: () => void
+  ) => {
+    setModalConfig({
+      isOpen: true,
+      type,
+      message,
+      onConfirm
+    })
+  }, [])
 
   // ============================================================================
   // Data Fetching
@@ -581,21 +609,22 @@ export default function PostsPage() {
 
   const handleBulkDelete = useCallback(async () => {
     if (selectedPosts.size === 0) return
-    if (!confirm(`დარწმუნებული ხართ რომ გსურთ ${selectedPosts.size} პოსტის წაშლა?`)) return
-
-    try {
-      for (const postId of selectedPosts) {
-        await supabase.from('posts').delete().eq('id', postId)
+    
+    showModal('confirm', `დარწმუნებული ხართ რომ გსურთ ${selectedPosts.size} პოსტის წაშლა?`, async () => {
+      try {
+        for (const postId of selectedPosts) {
+          await supabase.from('posts').delete().eq('id', postId)
+        }
+        
+        setPosts(posts.filter(p => !selectedPosts.has(p.id)))
+        setSelectedPosts(new Set())
+        showModal('success', `${selectedPosts.size} პოსტი წარმატებით წაიშალა`)
+      } catch (error) {
+        console.error('Error bulk deleting:', error)
+        showModal('error', 'შეცდომა წაშლისას')
       }
-      
-      setPosts(posts.filter(p => !selectedPosts.has(p.id)))
-      setSelectedPosts(new Set())
-      alert(`${selectedPosts.size} პოსტი წარმატებით წაიშალა`)
-    } catch (error) {
-      console.error('Error bulk deleting:', error)
-      alert('შეცდომა წაშლისას')
-    }
-  }, [selectedPosts, posts, supabase])
+    })
+  }, [selectedPosts, posts, supabase, showModal])
 
   const handleBulkStatusChange = useCallback(async (newStatus: Post['status']) => {
     if (selectedPosts.size === 0) return
@@ -609,37 +638,37 @@ export default function PostsPage() {
         selectedPosts.has(p.id) ? { ...p, status: newStatus } : p
       ))
       setSelectedPosts(new Set())
-      alert(`${selectedPosts.size} პოსტის სტატუსი შეიცვალა`)
+      showModal('success', `${selectedPosts.size} პოსტის სტატუსი შეიცვალა`)
     } catch (error) {
       console.error('Error bulk status change:', error)
-      alert('შეცდომა სტატუსის შეცვლისას')
+      showModal('error', 'შეცდომა სტატუსის შეცვლისას')
     }
-  }, [selectedPosts, posts, supabase])
+  }, [selectedPosts, posts, supabase, showModal])
 
   const handleDelete = useCallback(async (postId: string) => {
-    if (!confirm('დარწმუნებული ხართ რომ გსურთ პოსტის წაშლა?')) return
-
-    try {
-      const postToDelete = posts.find(p => p.id === postId)
-      
-      if (postToDelete?.featured_image_url) {
-        const urlParts = postToDelete.featured_image_url.split('/post-images/')
-        if (urlParts.length > 1) {
-          const filePath = urlParts[1]
-          await supabase.storage.from('post-images').remove([filePath])
+    showModal('confirm', 'დარწმუნებული ხართ რომ გსურთ პოსტის წაშლა?', async () => {
+      try {
+        const postToDelete = posts.find(p => p.id === postId)
+        
+        if (postToDelete?.featured_image_url) {
+          const urlParts = postToDelete.featured_image_url.split('/post-images/')
+          if (urlParts.length > 1) {
+            const filePath = urlParts[1]
+            await supabase.storage.from('post-images').remove([filePath])
+          }
         }
+
+        const { error } = await supabase.from('posts').delete().eq('id', postId)
+        if (error) throw error
+
+        setPosts(posts.filter(p => p.id !== postId))
+        showModal('success', 'პოსტი წარმატებით წაიშალა')
+      } catch (error) {
+        console.error('Error deleting post:', error)
+        showModal('error', 'შეცდომა პოსტის წაშლისას')
       }
-
-      const { error } = await supabase.from('posts').delete().eq('id', postId)
-      if (error) throw error
-
-      setPosts(posts.filter(p => p.id !== postId))
-      alert('პოსტი წარმატებით წაიშალა')
-    } catch (error) {
-      console.error('Error deleting post:', error)
-      alert('შეცდომა პოსტის წაშლისას')
-    }
-  }, [posts, supabase])
+    })
+  }, [posts, supabase, showModal])
 
   const handleStatusChange = useCallback(async (postId: string, newStatus: Post['status']) => {
     try {
@@ -649,23 +678,23 @@ export default function PostsPage() {
       setPosts(posts.map(p => p.id === postId ? { ...p, status: newStatus } : p))
     } catch (error) {
       console.error('Error updating status:', error)
-      alert('შეცდომა სტატუსის შეცვლისას')
+      showModal('error', 'შეცდომა სტატუსის შეცვლისას')
     }
-  }, [posts, supabase])
+  }, [posts, supabase, showModal])
 
   const handlePositionChange = useCallback(async (postId: string, newPosition: string) => {
     try {
       const positionValue = newPosition === '' || newPosition === 'null' ? null : parseInt(newPosition)
 
       if (positionValue !== null && (positionValue < 1 || positionValue > 10)) {
-        alert('პოზიცია უნდა იყოს 1-დან 10-მდე')
+        showModal('warning', 'პოზიცია უნდა იყოს 1-დან 10-მდე')
         return
       }
 
       if (positionValue === 1) {
         const post = posts.find(p => p.id === postId)
         if (!post || !post.featured_image_url) {
-          alert('პოსტს არ აქვს სურათი')
+          showModal('error', 'პოსტს არ აქვს სურათი')
           return
         }
 
@@ -689,9 +718,9 @@ export default function PostsPage() {
       fetchPosts()
     } catch (error) {
       console.error('Error updating position:', error)
-      alert('შეცდომა პოზიციის შეცვლისას')
+      showModal('error', 'შეცდომა პოზიციის შეცვლისას')
     }
-  }, [posts, supabase, fetchPosts])
+  }, [posts, supabase, fetchPosts, showModal])
 
   const fetchFocalPoint = async (postId: string) => {
     try {
@@ -722,13 +751,13 @@ export default function PostsPage() {
       if (error) throw error
 
       setPosts(posts.map(p => p.id === focalPointModal.postId ? { ...p, display_position: 1 } : p))
-      alert('Focal Point და პოზიცია შენახულია')
+      showModal('success', 'Focal Point და პოზიცია შენახულია')
       fetchPosts()
     } catch (error) {
       console.error('Error saving focal point:', error)
       throw error
     }
-  }, [focalPointModal.postId, posts, supabase, fetchPosts])
+  }, [focalPointModal.postId, posts, supabase, fetchPosts, showModal])
 
   const handlePositionOrderChange = useCallback((postId: string, newOrder: string) => {
     const orderValue = newOrder === '' ? null : parseInt(newOrder)
@@ -751,9 +780,9 @@ export default function PostsPage() {
       fetchPosts()
     } catch (error) {
       console.error('Error updating position order:', error)
-      alert('შეცდომა რიგითობის შეცვლისას')
+      showModal('error', 'შეცდომა რიგითობის შეცვლისას')
     }
-  }, [pendingOrderChanges, posts, supabase, fetchPosts])
+  }, [pendingOrderChanges, posts, supabase, fetchPosts, showModal])
 
   const cancelPositionOrderChange = useCallback((postId: string) => {
     setPendingOrderChanges(prev => {
@@ -1515,6 +1544,18 @@ export default function PostsPage() {
         postTitle={focalPointModal.postTitle}
         currentFocalPoint={focalPointModal.currentFocalPoint}
         onSave={handleFocalPointSave}
+      />
+
+      {/* General Modal */}
+      <Modal
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig({ ...modalConfig, isOpen: false })}
+        type={modalConfig.type}
+        message={modalConfig.message}
+        onConfirm={modalConfig.onConfirm}
+        showCancel={modalConfig.type === 'confirm'}
+        confirmText={modalConfig.type === 'confirm' ? 'დიახ' : 'კარგი'}
+        cancelText="გაუქმება"
       />
     </div>
   )

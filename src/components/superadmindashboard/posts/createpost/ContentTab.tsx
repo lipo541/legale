@@ -7,6 +7,7 @@ import { useState, useMemo, useEffect, useCallback, memo } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
+import Modal from '@/components/common/Modal'
 
 // Lazy load RichTextEditor for better performance
 const RichTextEditor = dynamic(() => import('@/components/common/RichTextEditor'), {
@@ -170,6 +171,17 @@ export default function ContentTab() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [featuredImagePreview, setFeaturedImagePreview] = useState<string | null>(null)
+  
+  // Modal state
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean
+    type: 'info' | 'success' | 'warning' | 'error'
+    message: string
+  }>({
+    isOpen: false,
+    type: 'info',
+    message: ''
+  })
 
   const currentTranslation = translations[activeLanguage]
 
@@ -338,7 +350,11 @@ export default function ContentTab() {
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('სურათის ზომა არ უნდა აღემატებოდეს 5MB-ს')
+      setModalConfig({
+        isOpen: true,
+        type: 'error',
+        message: 'სურათის ზომა არ უნდა აღემატებოდეს 5MB-ს'
+      })
       return
     }
 
@@ -395,7 +411,11 @@ export default function ContentTab() {
 
   const handleGenerateSlug = useCallback(() => {
     if (!currentTranslation.title) {
-      alert('ჯერ შეიყვანეთ სათაური!')
+      setModalConfig({
+        isOpen: true,
+        type: 'warning',
+        message: 'ჯერ შეიყვანეთ სათაური!'
+      })
       return
     }
     const baseSlug = generateSlug(currentTranslation.title)
@@ -791,6 +811,16 @@ export default function ContentTab() {
           onChange={(html) => updateField('content', html)} 
         />
       </div>
+
+      {/* Modal */}
+      <Modal
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig({ ...modalConfig, isOpen: false })}
+        type={modalConfig.type}
+        message={modalConfig.message}
+        showCancel={false}
+        confirmText="კარგი"
+      />
     </div>
   )
 }

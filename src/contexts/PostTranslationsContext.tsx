@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react'
 import { createPost, updatePost } from '@/lib/supabase/posts'
+import Modal from '@/components/common/Modal'
 
 // Types
 type Language = 'georgian' | 'english' | 'russian'
@@ -49,6 +50,8 @@ interface PostContextType {
   status: 'draft' | 'pending' | 'published' | 'archived'
   postId: string | null // For editing existing posts
   categoryId: string | null // Category ID (language-independent)
+  // Modal controls
+  showModal: (type: 'success' | 'error', message: string) => void
   publishedAt: string | null // Publication date/time (ISO string)
   // OG Image upload state
   ogImageFile: File | null
@@ -141,6 +144,21 @@ export function PostTranslationsProvider({
   // OG Image upload state
   const [ogImageFile, setOgImageFile] = useState<File | null>(null)
   const [ogImagePreview, setOgImagePreview] = useState<string | null>(null)
+  
+  // Modal state
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean
+    type: 'success' | 'error'
+    message: string
+  }>({
+    isOpen: false,
+    type: 'success',
+    message: ''
+  })
+  
+  const showModal = (type: 'success' | 'error', message: string) => {
+    setModalConfig({ isOpen: true, type, message })
+  }
   
   const [translations, setTranslations] = useState<PostTranslations>({
     georgian: { ...emptyTranslationData },
@@ -347,18 +365,18 @@ export function PostTranslationsProvider({
       if (postId) {
         // Update existing post
         result = await updatePost(postId, postData)
-        alert('პოსტი წარმატებით განახლდა!')
+        showModal('success', 'პოსტი წარმატებით განახლდა!')
       } else {
         // Create new post
         result = await createPost(postData)
         setPostId(result.postId) // Save postId for future updates
-        alert('პოსტი წარმატებით შეინახა!')
+        showModal('success', 'პოსტი წარმატებით შეინახა!')
       }
 
       console.log('Post saved successfully:', result)
     } catch (error) {
       console.error('Error saving post:', error)
-      alert('შეცდომა შენახვისას: ' + (error as Error).message)
+      showModal('error', 'შეცდომა შენახვისას: ' + (error as Error).message)
     } finally {
       setSaving(false)
     }
@@ -393,9 +411,18 @@ export function PostTranslationsProvider({
         setOgImageFile,
         setOgImagePreview,
         savePost,
+        showModal,
       }}
     >
       {children}
+      <Modal
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig({ ...modalConfig, isOpen: false })}
+        type={modalConfig.type}
+        message={modalConfig.message}
+        showCancel={false}
+        confirmText="კარგი"
+      />
     </PostTranslationsContext.Provider>
   )
 }

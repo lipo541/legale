@@ -3,7 +3,8 @@
 import { useTheme } from '@/contexts/ThemeContext'
 import { usePostTranslations } from '@/contexts/PostTranslationsContext'
 import { X, Share2, CheckCircle, Hash, Image as ImageIcon } from 'lucide-react'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
+import Modal from '@/components/common/Modal'
 
 // ============================================================================
 // TypeScript Interfaces
@@ -66,6 +67,17 @@ export default function SocialTab() {
   
   const currentData = translations[activeLanguage]
 
+  // Modal state
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean
+    type: 'info' | 'success' | 'warning' | 'error'
+    message: string
+  }>({
+    isOpen: false,
+    type: 'info',
+    message: ''
+  })
+
   // ============================================================================
   // Memoized Values
   // ============================================================================
@@ -103,14 +115,22 @@ export default function SocialTab() {
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('სურათის ზომა არ უნდა აღემატებოდეს 5MB-ს')
+      setModalConfig({
+        isOpen: true,
+        type: 'error',
+        message: 'სურათის ზომა არ უნდა აღემატებოდეს 5MB-ს'
+      })
       return
     }
 
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
-      alert('მხოლოდ JPG, PNG და WebP ფორმატები დაშვებულია')
+      setModalConfig({
+        isOpen: true,
+        type: 'error',
+        message: 'მხოლოდ JPG, PNG და WebP ფორმატები დაშვებულია'
+      })
       return
     }
 
@@ -400,6 +420,16 @@ export default function SocialTab() {
           </div>
         </div>
       </div>
+
+      {/* Modal */}
+      <Modal
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig({ ...modalConfig, isOpen: false })}
+        type={modalConfig.type}
+        message={modalConfig.message}
+        showCancel={false}
+        confirmText="კარგი"
+      />
     </div>
   )
 }
