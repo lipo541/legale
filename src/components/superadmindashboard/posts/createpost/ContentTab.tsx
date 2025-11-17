@@ -3,7 +3,7 @@
 import { useTheme } from '@/contexts/ThemeContext'
 import { usePostTranslations } from '@/contexts/PostTranslationsContext'
 import { ChevronRight, Check, Upload, X } from 'lucide-react'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback, memo } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
@@ -11,8 +11,16 @@ import { createClient } from '@/lib/supabase/client'
 // Lazy load RichTextEditor for better performance
 const RichTextEditor = dynamic(() => import('@/components/common/RichTextEditor'), {
   ssr: false,
-  loading: () => <div className="h-64 flex items-center justify-center text-sm text-white/60">Editor იტვირთება...</div>
+  loading: () => (
+    <div className="h-64 flex items-center justify-center text-xs text-white/60">
+      Editor იტვირთება...
+    </div>
+  )
 })
+
+// ============================================================================
+// TypeScript Interfaces
+// ============================================================================
 
 interface Category {
   id: string
@@ -23,10 +31,138 @@ interface Category {
   subcategories: Category[]
 }
 
+interface CategoryTranslation {
+  language: string
+  name: string
+  slug?: string
+  description?: string
+}
+
+interface CategoryData {
+  id: string
+  parent_id: string | null
+  post_category_translations: CategoryTranslation[]
+}
+
+// ============================================================================
+// Memoized Components
+// ============================================================================
+
+const CategoryItem = memo(({ 
+  category, 
+  level = 0,
+  isExpanded,
+  isSelected,
+  isDark,
+  expandedCategories,
+  onToggle,
+  onSelect
+}: {
+  category: Category
+  level?: number
+  isExpanded: boolean
+  isSelected: boolean
+  isDark: boolean
+  expandedCategories: string[]
+  onToggle: (id: string) => void
+  onSelect: (category: Category) => void
+}) => {
+  const hasSubcategories = category.subcategories.length > 0
+
+  return (
+    <div className="space-y-0.5">
+      <div 
+        className={`flex items-center gap-1.5 px-2 py-1 rounded-md transition-colors cursor-pointer ${
+          isSelected
+            ? isDark
+              ? 'bg-emerald-500/20 border border-emerald-500/30'
+              : 'bg-emerald-500/10 border border-emerald-500/20'
+            : isDark
+            ? 'hover:bg-white/5 border border-transparent'
+            : 'hover:bg-black/5 border border-transparent'
+        }`}
+        style={{ marginLeft: `${level * 12}px` }}
+        onClick={() => onSelect(category)}
+        role="button"
+        tabIndex={0}
+        aria-label={`Select category ${category.georgian}`}
+      >
+        {hasSubcategories ? (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggle(category.id)
+            }}
+            className={`p-0.5 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+            aria-label={isExpanded ? 'Collapse subcategories' : 'Expand subcategories'}
+          >
+            <ChevronRight className={`h-3 w-3 ${isDark ? 'text-white/60' : 'text-black/60'}`} />
+          </button>
+        ) : (
+          <div className="w-3" aria-hidden="true" />
+        )}
+        
+        <span className={`text-xs flex-1 ${
+          isSelected
+            ? isDark
+              ? 'text-emerald-400 font-medium'
+              : 'text-emerald-600 font-medium'
+            : isDark
+            ? 'text-white/80'
+            : 'text-black/80'
+        }`}>
+          {category.georgian}
+        </span>
+        
+        {isSelected && (
+          <Check className={`h-3.5 w-3.5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} aria-hidden="true" />
+        )}
+      </div>
+
+      {isExpanded && hasSubcategories && (
+        <div className="space-y-0.5">
+          {category.subcategories.map(sub => (
+            <CategoryItem
+              key={sub.id}
+              category={sub}
+              level={level + 1}
+              isExpanded={expandedCategories.includes(sub.id)}
+              isSelected={isSelected}
+              isDark={isDark}
+              expandedCategories={expandedCategories}
+              onToggle={onToggle}
+              onSelect={onSelect}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+})
+CategoryItem.displayName = 'CategoryItem'
+
+// ============================================================================
+// Main Component
+// ============================================================================
+
 export default function ContentTab() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
-  const { translations, activeLanguage, updateField, updateAllLanguages, displayPosition, positionOrder, setDisplayPosition, setPositionOrder, categoryId, setCategoryId } = usePostTranslations()
+  const { 
+    translations, 
+    activeLanguage, 
+    updateField, 
+    updateAllLanguages, 
+    displayPosition, 
+    positionOrder, 
+    setDisplayPosition, 
+    setPositionOrder, 
+    setCategoryId 
+  } = usePostTranslations()
+  
+  // ============================================================================
+  // State Management
+  // ============================================================================
   
   const [categories, setCategories] = useState<Category[]>([])
   const [loadingCategories, setLoadingCategories] = useState(true)
@@ -37,6 +173,17 @@ export default function ContentTab() {
 
   const currentTranslation = translations[activeLanguage]
 
+  // ============================================================================
+  // Effects
+  // ============================================================================
+
+  // Load featured image preview from translation data
+  useEffect(() => {
+    if (currentTranslation.featured_image && !featuredImagePreview) {
+      setFeaturedImagePreview(currentTranslation.featured_image)
+    }
+  }, [currentTranslation.featured_image, featuredImagePreview])
+
   // Load categories from Supabase
   useEffect(() => {
     loadCategories()
@@ -45,18 +192,6 @@ export default function ContentTab() {
   // Load selected category from context when categories are loaded
   useEffect(() => {
     if (categories.length > 0 && currentTranslation.category_id) {
-      // Find category recursively
-      const findCategory = (cats: Category[], id: string): Category | null => {
-        for (const cat of cats) {
-          if (cat.id === id) return cat
-          if (cat.subcategories.length > 0) {
-            const found = findCategory(cat.subcategories, id)
-            if (found) return found
-          }
-        }
-        return null
-      }
-
       const found = findCategory(categories, currentTranslation.category_id)
       if (found && found.id !== selectedCategory?.id) {
         setSelectedCategory(found)
@@ -65,6 +200,36 @@ export default function ContentTab() {
       setSelectedCategory(null)
     }
   }, [categories, currentTranslation.category_id])
+
+  // ============================================================================
+  // Memoized Values
+  // ============================================================================
+
+  // Reading stats (word count + reading time) for current language
+  const readingStats = useMemo(() => {
+    const content = currentTranslation.content || ''
+    const plain = content.replace(/<[^>]*>/g, ' ')
+    const words = plain.trim().split(/\s+/).filter(Boolean)
+    const wordCount = words.length
+    const wpm = activeLanguage === 'georgian' ? 180 : activeLanguage === 'english' ? 200 : 190
+    const readingTime = Math.ceil(wordCount / wpm)
+    return { wordCount, readingTime }
+  }, [currentTranslation.content, activeLanguage])
+
+  // ============================================================================
+  // Helper Functions
+  // ============================================================================
+
+  const findCategory = useCallback((cats: Category[], id: string): Category | null => {
+    for (const cat of cats) {
+      if (cat.id === id) return cat
+      if (cat.subcategories.length > 0) {
+        const found = findCategory(cat.subcategories, id)
+        if (found) return found
+      }
+    }
+    return null
+  }, [])
 
   const loadCategories = async () => {
     const supabase = createClient()
@@ -86,17 +251,6 @@ export default function ContentTab() {
         .order('created_at', { ascending: true })
 
       if (categoriesError) throw categoriesError
-
-      interface CategoryTranslation {
-        language: string
-        name: string
-      }
-
-      interface CategoryData {
-        id: string
-        parent_id: string | null
-        post_category_translations: CategoryTranslation[]
-      }
 
       // Transform data to nested structure
       const categoryMap = new Map<string, Category>()
@@ -137,18 +291,7 @@ export default function ContentTab() {
     }
   }
 
-  // Reading stats (word count + reading time) for current language
-  const readingStats = useMemo(() => {
-    const content = currentTranslation.content || ''
-    const plain = content.replace(/<[^>]*>/g, ' ')
-    const words = plain.trim().split(/\s+/).filter(Boolean)
-    const wordCount = words.length
-    const wpm = activeLanguage === 'georgian' ? 180 : activeLanguage === 'english' ? 200 : 190
-    const readingTime = Math.ceil(wordCount / wpm)
-    return { wordCount, readingTime }
-  }, [currentTranslation.content, activeLanguage])
-
-  const generateSlug = (text: string) => {
+  const generateSlug = useCallback((text: string): string => {
     const translitMap: { [key: string]: string } = {
       // Georgian
       'ა': 'a', 'ბ': 'b', 'გ': 'g', 'დ': 'd', 'ე': 'e', 'ვ': 'v', 'ზ': 'z', 'თ': 't', 'ი': 'i', 'კ': 'k', 'ლ': 'l', 'მ': 'm', 'ნ': 'n', 'ო': 'o', 'პ': 'p', 'ჟ': 'zh', 'რ': 'r', 'ს': 's', 'ტ': 't', 'უ': 'u', 'ფ': 'f', 'ქ': 'q', 'ღ': 'gh', 'ყ': 'y', 'შ': 'sh', 'ჩ': 'ch', 'ც': 'ts', 'ძ': 'dz', 'წ': 'w', 'ჭ': 'ch', 'ხ': 'kh', 'ჯ': 'j', 'ჰ': 'h',
@@ -167,27 +310,29 @@ export default function ContentTab() {
       .replace(/--+/g, '-')           // Replace multiple - with single -
       .replace(/^-+/, '')             // Trim - from start
       .replace(/-+$/, '')            // Trim - from end
-  }
+  }, [])
 
-  const handleTitleChange = (value: string) => {
+  // ============================================================================
+  // Event Handlers (useCallback for performance)
+  // ============================================================================
+
+  const handleTitleChange = useCallback((value: string) => {
     updateField('title', value)
     // Auto-generate slug only if slug is empty
     if (!currentTranslation.slug && value) {
       const baseSlug = generateSlug(value)
-      // Add language suffix to make slugs unique per language (like specialists/companies)
       const langSuffix = activeLanguage === 'georgian' ? '-ka' : activeLanguage === 'english' ? '-en' : '-ru'
       const generatedSlug = baseSlug + langSuffix
-      console.log('Title:', value, 'Generated Slug:', generatedSlug, 'Language:', activeLanguage)
       updateField('slug', generatedSlug)
     }
-  }
+  }, [currentTranslation.slug, activeLanguage, updateField, generateSlug])
 
-  const handleSlugChange = (value: string) => {
+  const handleSlugChange = useCallback((value: string) => {
     const sanitizedSlug = generateSlug(value)
     updateField('slug', sanitizedSlug)
-  }
+  }, [updateField, generateSlug])
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -204,22 +349,22 @@ export default function ContentTab() {
       updateField('featured_image', reader.result as string)
     }
     reader.readAsDataURL(file)
-  }
+  }, [updateField])
 
-  const removeImage = () => {
+  const removeImage = useCallback(() => {
     setFeaturedImagePreview(null)
     updateField('featured_image', '')
-  }
+  }, [updateField])
 
-  const toggleExpand = (categoryId: string) => {
+  const toggleExpand = useCallback((categoryId: string) => {
     setExpandedCategories(prev => 
       prev.includes(categoryId) 
         ? prev.filter(id => id !== categoryId)
         : [...prev, categoryId]
     )
-  }
+  }, [])
 
-  const handleSelectCategory = (category: Category) => {
+  const handleSelectCategory = useCallback((category: Category) => {
     setSelectedCategory(category)
     setIsDropdownOpen(false)
     
@@ -239,75 +384,39 @@ export default function ContentTab() {
       english: category.id,
       russian: category.id
     })
-  }
+  }, [updateAllLanguages, setCategoryId])
 
-  const renderCategory = (category: Category, level: number = 0) => {
-    const isExpanded = expandedCategories.includes(category.id)
-    const hasSubcategories = category.subcategories.length > 0
-    const isSelected = selectedCategory?.id === category.id
+  const handleClearCategory = useCallback(() => {
+    setSelectedCategory(null)
+    setCategoryId(null)
+    updateAllLanguages('category_id', { georgian: '', english: '', russian: '' })
+    updateAllLanguages('category', { georgian: '', english: '', russian: '' })
+  }, [setCategoryId, updateAllLanguages])
 
-    return (
-      <div key={category.id} className="space-y-0.5">
-        <div 
-          className={`flex items-center gap-1.5 px-2 py-1 rounded-md transition-colors cursor-pointer ${
-            isSelected
-              ? isDark
-                ? 'bg-emerald-500/20 border border-emerald-500/30'
-                : 'bg-emerald-500/10 border border-emerald-500/20'
-              : isDark
-              ? 'hover:bg-white/5 border border-transparent'
-              : 'hover:bg-black/5 border border-transparent'
-          }`}
-          style={{ marginLeft: `${level * 12}px` }}
-          onClick={() => handleSelectCategory(category)}
-        >
-          {hasSubcategories && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                toggleExpand(category.id)
-              }}
-              className={`p-0.5 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-            >
-              <ChevronRight className={`h-3 w-3 ${isDark ? 'text-white/60' : 'text-black/60'}`} />
-            </button>
-          )}
-          {!hasSubcategories && <div className="w-3" />}
-          
-          <span className={`text-xs flex-1 ${
-            isSelected
-              ? isDark
-                ? 'text-emerald-400 font-medium'
-                : 'text-emerald-600 font-medium'
-              : isDark
-              ? 'text-white/80'
-              : 'text-black/80'
-          }`}>
-            {category.georgian}
-          </span>
-          
-          {isSelected && (
-            <Check className={`h-3.5 w-3.5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-          )}
-        </div>
+  const handleGenerateSlug = useCallback(() => {
+    if (!currentTranslation.title) {
+      alert('ჯერ შეიყვანეთ სათაური!')
+      return
+    }
+    const baseSlug = generateSlug(currentTranslation.title)
+    const langSuffix = activeLanguage === 'georgian' ? '-ka' : activeLanguage === 'english' ? '-en' : '-ru'
+    const generatedSlug = baseSlug + langSuffix
+    updateField('slug', generatedSlug)
+  }, [currentTranslation.title, activeLanguage, updateField, generateSlug])
 
-        {isExpanded && hasSubcategories && (
-          <div className="space-y-1">
-            {category.subcategories.map(sub => renderCategory(sub, level + 1))}
-          </div>
-        )}
-      </div>
-    )
-  }
+  // ============================================================================
+  // Render
+  // ============================================================================
 
   return (
     <div className="space-y-3">
       {/* NewsPage Position Selector */}
       <div className="space-y-1.5">
-        <label className={`text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+        <label htmlFor="display-position" className={`text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
           NewsPage პოზიცია
         </label>
         <select
+          id="display-position"
           value={displayPosition || ''}
           onChange={(e) => setDisplayPosition(e.target.value ? parseInt(e.target.value) : null)}
           className={`appearance-none w-full px-3 py-2 pr-8 rounded-lg text-xs font-medium transition-all cursor-pointer ${
@@ -325,8 +434,11 @@ export default function ContentTab() {
             backgroundRepeat: 'no-repeat',
             backgroundPosition: 'right 10px center'
           }}
+          aria-label="Select NewsPage display position"
         >
-          <option value="" style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>AllPostsSection (არ არის Featured)</option>
+          <option value="" style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>
+            AllPostsSection (არ არის Featured)
+          </option>
           <optgroup label="Single Positions" style={isDark ? { backgroundColor: '#18181b', color: 'rgba(255,255,255,0.6)' } : { backgroundColor: 'white', color: 'rgba(0,0,0,0.6)' }}>
             <option value="1" style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>Position 1 - Hero Slider (Left, Main)</option>
             <option value="2" style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>Position 2 - Vertical News Feed</option>
@@ -347,10 +459,11 @@ export default function ContentTab() {
           <div className={`mt-1.5 p-2 rounded-lg ${
             isDark ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-emerald-500/5 border border-emerald-500/10'
           }`}>
-            <label className={`text-xs font-medium mb-1.5 block ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+            <label htmlFor="position-order" className={`text-xs font-medium mb-1.5 block ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
               რიგითობა Slider-ში
             </label>
             <input
+              id="position-order"
               type="number"
               min="0"
               value={positionOrder}
@@ -360,6 +473,7 @@ export default function ContentTab() {
                   ? 'bg-white/10 border border-white/20 text-white'
                   : 'bg-white border border-black/10 text-black'
               }`}
+              aria-label="Slider position order"
             />
             <p className={`text-xs mt-1 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
               0 = პირველი, 1 = მეორე, 2 = მესამე და ა.შ.
@@ -412,17 +526,13 @@ export default function ContentTab() {
                 )}
               </div>
               <button
-                onClick={() => {
-                  setSelectedCategory(null)
-                  setCategoryId(null) // Clear main category ID
-                  updateAllLanguages('category_id', { georgian: '', english: '', russian: '' })
-                  updateAllLanguages('category', { georgian: '', english: '', russian: '' })
-                }}
+                onClick={handleClearCategory}
                 className={`text-xs px-2 py-1 rounded-md transition-colors ${
                   isDark
                     ? 'hover:bg-white/10 text-white/60'
                     : 'hover:bg-black/10 text-black/60'
                 }`}
+                aria-label="Clear category selection"
               >
                 წაშლა
               </button>
@@ -458,6 +568,7 @@ export default function ContentTab() {
                     ? 'hover:bg-white/10 text-white/60'
                     : 'hover:bg-black/10 text-black/60'
                 }`}
+                aria-label="Change category selection"
               >
                 შეცვლა
               </button>
@@ -471,6 +582,7 @@ export default function ContentTab() {
                 ? 'bg-white/10 border-white/20 text-white/60 hover:bg-white/15'
                 : 'bg-black/5 border-black/10 text-black/60 hover:bg-black/10'
             }`}
+            aria-label="Open category selection dropdown"
           >
             აირჩიეთ კატეგორია...
           </button>
@@ -478,15 +590,30 @@ export default function ContentTab() {
 
         {/* Category Dropdown */}
         {isDropdownOpen && (
-          <div className={`rounded-md border p-2 space-y-0.5 max-h-48 overflow-y-auto ${
-            isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/5'
-          }`}>
+          <div 
+            className={`rounded-md border p-2 space-y-0.5 max-h-48 overflow-y-auto ${
+              isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/5'
+            }`}
+            role="listbox"
+            aria-label="Category selection"
+          >
             {loadingCategories ? (
               <div className={`text-center py-3 text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
                 იტვირთება...
               </div>
             ) : categories.length > 0 ? (
-              categories.map((category: Category) => renderCategory(category))
+              categories.map((category: Category) => (
+                <CategoryItem
+                  key={category.id}
+                  category={category}
+                  isExpanded={expandedCategories.includes(category.id)}
+                  isSelected={selectedCategory?.id === category.id}
+                  isDark={isDark}
+                  expandedCategories={expandedCategories}
+                  onToggle={toggleExpand}
+                  onSelect={handleSelectCategory}
+                />
+              ))
             ) : (
               <div className={`text-center py-3 text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
                 კატეგორიები ვერ მოიძებნა
@@ -498,10 +625,11 @@ export default function ContentTab() {
 
       {/* Title Input */}
       <div className="space-y-1.5">
-        <label className={`text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+        <label htmlFor="post-title" className={`text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
           პოსტის სათაური
         </label>
         <input
+          id="post-title"
           type="text"
           value={currentTranslation.title || ''}
           onChange={(e) => handleTitleChange(e.target.value)}
@@ -517,6 +645,7 @@ export default function ContentTab() {
               ? 'bg-white/10 border-white/20 text-white placeholder:text-white/40'
               : 'bg-black/5 border-black/10 text-black placeholder:text-black/40'
           }`}
+          aria-label="Post title"
         />
       </div>
 
@@ -533,7 +662,7 @@ export default function ContentTab() {
               : 'border-black/20 hover:border-emerald-500/50 bg-black/5'
           }`}>
             <div className="flex flex-col items-center justify-center py-3">
-              <Upload className={`w-6 h-6 mb-1 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
+              <Upload className={`w-6 h-6 mb-1 ${isDark ? 'text-white/40' : 'text-black/40'}`} aria-hidden="true" />
               <p className={`text-xs ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                 დააჭირეთ ან გადმოიტანეთ სურათი
               </p>
@@ -546,13 +675,14 @@ export default function ContentTab() {
               className="hidden" 
               accept="image/*"
               onChange={handleImageUpload}
+              aria-label="Upload featured image"
             />
           </label>
         ) : (
           <div className="relative w-full h-32 rounded-lg overflow-hidden">
             <Image
               src={featuredImagePreview || currentTranslation.featured_image || ''}
-              alt="Featured"
+              alt="Featured image preview"
               fill
               className="object-cover"
             />
@@ -563,6 +693,7 @@ export default function ContentTab() {
                   ? 'bg-black/60 hover:bg-black/80 text-white'
                   : 'bg-white/60 hover:bg-white/80 text-black'
               }`}
+              aria-label="Remove featured image"
             >
               <X className="w-3 h-3" />
             </button>
@@ -573,28 +704,20 @@ export default function ContentTab() {
       {/* Slug Input */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <label className={`text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+          <label htmlFor="post-slug" className={`text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
             URL Slug ({activeLanguage === 'georgian' ? 'ქართული' : activeLanguage === 'english' ? 'ინგლისური' : 'რუსული'})
           </label>
           <button
             type="button"
-            onClick={() => {
-              if (!currentTranslation.title) {
-                alert('ჯერ შეიყვანეთ სათაური!')
-                return
-              }
-              const baseSlug = generateSlug(currentTranslation.title)
-              const langSuffix = activeLanguage === 'georgian' ? '-ka' : activeLanguage === 'english' ? '-en' : '-ru'
-              const generatedSlug = baseSlug + langSuffix
-              updateField('slug', generatedSlug)
-            }}
+            onClick={handleGenerateSlug}
             className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
               isDark
                 ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30'
                 : 'bg-emerald-500/20 text-emerald-600 hover:bg-emerald-500/30 border border-emerald-500/30'
             }`}
+            aria-label="Auto-generate slug from title"
           >
-            � ავტო-გენერაცია
+            🔄 ავტო-გენერაცია
           </button>
         </div>
         <div className={`flex items-center gap-1.5 px-2 py-1.5 text-xs rounded-md border ${
@@ -602,10 +725,11 @@ export default function ContentTab() {
             ? 'bg-white/5 border-white/20'
             : 'bg-black/5 border-black/10'
         }`}>
-          <span className={`${isDark ? 'text-white/40' : 'text-black/40'}`}>
+          <span className={`${isDark ? 'text-white/40' : 'text-black/40'}`} aria-label="URL prefix">
             /blog/
           </span>
           <input
+            id="post-slug"
             type="text"
             value={currentTranslation.slug || ''}
             onChange={(e) => handleSlugChange(e.target.value)}
@@ -613,6 +737,7 @@ export default function ContentTab() {
             className={`flex-1 bg-transparent border-none outline-none ${
               isDark ? 'text-white placeholder:text-white/40' : 'text-black placeholder:text-black/40'
             }`}
+            aria-label="Post URL slug"
           />
         </div>
         <p className={`text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
@@ -622,10 +747,11 @@ export default function ContentTab() {
 
       {/* Excerpt (Short Description) */}
       <div className="space-y-1.5">
-        <label className={`text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+        <label htmlFor="post-excerpt" className={`text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
           მოკლე აღწერა
         </label>
         <textarea
+          id="post-excerpt"
           value={currentTranslation.excerpt || ''}
           onChange={(e) => updateField('excerpt', e.target.value)}
           placeholder={
@@ -641,8 +767,9 @@ export default function ContentTab() {
               ? 'bg-white/10 border-white/20 text-white placeholder:text-white/40'
               : 'bg-black/5 border-black/10 text-black placeholder:text-black/40'
           }`}
+          aria-label="Post excerpt"
         />
-        <div className={`text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+        <div className={`text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`} aria-live="polite">
           {currentTranslation.excerpt?.length || 0} სიმბოლო
         </div>
       </div>
@@ -654,9 +781,9 @@ export default function ContentTab() {
             სტატია
           </label>
           {/* Reading Stats */}
-          <div className={`flex items-center gap-2 text-xs ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-            <span>📝 {readingStats.wordCount}</span>
-            <span>⏱️ {readingStats.readingTime} წთ</span>
+          <div className={`flex items-center gap-2 text-xs ${isDark ? 'text-white/60' : 'text-black/60'}`} aria-live="polite">
+            <span aria-label={`${readingStats.wordCount} words`}>📝 {readingStats.wordCount}</span>
+            <span aria-label={`${readingStats.readingTime} minutes reading time`}>⏱️ {readingStats.readingTime} წთ</span>
           </div>
         </div>
         <RichTextEditor 

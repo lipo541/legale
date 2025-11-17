@@ -34,6 +34,7 @@ import PostsPage from './posts/PostsPage'
 import NewsBannerPage from './newsbanner/NewsBannerPage'
 import TeamCreatePage from './teamcreate/TeamCreatePage'
 import MessagesPage from './messages/MessagesPage'
+import CategoryAdd from './categories/CategoryAdd'
 import { createClient } from '@/lib/supabase/client'
 import CacheClearButton from './common/CacheClearButton'
 
@@ -152,17 +153,7 @@ export default function SuperAdminDashboard() {
       case 'posts':
         return <PostsPage />
       case 'categories':
-        return (
-          <div>
-            <h1 className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
-              Categories
-            </h1>
-            <p className={`mt-2 text-lg ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-              კატეგორიების მართვა
-            </p>
-            {/* TODO: Categories მართვა */}
-          </div>
-        )
+        return <CategoryAdd />
       case 'slider':
         return (
           <div>

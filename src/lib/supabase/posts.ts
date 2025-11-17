@@ -288,6 +288,7 @@ export async function createPost(data: {
         excerpt: data.translations.georgian.excerpt,
         content: data.translations.georgian.content,
         category: data.translations.georgian.category,
+        category_id: data.categoryId || null,
         slug: georgianSlug,
         meta_title: data.translations.georgian.meta_title,
         meta_description: data.translations.georgian.meta_description,
@@ -306,6 +307,7 @@ export async function createPost(data: {
         excerpt: data.translations.english.excerpt,
         content: data.translations.english.content,
         category: data.translations.english.category,
+        category_id: data.categoryId || null,
         slug: englishSlug,
         meta_title: data.translations.english.meta_title,
         meta_description: data.translations.english.meta_description,
@@ -324,6 +326,7 @@ export async function createPost(data: {
         excerpt: data.translations.russian.excerpt,
         content: data.translations.russian.content,
         category: data.translations.russian.category,
+        category_id: data.categoryId || null,
         slug: russianSlug,
         meta_title: data.translations.russian.meta_title,
         meta_description: data.translations.russian.meta_description,
@@ -420,7 +423,7 @@ export async function updatePost(
 
     if (postError) throw postError
 
-    // 2. Upload new featured image if provided
+    // 2. Upload new featured image if provided (only if it's a new file, not existing URL)
     if (data.featuredImageFile) {
       // First, get the old image URL to delete it
       const { data: existingPost } = await supabase
@@ -429,7 +432,7 @@ export async function updatePost(
         .eq('id', postId)
         .single()
 
-      // Delete old image from storage if exists
+      // Delete old image from storage if exists and we're uploading a new one
       if (existingPost?.featured_image_url) {
         const oldFilePath = existingPost.featured_image_url.split('/post-images/')[1]
         if (oldFilePath) {
@@ -450,6 +453,7 @@ export async function updatePost(
           .eq('id', postId)
       }
     }
+    // If no new image provided, existing featured_image_url is preserved automatically
 
     // 2.5. Upload new OG image if provided
     let ogImageUrl: string | null = null
@@ -492,6 +496,7 @@ export async function updatePost(
           excerpt: lang.data.excerpt,
           content: lang.data.content,
           category: lang.data.category,
+          category_id: data.categoryId || null,
           slug: lang.data.slug,
           meta_title: lang.data.meta_title,
           meta_description: lang.data.meta_description,

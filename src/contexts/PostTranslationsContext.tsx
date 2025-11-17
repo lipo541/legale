@@ -164,6 +164,24 @@ export function PostTranslationsProvider({
         const englishTrans = initialData.post_translations.find((t) => t.language === 'en')
         const russianTrans = initialData.post_translations.find((t) => t.language === 'ru')
 
+        // DEBUG: Log what we received from database
+        console.log('📥 LOADING EDIT DATA:', {
+          georgianCategoryId: georgianTrans?.category_id,
+          georgianCategory: georgianTrans?.category,
+          englishCategoryId: englishTrans?.category_id,
+          russianCategoryId: russianTrans?.category_id,
+          fullGeorgianTrans: georgianTrans,
+        })
+
+        // Load category_id from first available translation
+        const categoryIdFromTrans = georgianTrans?.category_id || englishTrans?.category_id || russianTrans?.category_id
+        if (categoryIdFromTrans) {
+          setCategoryId(categoryIdFromTrans)
+          console.log('✅ SET categoryId to state:', categoryIdFromTrans)
+        } else {
+          console.warn('⚠️ NO category_id found in translations!')
+        }
+
         // Load OG Image preview if exists (from any translation, usually they're the same)
         const ogImageUrl = georgianTrans?.og_image || englishTrans?.og_image || russianTrans?.og_image
         if (ogImageUrl) {
@@ -225,40 +243,94 @@ export function PostTranslationsProvider({
   }, [editMode, initialData])
 
   const updateField = (field: keyof PostTranslationData, value: string) => {
-    setTranslations(prev => ({
-      ...prev,
-      [activeLanguage]: {
-        ...prev[activeLanguage],
-        [field]: value
+    setTranslations(prev => {
+      const currentLangData = prev[activeLanguage]
+      
+      // Preserve category_id when updating any field
+      // This prevents category loss during edit mode when user changes other fields
+      const preservedCategoryId = currentLangData.category_id || categoryId || null
+      
+      // DEBUG: Log what's being preserved
+      if (field !== 'content') { // Skip content logging (too verbose)
+        console.log(`🔄 UPDATE FIELD [${activeLanguage}]:`, {
+          field,
+          value: value.substring(0, 50),
+          currentCategoryId: currentLangData.category_id,
+          categoryIdFromState: categoryId,
+          preservedCategoryId
+        })
       }
-    }))
+      
+      return {
+        ...prev,
+        [activeLanguage]: {
+          ...currentLangData,
+          [field]: value,
+          // Always preserve category_id unless explicitly changing it
+          category_id: field === 'category_id' ? value : preservedCategoryId
+        }
+      }
+    })
   }
 
   const updateAllLanguages = (
     field: keyof PostTranslationData, 
     values: { georgian: string, english: string, russian: string }
   ) => {
-    setTranslations(prev => ({
-      georgian: {
-        ...prev.georgian,
-        [field]: values.georgian
-      },
-      english: {
-        ...prev.english,
-        [field]: values.english
-      },
-      russian: {
-        ...prev.russian,
-        [field]: values.russian
+    setTranslations(prev => {
+      // Preserve category_id for each language unless explicitly changing it
+      const preserveGeorgianCategoryId = prev.georgian.category_id || categoryId || null
+      const preserveEnglishCategoryId = prev.english.category_id || categoryId || null
+      const preserveRussianCategoryId = prev.russian.category_id || categoryId || null
+      
+      return {
+        georgian: {
+          ...prev.georgian,
+          [field]: values.georgian,
+          // Preserve category_id unless we're explicitly updating it
+          category_id: field === 'category_id' ? values.georgian : preserveGeorgianCategoryId
+        },
+        english: {
+          ...prev.english,
+          [field]: values.english,
+          category_id: field === 'category_id' ? values.english : preserveEnglishCategoryId
+        },
+        russian: {
+          ...prev.russian,
+          [field]: values.russian,
+          category_id: field === 'category_id' ? values.russian : preserveRussianCategoryId
+        }
       }
-    }))
+    })
   }
 
   const savePost = async () => {
     setSaving(true)
     try {
       // Get featured image file from georgian translation (same for all languages)
-      const featuredImageFile = translations.georgian.featured_image || undefined
+      // Only send if it's a new upload (starts with 'data:' for base64)
+      const featuredImageFile = translations.georgian.featured_image?.startsWith('data:') 
+        ? translations.georgian.featured_image 
+        : undefined
+
+      // Get category ID: prioritize state, fallback to translation data
+      // This ensures category is preserved even if user doesn't re-select it during edit
+      const finalCategoryId = categoryId || 
+                              translations.georgian.category_id || 
+                              translations.english.category_id || 
+                              translations.russian.category_id
+
+      // DEBUG: Log category preservation
+      console.log('🔍 SAVE DEBUG:', {
+        categoryIdFromState: categoryId,
+        categoryIdFromGeorgian: translations.georgian.category_id,
+        categoryIdFromEnglish: translations.english.category_id,
+        categoryIdFromRussian: translations.russian.category_id,
+        finalCategoryId: finalCategoryId,
+        georgianCategory: translations.georgian.category,
+        englishCategory: translations.english.category,
+        russianCategory: translations.russian.category,
+      })
 
       const postData = {
         translations,
@@ -268,7 +340,7 @@ export function PostTranslationsProvider({
         publishedAt,
         featuredImageFile,
         ogImageFile, // Add OG image file
-        categoryId, // Add category ID
+        categoryId: finalCategoryId, // Use final category ID with fallback
       }
 
       let result

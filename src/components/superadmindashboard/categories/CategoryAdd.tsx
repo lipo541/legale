@@ -2,7 +2,7 @@
 
 import { useTheme } from '@/contexts/ThemeContext'
 import { Plus, ChevronRight, Trash2, Check, X, Edit } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo, memo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 interface Category {
@@ -92,9 +92,9 @@ export default function CategoryAdd({ editMode, postData }: CategoryAddProps) {
         setSelectedCategoryId(georgianTranslation.category_id)
       }
     }
-  }, [])
+  }, [editMode, postData])
 
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     const supabase = createClient()
     setLoading(true)
 
@@ -109,7 +109,9 @@ export default function CategoryAdd({ editMode, postData }: CategoryAddProps) {
             language,
             name,
             slug,
-            description
+            description,
+            seo_title,
+            seo_description
           )
         `)
         .order('created_at', { ascending: true })
@@ -165,9 +167,9 @@ export default function CategoryAdd({ editMode, postData }: CategoryAddProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const handleCreateCategory = async (parentId: string | null = null, slugs?: { ka: string; en: string; ru: string }) => {
+  const handleCreateCategory = useCallback(async (parentId: string | null = null, slugs?: { ka: string; en: string; ru: string }) => {
     if (!newCategory.georgian || !newCategory.english || !newCategory.russian) {
       alert('გთხოვთ შეავსოთ ყველა სავალდებულო ველი')
       return
@@ -248,9 +250,9 @@ export default function CategoryAdd({ editMode, postData }: CategoryAddProps) {
       console.error('Error creating category:', error)
       alert('კატეგორიის შექმნა ვერ მოხერხდა')
     }
-  }
+  }, [newCategory, loadCategories])
 
-  const handleDeleteCategory = async (categoryId: string) => {
+  const handleDeleteCategory = useCallback(async (categoryId: string) => {
     if (!confirm('დარწმუნებული ხართ რომ გსურთ კატეგორიის წაშლა?')) return
 
     const supabase = createClient()
@@ -269,29 +271,47 @@ export default function CategoryAdd({ editMode, postData }: CategoryAddProps) {
       console.error('Error deleting category:', error)
       alert('კატეგორიის წაშლა ვერ მოხერხდა')
     }
-  }
+  }, [loadCategories])
 
-  const handleEditCategory = async (categoryId: string, categoryData: Category) => {
-    // Load category data for editing
-    setEditCategory({
-      id: categoryId,
-      georgian: categoryData.georgian,
-      english: categoryData.english,
-      russian: categoryData.russian,
-      description_ka: '',
-      description_en: '',
-      description_ru: '',
-      seo_title_ka: '',
-      seo_title_en: '',
-      seo_title_ru: '',
-      seo_description_ka: '',
-      seo_description_en: '',
-      seo_description_ru: ''
-    })
-    setEditingCategory(categoryId)
-  }
+  const handleEditCategory = useCallback(async (categoryId: string, categoryData: Category) => {
+    // Load full category data including SEO fields
+    const supabase = createClient()
+    
+    try {
+      const { data: translations, error } = await supabase
+        .from('post_category_translations')
+        .select('*')
+        .eq('category_id', categoryId)
 
-  const handleUpdateCategory = async (slugs?: { ka: string; en: string; ru: string }) => {
+      if (error) throw error
+
+      const ka = translations?.find((t) => t.language === 'ka')
+      const en = translations?.find((t) => t.language === 'en')
+      const ru = translations?.find((t) => t.language === 'ru')
+
+      setEditCategory({
+        id: categoryId,
+        georgian: ka?.name || categoryData.georgian,
+        english: en?.name || categoryData.english,
+        russian: ru?.name || categoryData.russian,
+        description_ka: ka?.description || '',
+        description_en: en?.description || '',
+        description_ru: ru?.description || '',
+        seo_title_ka: ka?.seo_title || '',
+        seo_title_en: en?.seo_title || '',
+        seo_title_ru: ru?.seo_title || '',
+        seo_description_ka: ka?.seo_description || '',
+        seo_description_en: en?.seo_description || '',
+        seo_description_ru: ru?.seo_description || ''
+      })
+      setEditingCategory(categoryId)
+    } catch (error) {
+      console.error('Error loading category for edit:', error)
+      alert('კატეგორიის ჩატვირთვა ვერ მოხერხდა')
+    }
+  }, [])
+
+  const handleUpdateCategory = useCallback(async (slugs?: { ka: string; en: string; ru: string }) => {
     if (!editCategory.georgian || !editCategory.english || !editCategory.russian) {
       alert('გთხოვთ შეავსოთ ყველა სავალდებულო ველი')
       return
@@ -306,6 +326,7 @@ export default function CategoryAdd({ editMode, postData }: CategoryAddProps) {
           language: 'ka',
           name: editCategory.georgian,
           slug: slugs?.ka || generateSlug(editCategory.georgian),
+          description: editCategory.description_ka || null,
           seo_title: editCategory.seo_title_ka || null,
           seo_description: editCategory.seo_description_ka || null
         },
@@ -313,6 +334,7 @@ export default function CategoryAdd({ editMode, postData }: CategoryAddProps) {
           language: 'en',
           name: editCategory.english,
           slug: slugs?.en || generateSlug(editCategory.english),
+          description: editCategory.description_en || null,
           seo_title: editCategory.seo_title_en || null,
           seo_description: editCategory.seo_description_en || null
         },
@@ -320,6 +342,7 @@ export default function CategoryAdd({ editMode, postData }: CategoryAddProps) {
           language: 'ru',
           name: editCategory.russian,
           slug: slugs?.ru || generateSlug(editCategory.russian),
+          description: editCategory.description_ru || null,
           seo_title: editCategory.seo_title_ru || null,
           seo_description: editCategory.seo_description_ru || null
         }
@@ -331,6 +354,7 @@ export default function CategoryAdd({ editMode, postData }: CategoryAddProps) {
           .update({ 
             name: update.name, 
             slug: update.slug,
+            description: update.description,
             seo_title: update.seo_title,
             seo_description: update.seo_description
           })
@@ -366,9 +390,9 @@ export default function CategoryAdd({ editMode, postData }: CategoryAddProps) {
       console.error('Error updating category:', error)
       alert('კატეგორიის განახლება ვერ მოხერხდა')
     }
-  }
+  }, [editCategory, loadCategories])
 
-  const generateSlug = (text: string): string => {
+  const generateSlug = useCallback((text: string): string => {
     const translitMap: { [key: string]: string } = {
       'ა': 'a', 'ბ': 'b', 'გ': 'g', 'დ': 'd', 'ე': 'e', 'ვ': 'v', 'ზ': 'z', 'თ': 't', 'ი': 'i', 'კ': 'k', 'ლ': 'l', 'მ': 'm', 'ნ': 'n', 'ო': 'o', 'პ': 'p', 'ჟ': 'zh', 'რ': 'r', 'ს': 's', 'ტ': 't', 'უ': 'u', 'ფ': 'f', 'ქ': 'q', 'ღ': 'gh', 'ყ': 'y', 'შ': 'sh', 'ჩ': 'ch', 'ც': 'ts', 'ძ': 'dz', 'წ': 'w', 'ჭ': 'ch', 'ხ': 'kh', 'ჯ': 'j', 'ჰ': 'h',
       'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo', 'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'shch', 'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya'
@@ -382,17 +406,94 @@ export default function CategoryAdd({ editMode, postData }: CategoryAddProps) {
       .replace(/--+/g, '-')
       .replace(/^-+/, '')
       .replace(/-+$/, '')
-  }
+  }, [])
 
-  const toggleExpand = (categoryId: string) => {
+  const toggleExpand = useCallback((categoryId: string) => {
     setExpandedCategories(prev => 
       prev.includes(categoryId) 
         ? prev.filter(id => id !== categoryId)
         : [...prev, categoryId]
     )
-  }
+  }, [])
 
-  const renderCategory = (category: Category, level: number = 0) => {
+  const handleResetNewCategory = useCallback(() => {
+    setIsCreating(false)
+    setNewCategory({
+      georgian: '',
+      english: '',
+      russian: '',
+      description_ka: '',
+      description_en: '',
+      description_ru: '',
+      seo_title_ka: '',
+      seo_title_en: '',
+      seo_title_ru: '',
+      seo_description_ka: '',
+      seo_description_en: '',
+      seo_description_ru: ''
+    })
+  }, [])
+
+  const handleResetEditCategory = useCallback(() => {
+    setEditingCategory(null)
+    setEditCategory({
+      id: '',
+      georgian: '',
+      english: '',
+      russian: '',
+      description_ka: '',
+      description_en: '',
+      description_ru: '',
+      seo_title_ka: '',
+      seo_title_en: '',
+      seo_title_ru: '',
+      seo_description_ka: '',
+      seo_description_en: '',
+      seo_description_ru: ''
+    })
+  }, [])
+
+  const handleResetSubCategory = useCallback(() => {
+    setCreatingSubFor(null)
+    setNewCategory({
+      georgian: '',
+      english: '',
+      russian: '',
+      description_ka: '',
+      description_en: '',
+      description_ru: '',
+      seo_title_ka: '',
+      seo_title_en: '',
+      seo_title_ru: '',
+      seo_description_ka: '',
+      seo_description_en: '',
+      seo_description_ru: ''
+    })
+  }, [])
+
+  // Memoized selected category search
+  const selectedCategoryData = useMemo(() => {
+    if (!selectedCategoryId || !editMode) return null
+
+    const findCategory = (cats: Category[], id: string): { category: Category; parent: Category | null } | null => {
+      for (const cat of cats) {
+        if (cat.id === id) {
+          return { category: cat, parent: null }
+        }
+        if (cat.subcategories.length > 0) {
+          const found = findCategory(cat.subcategories, id)
+          if (found) {
+            return { category: found.category, parent: found.parent || cat }
+          }
+        }
+      }
+      return null
+    }
+
+    return findCategory(categories, selectedCategoryId)
+  }, [selectedCategoryId, categories, editMode])
+
+  const renderCategory = useCallback((category: Category, level: number = 0) => {
     const isExpanded = expandedCategories.includes(category.id)
     const hasSubcategories = category.subcategories.length > 0
     const isEditing = editingCategory === category.id
@@ -402,7 +503,7 @@ export default function CategoryAdd({ editMode, postData }: CategoryAddProps) {
         {/* Edit Form */}
         {isEditing ? (
           <div 
-            className={`space-y-3 p-4 rounded-lg ${
+            className={`space-y-3 p-3 rounded-lg ${
               isDark ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-blue-500/5 border border-blue-500/10'
             }`}
             style={{ marginLeft: `${level * 20}px` }}
@@ -416,48 +517,33 @@ export default function CategoryAdd({ editMode, postData }: CategoryAddProps) {
             <div className="flex gap-2">
               <button
                 onClick={() => handleUpdateCategory(editSlugs)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md font-medium transition-colors ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${
                   isDark
                     ? 'bg-blue-500 hover:bg-blue-600 text-white'
                     : 'bg-blue-500 hover:bg-blue-600 text-white'
                 }`}
+                aria-label="კატეგორიის შენახვა"
               >
-                <Check className="h-4 w-4" />
+                <Check className="h-3.5 w-3.5" />
                 შენახვა
               </button>
               <button
-                onClick={() => {
-                  setEditingCategory(null)
-                  setEditCategory({
-                    id: '',
-                    georgian: '',
-                    english: '',
-                    russian: '',
-                    description_ka: '',
-                    description_en: '',
-                    description_ru: '',
-                    seo_title_ka: '',
-                    seo_title_en: '',
-                    seo_title_ru: '',
-                    seo_description_ka: '',
-                    seo_description_en: '',
-                    seo_description_ru: ''
-                  })
-                }}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md font-medium transition-colors ${
+                onClick={handleResetEditCategory}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${
                   isDark
                     ? 'bg-white/10 text-white/70 hover:bg-white/20'
                     : 'bg-black/10 text-black/70 hover:bg-black/20'
                 }`}
+                aria-label="რედაქტირების გაუქმება"
               >
-                <X className="h-4 w-4" />
+                <X className="h-3.5 w-3.5" />
                 გაუქმება
               </button>
             </div>
           </div>
         ) : (
           <div 
-            className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
+            className={`flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors ${
               isDark 
                 ? 'hover:bg-white/5 border border-white/10' 
                 : 'hover:bg-black/5 border border-black/10'
@@ -468,50 +554,55 @@ export default function CategoryAdd({ editMode, postData }: CategoryAddProps) {
               <button
                 onClick={() => toggleExpand(category.id)}
                 className={`p-0.5 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                aria-label={isExpanded ? 'ჩაკეცვა' : 'გაშლა'}
+                aria-expanded={isExpanded}
               >
-                <ChevronRight className={`h-4 w-4 ${isDark ? 'text-white/60' : 'text-black/60'}`} />
+                <ChevronRight className={`h-3.5 w-3.5 ${isDark ? 'text-white/60' : 'text-black/60'}`} />
               </button>
             )}
-            {!hasSubcategories && <div className="w-5" />}
+            {!hasSubcategories && <div className="w-4" />}
             
-            <span className={`text-sm flex-1 ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+            <span className={`text-xs flex-1 ${isDark ? 'text-white/80' : 'text-black/80'}`}>
               {category.georgian} / {category.english} / {category.russian}
             </span>
             
             <button
               onClick={() => handleEditCategory(category.id, category)}
-              className={`p-1.5 rounded-md transition-colors ${
+              className={`p-1 rounded-md transition-colors ${
                 isDark
                   ? 'hover:bg-blue-500/20 text-blue-400'
                   : 'hover:bg-blue-500/10 text-blue-600'
               }`}
               title="რედაქტირება"
+              aria-label="კატეგორიის რედაქტირება"
             >
-              <Edit className="h-4 w-4" />
+              <Edit className="h-3.5 w-3.5" />
             </button>
 
             <button
               onClick={() => setCreatingSubFor(category.id)}
-              className={`p-1.5 rounded-md transition-colors ${
+              className={`p-1 rounded-md transition-colors ${
                 isDark
                   ? 'hover:bg-emerald-500/20 text-emerald-400'
                   : 'hover:bg-emerald-500/10 text-emerald-600'
               }`}
               title="სუბკატეგორიის დამატება"
+              aria-label="სუბკატეგორიის დამატება"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3.5 w-3.5" />
             </button>
 
             <button
               onClick={() => handleDeleteCategory(category.id)}
-              className={`p-1.5 rounded-md transition-colors ${
+              className={`p-1 rounded-md transition-colors ${
                 isDark
                   ? 'hover:bg-red-500/20 text-red-400'
                   : 'hover:bg-red-500/10 text-red-600'
               }`}
               title="წაშლა"
+              aria-label="კატეგორიის წაშლა"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-3.5 w-3.5" />
             </button>
           </div>
         )}
@@ -525,7 +616,7 @@ export default function CategoryAdd({ editMode, postData }: CategoryAddProps) {
         {/* Add Subcategory Form */}
         {creatingSubFor === category.id && (
           <div 
-            className={`space-y-3 p-4 rounded-lg ${
+            className={`space-y-3 p-3 rounded-lg ${
               isDark ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-emerald-500/5 border border-emerald-500/10'
             }`}
             style={{ marginLeft: `${(level + 1) * 20}px` }}
@@ -539,40 +630,26 @@ export default function CategoryAdd({ editMode, postData }: CategoryAddProps) {
             <div className="flex gap-2">
               <button
                 onClick={() => handleCreateCategory(category.id, subSlugs)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md font-medium transition-colors ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${
                   isDark
                     ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
                     : 'bg-emerald-500 hover:bg-emerald-600 text-white'
                 }`}
+                aria-label="სუბკატეგორიის დამატება"
               >
-                <Check className="h-4 w-4" />
+                <Check className="h-3.5 w-3.5" />
                 დამატება
               </button>
               <button
-                onClick={() => {
-                  setCreatingSubFor(null)
-                  setNewCategory({
-                    georgian: '',
-                    english: '',
-                    russian: '',
-                    description_ka: '',
-                    description_en: '',
-                    description_ru: '',
-                    seo_title_ka: '',
-                    seo_title_en: '',
-                    seo_title_ru: '',
-                    seo_description_ka: '',
-                    seo_description_en: '',
-                    seo_description_ru: ''
-                  })
-                }}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md font-medium transition-colors ${
+                onClick={handleResetSubCategory}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${
                   isDark
                     ? 'bg-white/10 text-white/70 hover:bg-white/20'
                     : 'bg-black/10 text-black/70 hover:bg-black/20'
                 }`}
+                aria-label="სუბკატეგორიის დამატების გაუქმება"
               >
-                <X className="h-4 w-4" />
+                <X className="h-3.5 w-3.5" />
                 გაუქმება
               </button>
             </div>
@@ -580,22 +657,22 @@ export default function CategoryAdd({ editMode, postData }: CategoryAddProps) {
         )}
       </div>
     )
-  }
+  }, [expandedCategories, editingCategory, editCategory, isDark, newCategory, editSlugs, subSlugs, handleUpdateCategory, handleResetEditCategory, toggleExpand, handleEditCategory, handleDeleteCategory, handleCreateCategory, handleResetSubCategory])
 
   if (loading) {
     return (
-      <div className={`text-center py-8 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+      <div className={`text-center py-8 text-xs ${isDark ? 'text-white/60' : 'text-black/60'}`}>
         იტვირთება...
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Action Button */}
       <button
         onClick={() => setIsCreating(!isCreating)}
-        className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
           isCreating
             ? isDark
               ? 'bg-emerald-500 text-white'
@@ -604,14 +681,15 @@ export default function CategoryAdd({ editMode, postData }: CategoryAddProps) {
             ? 'bg-white/10 text-white/80 hover:bg-white/20'
             : 'bg-black/10 text-black/80 hover:bg-black/20'
         }`}
+        aria-label="კატეგორიის შექმნა"
       >
-        <Plus className="h-4 w-4" />
+        <Plus className="h-3.5 w-3.5" />
         შექმენი კატეგორია
       </button>
 
       {/* Create Main Category Form */}
       {isCreating && (
-        <div className={`space-y-4 p-4 rounded-lg ${
+        <div className={`space-y-3 p-3 rounded-lg ${
           isDark ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-emerald-500/5 border border-emerald-500/10'
         }`}>
           <CategoryForm 
@@ -623,40 +701,26 @@ export default function CategoryAdd({ editMode, postData }: CategoryAddProps) {
           <div className="flex gap-2">
             <button
               onClick={() => handleCreateCategory(null, currentSlugs)}
-              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-medium transition-colors ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 isDark
                   ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
                   : 'bg-emerald-500 hover:bg-emerald-600 text-white'
               }`}
+              aria-label="კატეგორიის შექმნა"
             >
-              <Check className="h-4 w-4" />
+              <Check className="h-3.5 w-3.5" />
               შექმნა
             </button>
             <button
-              onClick={() => {
-                setIsCreating(false)
-                setNewCategory({
-                  georgian: '',
-                  english: '',
-                  russian: '',
-                  description_ka: '',
-                  description_en: '',
-                  description_ru: '',
-                  seo_title_ka: '',
-                  seo_title_en: '',
-                  seo_title_ru: '',
-                  seo_description_ka: '',
-                  seo_description_en: '',
-                  seo_description_ru: ''
-                })
-              }}
-              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-medium transition-colors ${
+              onClick={handleResetNewCategory}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 isDark
                   ? 'bg-white/10 text-white/70 hover:bg-white/20'
                   : 'bg-black/10 text-black/70 hover:bg-black/20'
               }`}
+              aria-label="კატეგორიის შექმნის გაუქმება"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
               გაუქმება
             </button>
           </div>
@@ -665,70 +729,50 @@ export default function CategoryAdd({ editMode, postData }: CategoryAddProps) {
 
       {/* Categories Tree */}
       <div className="space-y-2">
-        <h3 className={`text-sm font-semibold ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+        <h3 className={`text-xs font-semibold ${isDark ? 'text-white/80' : 'text-black/80'}`}>
           {editMode && selectedCategoryId ? 'არჩეული კატეგორია:' : 'არსებული კატეგორიები:'}
         </h3>
 
         {/* Show selected category in edit mode */}
-        {editMode && selectedCategoryId && (() => {
-          // Find selected category recursively
-          const findCategory = (cats: Category[], id: string): { category: Category; parent: Category | null } | null => {
-            for (const cat of cats) {
-              if (cat.id === id) {
-                return { category: cat, parent: null }
-              }
-              if (cat.subcategories.length > 0) {
-                const found = findCategory(cat.subcategories, id)
-                if (found) {
-                  return { category: found.category, parent: found.parent || cat }
-                }
-              }
-            }
-            return null
-          }
-
-          const result = findCategory(categories, selectedCategoryId)
-          if (!result) return null
-
-          return (
-            <div className={`mb-4 rounded-lg border p-4 ${
-              isDark ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-emerald-500/5 border-emerald-500/20'
-            }`}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={`text-sm font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                    {result.category.georgian} / {result.category.english} / {result.category.russian}
+        {selectedCategoryData && (
+          <div className={`mb-3 rounded-lg border p-3 ${
+            isDark ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-emerald-500/5 border-emerald-500/20'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className={`text-xs font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                  {selectedCategoryData.category.georgian} / {selectedCategoryData.category.english} / {selectedCategoryData.category.russian}
+                </p>
+                {selectedCategoryData.parent && (
+                  <p className={`mt-1 text-[10px] ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                    Subcategory of: {selectedCategoryData.parent.georgian}
                   </p>
-                  {result.parent && (
-                    <p className={`mt-1 text-xs ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-                      Subcategory of: {result.parent.georgian}
-                    </p>
-                  )}
-                  <p className={`mt-1 text-xs font-mono ${isDark ? 'text-white/50' : 'text-black/50'}`}>
-                    ID: {selectedCategoryId}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setSelectedCategoryId(null)}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                    isDark
-                      ? 'bg-white/10 text-white/70 hover:bg-white/20'
-                      : 'bg-black/10 text-black/70 hover:bg-black/20'
-                  }`}
-                >
-                  შეცვლა
-                </button>
+                )}
+                <p className={`mt-1 text-[10px] font-mono ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+                  ID: {selectedCategoryId}
+                </p>
               </div>
+              <button
+                onClick={() => setSelectedCategoryId(null)}
+                className={`rounded-lg px-2 py-1 text-[10px] font-medium transition-colors ${
+                  isDark
+                    ? 'bg-white/10 text-white/70 hover:bg-white/20'
+                    : 'bg-black/10 text-black/70 hover:bg-black/20'
+                }`}
+                aria-label="კატეგორიის შეცვლა"
+              >
+                შეცვლა
+              </button>
             </div>
-          )
-        })()}
+          </div>
+        )}
         
         {categories.length > 0 ? (
           <div className="space-y-1">
             {categories.map(category => renderCategory(category))}
           </div>
         ) : (
-          <div className={`text-center py-8 ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+          <div className={`text-center py-8 text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
             კატეგორიები ჯერ არ არის დამატებული
           </div>
         )}
@@ -770,8 +814,8 @@ interface CategoryFormData {
   seo_description_ru: string
 }
 
-// Separate Form Component
-function CategoryForm({ 
+// Separate Memoized Form Component
+const CategoryForm = memo(function CategoryForm({ 
   category, 
   setCategory, 
   isDark,
@@ -793,7 +837,7 @@ function CategoryForm({
       setGeorgianSlug(slug)
       onGetSlugs({ ka: slug, en: englishSlug, ru: russianSlug })
     }
-  }, [category.georgian])
+  }, [category.georgian, englishSlug, russianSlug, onGetSlugs])
 
   useEffect(() => {
     if (category.english) {
@@ -801,7 +845,7 @@ function CategoryForm({
       setEnglishSlug(slug)
       onGetSlugs({ ka: georgianSlug, en: slug, ru: russianSlug })
     }
-  }, [category.english])
+  }, [category.english, georgianSlug, russianSlug, onGetSlugs])
 
   useEffect(() => {
     if (category.russian) {
@@ -809,42 +853,45 @@ function CategoryForm({
       setRussianSlug(slug)
       onGetSlugs({ ka: georgianSlug, en: englishSlug, ru: slug })
     }
-  }, [category.russian])
+  }, [category.russian, georgianSlug, englishSlug, onGetSlugs])
 
   // Also update when slugs are manually edited
   useEffect(() => {
     onGetSlugs({ ka: georgianSlug, en: englishSlug, ru: russianSlug })
-  }, [georgianSlug, englishSlug, russianSlug])
+  }, [georgianSlug, englishSlug, russianSlug, onGetSlugs])
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div className="grid grid-cols-3 gap-3">
         {/* Georgian */}
         <div className="space-y-1.5">
-          <label className={`text-xs font-medium ${isDark ? 'text-white/70' : 'text-black/70'}`}>
+          <label htmlFor="category-georgian" className={`text-[10px] font-medium ${isDark ? 'text-white/70' : 'text-black/70'}`}>
             ქართულად *
           </label>
           <input
+            id="category-georgian"
             type="text"
             value={category.georgian}
             onChange={(e) => setCategory({ ...category, georgian: e.target.value })}
             placeholder="მაგ: ახალი ამბები"
-            className={`w-full px-3 py-2 text-sm rounded-md border transition-colors focus:outline-none focus:border-emerald-500 ${
+            className={`w-full px-2 py-1.5 text-[10px] rounded-md border transition-colors focus:outline-none focus:border-emerald-500 ${
               isDark
                 ? 'bg-white/10 border-white/20 text-white placeholder:text-white/40'
                 : 'bg-white border-black/10 text-black placeholder:text-black/40'
             }`}
+            aria-required="true"
           />
           <div className="space-y-1">
-            <label className={`text-xs font-medium ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+            <label htmlFor="slug-ka" className={`text-[10px] font-medium ${isDark ? 'text-white/50' : 'text-black/50'}`}>
               Slug (ქართული)
             </label>
             <input
+              id="slug-ka"
               type="text"
               value={georgianSlug}
               onChange={(e) => setGeorgianSlug(e.target.value)}
               placeholder="ავტომატურად გენერირდება"
-              className={`w-full px-3 py-1.5 text-xs rounded-md border transition-colors focus:outline-none focus:border-blue-500 ${
+              className={`w-full px-2 py-1 text-[10px] rounded-md border transition-colors focus:outline-none focus:border-blue-500 ${
                 isDark
                   ? 'bg-white/5 border-white/10 text-white/60 placeholder:text-white/30'
                   : 'bg-black/5 border-black/10 text-black/60 placeholder:text-black/30'
@@ -852,15 +899,16 @@ function CategoryForm({
             />
           </div>
           <div className="space-y-1">
-            <label className={`text-xs font-medium ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+            <label htmlFor="seo-title-ka" className={`text-[10px] font-medium ${isDark ? 'text-white/50' : 'text-black/50'}`}>
               SEO Title
             </label>
             <input
+              id="seo-title-ka"
               type="text"
               value={category.seo_title_ka || ''}
               onChange={(e) => setCategory({ ...category, seo_title_ka: e.target.value })}
               placeholder="SEO სათაური"
-              className={`w-full px-3 py-1.5 text-xs rounded-md border transition-colors focus:outline-none focus:border-blue-500 ${
+              className={`w-full px-2 py-1 text-[10px] rounded-md border transition-colors focus:outline-none focus:border-blue-500 ${
                 isDark
                   ? 'bg-white/5 border-white/10 text-white/60 placeholder:text-white/30'
                   : 'bg-black/5 border-black/10 text-black/60 placeholder:text-black/30'
@@ -868,15 +916,16 @@ function CategoryForm({
             />
           </div>
           <div className="space-y-1">
-            <label className={`text-xs font-medium ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+            <label htmlFor="seo-desc-ka" className={`text-[10px] font-medium ${isDark ? 'text-white/50' : 'text-black/50'}`}>
               SEO Description
             </label>
             <textarea
+              id="seo-desc-ka"
               value={category.seo_description_ka || ''}
               onChange={(e) => setCategory({ ...category, seo_description_ka: e.target.value })}
               placeholder="SEO აღწერა"
               rows={2}
-              className={`w-full px-3 py-1.5 text-xs rounded-md border transition-colors focus:outline-none focus:border-blue-500 resize-none ${
+              className={`w-full px-2 py-1 text-[10px] rounded-md border transition-colors focus:outline-none focus:border-blue-500 resize-none ${
                 isDark
                   ? 'bg-white/5 border-white/10 text-white/60 placeholder:text-white/30'
                   : 'bg-black/5 border-black/10 text-black/60 placeholder:text-black/30'
@@ -887,30 +936,33 @@ function CategoryForm({
 
         {/* English */}
         <div className="space-y-1.5">
-          <label className={`text-xs font-medium ${isDark ? 'text-white/70' : 'text-black/70'}`}>
+          <label htmlFor="category-english" className={`text-[10px] font-medium ${isDark ? 'text-white/70' : 'text-black/70'}`}>
             English *
           </label>
           <input
+            id="category-english"
             type="text"
             value={category.english}
             onChange={(e) => setCategory({ ...category, english: e.target.value })}
             placeholder="e.g: News"
-            className={`w-full px-3 py-2 text-sm rounded-md border transition-colors focus:outline-none focus:border-emerald-500 ${
+            className={`w-full px-2 py-1.5 text-[10px] rounded-md border transition-colors focus:outline-none focus:border-emerald-500 ${
               isDark
                 ? 'bg-white/10 border-white/20 text-white placeholder:text-white/40'
                 : 'bg-white border-black/10 text-black placeholder:text-black/40'
             }`}
+            aria-required="true"
           />
           <div className="space-y-1">
-            <label className={`text-xs font-medium ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+            <label htmlFor="slug-en" className={`text-[10px] font-medium ${isDark ? 'text-white/50' : 'text-black/50'}`}>
               Slug (English)
             </label>
             <input
+              id="slug-en"
               type="text"
               value={englishSlug}
               onChange={(e) => setEnglishSlug(e.target.value)}
               placeholder="auto-generated"
-              className={`w-full px-3 py-1.5 text-xs rounded-md border transition-colors focus:outline-none focus:border-blue-500 ${
+              className={`w-full px-2 py-1 text-[10px] rounded-md border transition-colors focus:outline-none focus:border-blue-500 ${
                 isDark
                   ? 'bg-white/5 border-white/10 text-white/60 placeholder:text-white/30'
                   : 'bg-black/5 border-black/10 text-black/60 placeholder:text-black/30'
@@ -918,15 +970,16 @@ function CategoryForm({
             />
           </div>
           <div className="space-y-1">
-            <label className={`text-xs font-medium ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+            <label htmlFor="seo-title-en" className={`text-[10px] font-medium ${isDark ? 'text-white/50' : 'text-black/50'}`}>
               SEO Title
             </label>
             <input
+              id="seo-title-en"
               type="text"
               value={category.seo_title_en || ''}
               onChange={(e) => setCategory({ ...category, seo_title_en: e.target.value })}
               placeholder="SEO Title"
-              className={`w-full px-3 py-1.5 text-xs rounded-md border transition-colors focus:outline-none focus:border-blue-500 ${
+              className={`w-full px-2 py-1 text-[10px] rounded-md border transition-colors focus:outline-none focus:border-blue-500 ${
                 isDark
                   ? 'bg-white/5 border-white/10 text-white/60 placeholder:text-white/30'
                   : 'bg-black/5 border-black/10 text-black/60 placeholder:text-black/30'
@@ -934,15 +987,16 @@ function CategoryForm({
             />
           </div>
           <div className="space-y-1">
-            <label className={`text-xs font-medium ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+            <label htmlFor="seo-desc-en" className={`text-[10px] font-medium ${isDark ? 'text-white/50' : 'text-black/50'}`}>
               SEO Description
             </label>
             <textarea
+              id="seo-desc-en"
               value={category.seo_description_en || ''}
               onChange={(e) => setCategory({ ...category, seo_description_en: e.target.value })}
               placeholder="SEO Description"
               rows={2}
-              className={`w-full px-3 py-1.5 text-xs rounded-md border transition-colors focus:outline-none focus:border-blue-500 resize-none ${
+              className={`w-full px-2 py-1 text-[10px] rounded-md border transition-colors focus:outline-none focus:border-blue-500 resize-none ${
                 isDark
                   ? 'bg-white/5 border-white/10 text-white/60 placeholder:text-white/30'
                   : 'bg-black/5 border-black/10 text-black/60 placeholder:text-black/30'
@@ -953,30 +1007,33 @@ function CategoryForm({
 
         {/* Russian */}
         <div className="space-y-1.5">
-          <label className={`text-xs font-medium ${isDark ? 'text-white/70' : 'text-black/70'}`}>
+          <label htmlFor="category-russian" className={`text-[10px] font-medium ${isDark ? 'text-white/70' : 'text-black/70'}`}>
             Русский *
           </label>
           <input
+            id="category-russian"
             type="text"
             value={category.russian}
             onChange={(e) => setCategory({ ...category, russian: e.target.value })}
             placeholder="напр: Новости"
-            className={`w-full px-3 py-2 text-sm rounded-md border transition-colors focus:outline-none focus:border-emerald-500 ${
+            className={`w-full px-2 py-1.5 text-[10px] rounded-md border transition-colors focus:outline-none focus:border-emerald-500 ${
               isDark
                 ? 'bg-white/10 border-white/20 text-white placeholder:text-white/40'
                 : 'bg-white border-black/10 text-black placeholder:text-black/40'
             }`}
+            aria-required="true"
           />
           <div className="space-y-1">
-            <label className={`text-xs font-medium ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+            <label htmlFor="slug-ru" className={`text-[10px] font-medium ${isDark ? 'text-white/50' : 'text-black/50'}`}>
               Slug (Русский)
             </label>
             <input
+              id="slug-ru"
               type="text"
               value={russianSlug}
               onChange={(e) => setRussianSlug(e.target.value)}
               placeholder="автоматически"
-              className={`w-full px-3 py-1.5 text-xs rounded-md border transition-colors focus:outline-none focus:border-blue-500 ${
+              className={`w-full px-2 py-1 text-[10px] rounded-md border transition-colors focus:outline-none focus:border-blue-500 ${
                 isDark
                   ? 'bg-white/5 border-white/10 text-white/60 placeholder:text-white/30'
                   : 'bg-black/5 border-black/10 text-black/60 placeholder:text-black/30'
@@ -984,15 +1041,16 @@ function CategoryForm({
             />
           </div>
           <div className="space-y-1">
-            <label className={`text-xs font-medium ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+            <label htmlFor="seo-title-ru" className={`text-[10px] font-medium ${isDark ? 'text-white/50' : 'text-black/50'}`}>
               SEO Title
             </label>
             <input
+              id="seo-title-ru"
               type="text"
               value={category.seo_title_ru || ''}
               onChange={(e) => setCategory({ ...category, seo_title_ru: e.target.value })}
               placeholder="SEO Заголовок"
-              className={`w-full px-3 py-1.5 text-xs rounded-md border transition-colors focus:outline-none focus:border-blue-500 ${
+              className={`w-full px-2 py-1 text-[10px] rounded-md border transition-colors focus:outline-none focus:border-blue-500 ${
                 isDark
                   ? 'bg-white/5 border-white/10 text-white/60 placeholder:text-white/30'
                   : 'bg-black/5 border-black/10 text-black/60 placeholder:text-black/30'
@@ -1000,15 +1058,16 @@ function CategoryForm({
             />
           </div>
           <div className="space-y-1">
-            <label className={`text-xs font-medium ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+            <label htmlFor="seo-desc-ru" className={`text-[10px] font-medium ${isDark ? 'text-white/50' : 'text-black/50'}`}>
               SEO Description
             </label>
             <textarea
+              id="seo-desc-ru"
               value={category.seo_description_ru || ''}
               onChange={(e) => setCategory({ ...category, seo_description_ru: e.target.value })}
               placeholder="SEO Описание"
               rows={2}
-              className={`w-full px-3 py-1.5 text-xs rounded-md border transition-colors focus:outline-none focus:border-blue-500 resize-none ${
+              className={`w-full px-2 py-1 text-[10px] rounded-md border transition-colors focus:outline-none focus:border-blue-500 resize-none ${
                 isDark
                   ? 'bg-white/5 border-white/10 text-white/60 placeholder:text-white/30'
                   : 'bg-black/5 border-black/10 text-black/60 placeholder:text-black/30'
@@ -1019,4 +1078,4 @@ function CategoryForm({
       </div>
     </div>
   )
-}
+})
