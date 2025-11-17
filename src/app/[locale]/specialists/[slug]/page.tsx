@@ -23,8 +23,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       slug,
       language,
       specialist_id,
+      social_title,
+      social_description,
+      seo_title,
+      seo_description,
       profiles!inner(
         avatar_url,
+        social_image_url,
         company_id,
         role
       )
@@ -74,7 +79,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       ? `${baseUrl}/specialists/${slug}`
       : `${baseUrl}/${locale}/specialists/${slug}`
 
-  const avatarUrl = specialist.profiles?.avatar_url || `${baseUrl}/images/default-avatar.jpg`
+  // Use social_image_url for OG image (fallback to avatar_url)
+  const socialImageUrl = specialist.profiles?.social_image_url || specialist.profiles?.avatar_url
+  const ogImage = socialImageUrl
+    ? (socialImageUrl.startsWith('http') ? socialImageUrl : `${baseUrl}${socialImageUrl}`)
+    : `${baseUrl}/asset/images/og-image.jpg`
+
+  // Use social_title and social_description for OpenGraph (with fallbacks)
+  const ogTitle = specialist.social_title || specialist.seo_title || title
+  const ogDescription = specialist.social_description || specialist.seo_description || description
 
   // Person Schema for structured data
   const personSchema = {
@@ -82,7 +95,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     '@type': 'Person',
     name: specialist.full_name,
     jobTitle: specialist.role_title || 'Legal Specialist',
-    image: avatarUrl,
+    image: ogImage,
     description: specialist.bio || `Professional legal specialist ${specialist.full_name}.`,
     ...(companyName && {
       worksFor: {
@@ -105,15 +118,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       },
     },
     openGraph: {
-      title,
-      description,
+      title: ogTitle,
+      description: ogDescription,
       url: canonicalUrl,
-      siteName: 'LegalGE',
+      siteName: 'Legal.ge',
       images: [
         {
-          url: avatarUrl,
-          width: 400,
-          height: 400,
+          url: ogImage,
+          width: 1200,
+          height: 630,
           alt: specialist.full_name,
         },
       ],
@@ -121,10 +134,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       type: 'profile',
     },
     twitter: {
-      card: 'summary',
-      title,
-      description,
-      images: [avatarUrl],
+      card: 'summary_large_image',
+      title: ogTitle,
+      description: ogDescription,
+      images: [ogImage],
     },
     other: {
       'application/ld+json': JSON.stringify(personSchema),
