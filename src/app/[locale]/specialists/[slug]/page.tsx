@@ -81,9 +81,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   // Use social_image_url for OG image (fallback to avatar_url)
   const socialImageUrl = specialist.profiles?.social_image_url || specialist.profiles?.avatar_url
-  const ogImage = socialImageUrl
-    ? (socialImageUrl.startsWith('http') ? socialImageUrl : `${baseUrl}/${socialImageUrl}`)
-    : `${baseUrl}/asset/images/og-image.jpg`
+  
+  // Construct proper Supabase Storage URL for social_image_url
+  let ogImage: string
+  if (socialImageUrl) {
+    if (socialImageUrl.startsWith('http')) {
+      // Already a full URL (like avatar_url from Supabase)
+      ogImage = socialImageUrl
+    } else {
+      // It's a file path - construct Supabase Storage URL for specialist-social-images bucket
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://fbxooowagcadiqpppniy.supabase.co'
+      ogImage = `${supabaseUrl}/storage/v1/object/public/specialist-social-images/${socialImageUrl}`
+    }
+  } else {
+    ogImage = `${baseUrl}/asset/images/og-image.jpg`
+  }
 
   // Use social_title and social_description for OpenGraph (with fallbacks)
   const ogTitle = specialist.social_title || specialist.seo_title || title
