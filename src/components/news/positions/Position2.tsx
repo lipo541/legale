@@ -78,9 +78,7 @@ export default function Position2({ posts }: Position2Props) {
                 <span className={`text-[10px] ${isDark ? 'text-white/40' : 'text-white/60'}`}>
                   {publishedDate}
                 </span>
-                <span className={`rounded-full px-2 py-0.5 text-[10px] ${
-                  isDark ? 'bg-white/10 text-white/60' : 'bg-white/20 text-white/80'
-                }`}>
+                <span className="rounded-full px-2 py-0.5 text-[10px] bg-red-600 text-white">
                   {translation.category}
                 </span>
               </div>

@@ -163,9 +163,14 @@ export default function AuthorPageClient({ author, posts, locale }: AuthorPageCl
                       : `/${locale}/specialists/${author.slug || author.id}`
                     window.location.href = profilePath
                   }}
-                  className={`text-4xl font-bold mb-3 transition-colors hover:opacity-80 text-left ${isDark ? 'text-white' : 'text-black'}`}
+                  className={`group text-4xl font-bold mb-3 text-left cursor-pointer transition-all duration-300 hover:scale-[1.02] relative inline-block ${
+                    isDark ? 'text-white hover:text-emerald-400' : 'text-black hover:text-emerald-600'
+                  }`}
                 >
                   {authorName}
+                  <span className={`absolute bottom-0 left-0 w-0 h-0.5 group-hover:w-full transition-all duration-300 ${
+                    isDark ? 'bg-emerald-400' : 'bg-emerald-600'
+                  }`} />
                 </button>
               ) : (
                 <h1 className={`text-4xl font-bold mb-3 ${isDark ? 'text-white' : 'text-black'}`}>
@@ -180,9 +185,14 @@ export default function AuthorPageClient({ author, posts, locale }: AuthorPageCl
                     onClick={() => {
                       window.location.href = `/${locale}/news/author/${author.company_id}`
                     }}
-                    className={`text-lg font-medium transition-colors hover:underline ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-700'}`}
+                    className={`group text-lg font-medium cursor-pointer transition-all duration-300 hover:scale-105 relative inline-block ${
+                      isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-700'
+                    }`}
                   >
                     {author.company.full_name}
+                    <span className={`absolute bottom-0 left-0 w-0 h-0.5 group-hover:w-full transition-all duration-300 ${
+                      isDark ? 'bg-emerald-300' : 'bg-emerald-700'
+                    }`} />
                   </button>
                   <span className={`text-sm ${isDark ? 'text-white/40' : 'text-black/40'}`}>
                     - კომპანიის სპეციალისტი

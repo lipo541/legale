@@ -68,7 +68,7 @@ export default function Position3({ posts }: Position3Props) {
           return (
             <SwiperSlide key={post.id}>
               <Link href={`/${locale}/news/${translation.slug}`} className="block h-full">
-                <div className="flex h-full flex-col justify-between p-10 cursor-pointer">
+                <div className="flex h-full flex-col justify-between p-4 md:p-5 lg:p-6 cursor-pointer">
                   {/* Featured Image (optional) */}
                   {post.featured_image_url && (
                     <div className="absolute inset-0 z-0">
@@ -87,7 +87,7 @@ export default function Position3({ posts }: Position3Props) {
                   
                   {/* Category Badge - ABSOLUTE TOP RIGHT CORNER */}
                   <div className="absolute top-3 right-3 z-10">
-                    <span className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-medium bg-white/10 text-white backdrop-blur-sm">
+                    <span className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-medium bg-red-600 text-white backdrop-blur-sm">
                       {translation.category}
                     </span>
                   </div>
@@ -112,7 +112,7 @@ export default function Position3({ posts }: Position3Props) {
                   {/* Content */}
                   <div className="relative z-10 space-y-3">
                     <div className="space-y-2">
-                      <h2 className="text-lg md:text-xl lg:text-2xl font-semibold leading-tight text-white hover:opacity-80 transition-opacity">
+                      <h2 className="text-xs md:text-sm lg:text-base font-semibold leading-tight text-white hover:opacity-80 transition-opacity line-clamp-5">
                         {translation.title}
                       </h2>
                     </div>

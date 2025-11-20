@@ -73,9 +73,7 @@ export default function Position6({ posts }: Position6Props) {
             
             {/* Category Badge on Image */}
             <div className="absolute top-2 left-2">
-              <span className={`inline-block rounded-md px-2 py-0.5 text-[10px] font-medium backdrop-blur-sm ${
-                isDark ? 'bg-black/70 text-white' : 'bg-white/30 text-white'
-              }`}>
+              <span className="inline-block rounded-md px-2 py-0.5 text-[10px] font-medium backdrop-blur-sm bg-red-600 text-white">
                 {translation.category}
               </span>
             </div>

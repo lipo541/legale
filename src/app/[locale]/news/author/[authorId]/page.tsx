@@ -13,19 +13,10 @@ export default async function AuthorPage({ params }: PageProps) {
   const { locale, authorId } = await params
   const supabase = await createClient()
 
-  // Fetch author info
+  // Fetch author info - get all fields like company detail page
   const { data: author, error: authorError } = await supabase
     .from('profiles')
-    .select(`
-      id, 
-      email, 
-      full_name, 
-      avatar_url, 
-      bio, 
-      role,
-      company_id,
-      company_slug
-    `)
+    .select('*')
     .eq('id', authorId)
     .single()
 
@@ -44,6 +35,25 @@ export default async function AuthorPage({ params }: PageProps) {
       .single()
     
     specialistSlug = slugData?.slug
+  }
+
+  // Fetch company translations if author is a company
+  let companyBio = author.bio || author.summary
+  const companyAvatar = author.avatar_url || author.logo_url
+  
+  if (author.role === 'COMPANY' && locale !== 'ka') {
+    // For non-Georgian languages, get translated info from company_translations
+    const { data: translation } = await supabase
+      .from('company_translations')
+      .select('summary, company_overview')
+      .eq('company_id', authorId)
+      .eq('language', locale)
+      .single()
+    
+    // Use translated summary as bio, or fall back to company_overview
+    if (translation) {
+      companyBio = translation.summary || translation.company_overview || companyBio
+    }
   }
 
   // Fetch company info if author is a specialist with company
@@ -139,9 +149,9 @@ export default async function AuthorPage({ params }: PageProps) {
       author={{
         id: author.id,
         email: author.email,
-        full_name: author.full_name,
-        avatar_url: author.avatar_url,
-        bio: author.bio,
+        full_name: author.full_name || author.company_name,
+        avatar_url: companyAvatar,
+        bio: companyBio,
         role: author.role,
         company_id: author.company_id,
         company: companyInfo,

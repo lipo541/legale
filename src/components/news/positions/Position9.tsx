@@ -51,9 +51,7 @@ export default function Position9({ posts }: Position9Props) {
       {/* Header */}
       <div className="border-b p-3" style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
         <div className="flex items-center gap-2">
-          <div className={`h-1.5 w-1.5 animate-pulse rounded-full ${
-            isDark ? 'bg-white' : 'bg-black'
-          }`} />
+          <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
           <span className={`text-[10px] font-medium uppercase tracking-wider ${
             isDark ? 'text-white/60' : 'text-black/60'
           }`}>
@@ -92,9 +90,7 @@ export default function Position9({ posts }: Position9Props) {
                     <span className={`text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
                       {publishedTime}
                     </span>
-                    <span className={`rounded-full px-1.5 py-0.5 text-[9px] ${
-                      isDark ? 'bg-white/10 text-white/60' : 'bg-black/10 text-black/60'
-                    }`}>
+                    <span className="rounded-full px-1.5 py-0.5 text-[9px] bg-red-600 text-white">
                       {translation.category}
                     </span>
                   </div>
