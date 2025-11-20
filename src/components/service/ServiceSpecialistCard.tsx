@@ -14,7 +14,7 @@ interface Specialist {
   full_name: string
   role_title: string
   avatar_url: string | null
-  slug: string
+  slug: string | null
   role: UserRole.SPECIALIST | UserRole.SOLO_SPECIALIST
 }
 
@@ -86,7 +86,7 @@ export default function ServiceSpecialistCard({ serviceId, locale }: ServiceSpec
         // Fetch translations in a separate optimized query
         const { data: translationsData, error: translationsError } = await supabase
           .from('specialist_translations')
-          .select('specialist_id, full_name, role_title')
+          .select('specialist_id, full_name, role_title, slug')
           .in('specialist_id', profileIds)
           .eq('language', locale)
 
@@ -121,7 +121,7 @@ export default function ServiceSpecialistCard({ serviceId, locale }: ServiceSpec
               full_name: translation.full_name,
               role_title: translation.role_title,
               avatar_url: profile.avatar_url ?? null,
-              slug: profile.slug,
+              slug: translation.slug ?? null,
               role: profile.role as UserRole.SPECIALIST | UserRole.SOLO_SPECIALIST
             }
           })
@@ -169,8 +169,10 @@ export default function ServiceSpecialistCard({ serviceId, locale }: ServiceSpec
           {specialists.map((specialist) => (
             <Link
               key={specialist.id}
-              href={`/${locale}/specialists/${specialist.slug}`}
-              className={`group rounded-2xl overflow-hidden border transition-all duration-300 hover:scale-[1.02] cursor-pointer ${
+              href={specialist.slug ? `/${locale}/specialists/${specialist.slug}` : '#'}
+              className={`group rounded-2xl overflow-hidden border transition-all duration-300 hover:scale-[1.02] ${
+                specialist.slug ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
+              } ${
                 isDark
                   ? 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
                   : 'bg-black/5 border-gray-200 hover:bg-black/10 hover:border-gray-300'
