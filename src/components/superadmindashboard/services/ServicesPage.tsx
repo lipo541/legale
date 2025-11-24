@@ -1,10 +1,36 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useTheme } from '@/contexts/ThemeContext'
-import { Plus, Search, Edit, Trash2, Eye, Loader2, Lock, Unlock, Filter, ChevronDown } from 'lucide-react'
-import ServiceAdd from './ServiceAdd'
+import { useState, useEffect, useCallback, useMemo, memo, Fragment } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useTheme } from '@/contexts/ThemeContext'
+import ServiceAdd from './ServiceAdd'
+import Modal from '@/components/common/Modal'
+import { 
+  Layers,
+  Eye, 
+  Edit, 
+  Trash2, 
+  Search,
+  Plus,
+  Check,
+  X,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  ChevronDown,
+  ChevronUp,
+  CheckSquare,
+  Square,
+  Trash,
+  RefreshCw,
+  SlidersHorizontal,
+  Globe,
+  ExternalLink
+} from 'lucide-react'
+
+// ============================================================================
+// TypeScript Interfaces
+// ============================================================================
 
 type Language = 'ka' | 'en' | 'ru'
 
@@ -13,7 +39,7 @@ interface Service {
   practice_id: string
   image_url: string
   og_image_url: string | null
-  status: string
+  status: 'draft' | 'published'
   created_at: string
   updated_at: string
 }
@@ -41,45 +67,171 @@ interface ServiceWithTranslations extends Service {
 
 interface Practice {
   id: string
-  created_at: string
+  title: string
 }
 
-interface PracticeTranslation {
-  id: string
-  practice_id: string
-  language: Language
-  title: string
-  slug: string
-}
+type SortColumn = 'created_at' | 'title' | 'practice' | 'status' | 'updated_at'
+type SortOrder = 'asc' | 'desc'
+
+// ============================================================================
+// Memoized Components
+// ============================================================================
+
+const StatsCard = memo(function StatsCard({ 
+  label, 
+  value, 
+  isDark 
+}: { 
+  label: string
+  value: number
+  isDark: boolean 
+}) {
+  return (
+    <div className={`rounded-lg border p-3 ${
+      isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/5'
+    }`}>
+      <div className={`text-xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+        {value}
+      </div>
+      <div className={`text-[10px] ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+        {label}
+      </div>
+    </div>
+  )
+})
+
+// Translation Status Indicator Component
+const TranslationStatus = memo(function TranslationStatus({
+  translations,
+  isDark
+}: {
+  translations: ServiceTranslation[]
+  isDark: boolean
+}) {
+  const languages: Language[] = ['ka', 'en', 'ru']
+  const flags: Record<Language, string> = { ka: '🇬🇪', en: '🇬🇧', ru: '🇷🇺' }
+
+  return (
+    <div className="flex items-center gap-0.5">
+      {languages.map(lang => {
+        const hasTranslation = translations.some(t => t.language === lang && t.title?.trim())
+        return (
+          <span
+            key={lang}
+            className={`text-[10px] ${hasTranslation ? 'opacity-100' : 'opacity-30'}`}
+            title={hasTranslation ? `${lang.toUpperCase()} თარგმნილია` : `${lang.toUpperCase()} არ არის თარგმნილი`}
+          >
+            {flags[lang]}
+          </span>
+        )
+      })}
+    </div>
+  )
+})
+
+// ============================================================================
+// Main Component
+// ============================================================================
 
 export default function ServicesPage() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
-  const [searchQuery, setSearchQuery] = useState('')
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [editingService, setEditingService] = useState<ServiceWithTranslations | null>(null)
-  const [services, setServices] = useState<ServiceWithTranslations[]>([])
-  const [loading, setLoading] = useState(true)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [togglingStatusId, setTogglingStatusId] = useState<string | null>(null)
-  const [showFilters, setShowFilters] = useState(false)
-  const [selectedPracticeId, setSelectedPracticeId] = useState<string>('')
-  const [practices, setPractices] = useState<{ id: string; title: string }[]>([])
-
   const supabase = createClient()
 
-  // Fetch practices from database
+  // State
+  const [services, setServices] = useState<ServiceWithTranslations[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [editingService, setEditingService] = useState<ServiceWithTranslations | null>(null)
+  const [expandedServiceId, setExpandedServiceId] = useState<string | null>(null)
+  
+  // Filters
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'draft' | 'published'>('ALL')
+  const [practiceFilter, setPracticeFilter] = useState<string>('ALL')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  
+  // Sorting
+  const [sortBy, setSortBy] = useState<SortColumn>('created_at')
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(25)
+  
+  // Multi-select
+  const [selectedServices, setSelectedServices] = useState<Set<string>>(new Set())
+  
+  // Practices
+  const [practices, setPractices] = useState<Practice[]>([])
+  
+  // UI State
+  const [showFilters, setShowFilters] = useState(true)
+
+  // Modal state
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean
+    type: 'info' | 'success' | 'warning' | 'error' | 'confirm'
+    message: string
+    onConfirm?: () => void
+  }>({
+    isOpen: false,
+    type: 'info',
+    message: '',
+    onConfirm: undefined
+  })
+
+  // Helper to show modal
+  const showModal = useCallback((
+    type: 'info' | 'success' | 'warning' | 'error' | 'confirm',
+    message: string,
+    onConfirm?: () => void
+  ) => {
+    setModalConfig({
+      isOpen: true,
+      type,
+      message,
+      onConfirm
+    })
+  }, [])
+
+  // ============================================================================
+  // Data Fetching
+  // ============================================================================
+
+  const fetchServices = useCallback(async () => {
+    setLoading(true)
+    try {
+      // Fetch services with translations using Supabase nested select
+      // This bypasses the 1000 row limit for translations
+      const { data: servicesWithTranslations, error: servicesError } = await supabase
+        .from('services')
+        .select(`
+          id, practice_id, image_url, og_image_url, status, created_at, updated_at,
+          service_translations(*)
+        `)
+        .order('created_at', { ascending: false })
+
+      if (servicesError) throw servicesError
+
+      setServices(servicesWithTranslations as ServiceWithTranslations[])
+    } catch (error) {
+      console.error('Error fetching services:', error)
+      showModal('error', 'შეცდომა სერვისების ჩატვირთვისას')
+    } finally {
+      setLoading(false)
+    }
+  }, [supabase, showModal])
+
   const fetchPractices = useCallback(async () => {
     try {
       const { data: practicesData, error: practicesError } = await supabase
         .from('practices')
-        .select('id, created_at')
+        .select('id')
         .order('created_at', { ascending: false })
 
-      if (practicesError) {
-        console.error('Error fetching practices:', practicesError)
-        return
-      }
+      if (practicesError) throw practicesError
 
       // Fetch practice translations (Georgian only for dropdown)
       const { data: translationsData, error: translationsError } = await supabase
@@ -87,10 +239,7 @@ export default function ServicesPage() {
         .select('practice_id, title')
         .eq('language', 'ka')
 
-      if (translationsError) {
-        console.error('Error fetching practice translations:', translationsError)
-        return
-      }
+      if (translationsError) throw translationsError
 
       // Combine practices with their Georgian titles
       const practicesWithTitles = (practicesData || []).map(practice => {
@@ -103,146 +252,284 @@ export default function ServicesPage() {
 
       setPractices(practicesWithTitles)
     } catch (error) {
-      console.error('Fetch practices error:', error)
-    }
-  }, [supabase])
-
-  // Fetch services from database
-  const fetchServices = useCallback(async () => {
-    setLoading(true)
-    
-    try {
-      // First, fetch services
-      const { data: servicesData, error: servicesError } = await supabase
-        .from('services')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      console.log('Services data:', servicesData)
-      console.log('Services error:', servicesError)
-
-      if (servicesError) {
-        console.error('Error fetching services:', servicesError)
-        setLoading(false)
-        return
-      }
-
-      // Then fetch translations
-      const { data: translationsData, error: translationsError } = await supabase
-        .from('service_translations')
-        .select('*')
-
-      console.log('Translations data:', translationsData)
-      console.log('Translations error:', translationsError)
-
-      if (translationsError) {
-        console.error('Error fetching translations:', translationsError)
-        setLoading(false)
-        return
-      }
-
-      // Combine them
-      const servicesWithTranslations = (servicesData || []).map(service => ({
-        ...service,
-        service_translations: (translationsData || []).filter(
-          t => t.service_id === service.id
-        )
-      }))
-
-      console.log('Combined services:', servicesWithTranslations)
-      setServices(servicesWithTranslations as ServiceWithTranslations[])
-      
-    } catch (error) {
-      console.error('Fetch error:', error)
-    } finally {
-      setLoading(false)
+      console.error('Error fetching practices:', error)
     }
   }, [supabase])
 
   useEffect(() => {
-    fetchPractices()
     fetchServices()
-  }, [fetchPractices, fetchServices])
+    fetchPractices()
+  }, [fetchServices, fetchPractices])
 
-  // Handle delete
-  const handleDelete = async (id: string) => {
-    if (!confirm('დარწმუნებული ხართ რომ გსურთ ამ სერვისის წაშლა?')) {
-      return
+  // ============================================================================
+  // Helper Functions
+  // ============================================================================
+
+  const getPracticeTitle = useCallback((practiceId: string): string => {
+    const practice = practices.find(p => p.id === practiceId)
+    return practice?.title || '-'
+  }, [practices])
+
+  // ============================================================================
+  // Filtering & Sorting Logic
+  // ============================================================================
+
+  const filteredAndSortedServices = useMemo(() => {
+    let result = [...services]
+
+    // Search filter (multi-language)
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase()
+      result = result.filter(service => {
+        const kaTranslation = service.service_translations?.find(t => t.language === 'ka')
+        const enTranslation = service.service_translations?.find(t => t.language === 'en')
+        const ruTranslation = service.service_translations?.find(t => t.language === 'ru')
+        
+        return (
+          kaTranslation?.title?.toLowerCase().includes(searchLower) ||
+          enTranslation?.title?.toLowerCase().includes(searchLower) ||
+          ruTranslation?.title?.toLowerCase().includes(searchLower) ||
+          kaTranslation?.slug?.toLowerCase().includes(searchLower) ||
+          enTranslation?.slug?.toLowerCase().includes(searchLower) ||
+          service.id.toLowerCase().includes(searchLower)
+        )
+      })
     }
 
-    setDeletingId(id)
-    const { error } = await supabase
-      .from('services')
-      .delete()
-      .eq('id', id)
-
-    if (!error) {
-      await fetchServices()
-    } else {
-      alert('შეცდომა წაშლისას: ' + error.message)
-    }
-    setDeletingId(null)
-  }
-
-  // Handle toggle status (publish/unpublish)
-  const handleToggleStatus = async (service: ServiceWithTranslations) => {
-    const newStatus = service.status === 'published' ? 'draft' : 'published'
-    const confirmMessage = newStatus === 'published' 
-      ? 'დარწმუნებული ხართ რომ გსურთ ამ სერვისის გამოქვეყნება?'
-      : 'დარწმუნებული ხართ რომ გსურთ ამ სერვისის დაბლოკვა?'
-    
-    if (!confirm(confirmMessage)) {
-      return
+    // Status filter
+    if (statusFilter !== 'ALL') {
+      result = result.filter(service => service.status === statusFilter)
     }
 
-    setTogglingStatusId(service.id)
-    
-    try {
-      const { error } = await supabase
-        .from('services')
-        .update({ 
-          status: newStatus,
-          updated_at: new Date().toISOString() 
-        })
-        .eq('id', service.id)
+    // Practice filter
+    if (practiceFilter !== 'ALL') {
+      result = result.filter(service => service.practice_id === practiceFilter)
+    }
 
-      if (error) {
-        console.error('Status update error:', error)
-        alert('შეცდომა სტატუსის შეცვლისას: ' + error.message)
-      } else {
-        console.log('Status updated successfully to:', newStatus)
-        await fetchServices()
+    // Date range filter
+    if (dateFrom) {
+      result = result.filter(service => new Date(service.created_at) >= new Date(dateFrom))
+    }
+    if (dateTo) {
+      result = result.filter(service => new Date(service.created_at) <= new Date(dateTo))
+    }
+
+    // Sorting
+    result.sort((a, b) => {
+      let aValue: string | number
+      let bValue: string | number
+
+      switch (sortBy) {
+        case 'title':
+          aValue = a.service_translations?.find(t => t.language === 'ka')?.title || ''
+          bValue = b.service_translations?.find(t => t.language === 'ka')?.title || ''
+          break
+        case 'practice':
+          aValue = getPracticeTitle(a.practice_id)
+          bValue = getPracticeTitle(b.practice_id)
+          break
+        case 'status':
+          aValue = a.status
+          bValue = b.status
+          break
+        case 'updated_at':
+          aValue = new Date(a.updated_at).getTime()
+          bValue = new Date(b.updated_at).getTime()
+          break
+        case 'created_at':
+        default:
+          aValue = new Date(a.created_at).getTime()
+          bValue = new Date(b.created_at).getTime()
+          break
       }
-    } catch (err) {
-      console.error('Catch error:', err)
-      alert('შეცდომა სტატუსის შეცვლისას')
-    } finally {
-      setTogglingStatusId(null)
-    }
-  }
 
-  // Handle edit
-  const handleEdit = (service: ServiceWithTranslations) => {
-    if (!confirm('დარწმუნებული ხართ რომ გსურთ ამ სერვისის რედაქტირება?')) {
-      return
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortOrder === 'asc' 
+          ? aValue.localeCompare(bValue) 
+          : bValue.localeCompare(aValue)
+      }
+
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortOrder === 'asc' ? aValue - bValue : bValue - aValue
+      }
+
+      return 0
+    })
+
+    return result
+  }, [services, searchTerm, statusFilter, practiceFilter, dateFrom, dateTo, sortBy, sortOrder, getPracticeTitle])
+
+  // Pagination
+  const paginatedServices = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    return filteredAndSortedServices.slice(startIndex, endIndex)
+  }, [filteredAndSortedServices, currentPage, itemsPerPage])
+
+  const totalPages = Math.ceil(filteredAndSortedServices.length / itemsPerPage)
+
+  // Stats
+  const stats = useMemo(() => {
+    const needsTranslation = services.filter(s => {
+      const hasKa = s.service_translations.some(t => t.language === 'ka' && t.title?.trim())
+      const hasEn = s.service_translations.some(t => t.language === 'en' && t.title?.trim())
+      const hasRu = s.service_translations.some(t => t.language === 'ru' && t.title?.trim())
+      return hasKa && (!hasEn || !hasRu)
+    }).length
+
+    return {
+      total: services.length,
+      published: services.filter(s => s.status === 'published').length,
+      draft: services.filter(s => s.status === 'draft').length,
+      needsTranslation,
+      filtered: filteredAndSortedServices.length
     }
-    setEditingService(service)
+  }, [services, filteredAndSortedServices])
+
+  // ============================================================================
+  // Event Handlers
+  // ============================================================================
+
+  const handleSort = useCallback((column: SortColumn) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortBy(column)
+      setSortOrder('asc')
+    }
+  }, [sortBy, sortOrder])
+
+  const handleSelectAll = useCallback(() => {
+    if (selectedServices.size === paginatedServices.length) {
+      setSelectedServices(new Set())
+    } else {
+      setSelectedServices(new Set(paginatedServices.map(s => s.id)))
+    }
+  }, [selectedServices.size, paginatedServices])
+
+  const handleSelectService = useCallback((serviceId: string) => {
+    const newSelected = new Set(selectedServices)
+    if (newSelected.has(serviceId)) {
+      newSelected.delete(serviceId)
+    } else {
+      newSelected.add(serviceId)
+    }
+    setSelectedServices(newSelected)
+  }, [selectedServices])
+
+  const handleBulkDelete = useCallback(async () => {
+    if (selectedServices.size === 0) return
+    
+    showModal('confirm', `დარწმუნებული ხართ რომ გსურთ ${selectedServices.size} სერვისის წაშლა?`, async () => {
+      try {
+        for (const serviceId of selectedServices) {
+          await supabase.from('services').delete().eq('id', serviceId)
+        }
+        
+        setServices(services.filter(s => !selectedServices.has(s.id)))
+        setSelectedServices(new Set())
+        showModal('success', `${selectedServices.size} სერვისი წარმატებით წაიშალა`)
+      } catch (error) {
+        console.error('Error bulk deleting:', error)
+        showModal('error', 'შეცდომა წაშლისას')
+      }
+    })
+  }, [selectedServices, services, supabase, showModal])
+
+  const handleBulkStatusChange = useCallback(async (newStatus: Service['status']) => {
+    if (selectedServices.size === 0) return
+
+    try {
+      for (const serviceId of selectedServices) {
+        await supabase.from('services').update({ 
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        }).eq('id', serviceId)
+      }
+      
+      setServices(services.map(s => 
+        selectedServices.has(s.id) ? { ...s, status: newStatus } : s
+      ))
+      setSelectedServices(new Set())
+      showModal('success', `${selectedServices.size} სერვისის სტატუსი შეიცვალა`)
+    } catch (error) {
+      console.error('Error bulk status change:', error)
+      showModal('error', 'შეცდომა სტატუსის შეცვლისას')
+    }
+  }, [selectedServices, services, supabase, showModal])
+
+  const handleDelete = useCallback(async (serviceId: string) => {
+    showModal('confirm', 'დარწმუნებული ხართ რომ გსურთ სერვისის წაშლა?', async () => {
+      try {
+        const { error } = await supabase.from('services').delete().eq('id', serviceId)
+        if (error) throw error
+
+        setServices(services.filter(s => s.id !== serviceId))
+        showModal('success', 'სერვისი წარმატებით წაიშალა')
+      } catch (error) {
+        console.error('Error deleting service:', error)
+        showModal('error', 'შეცდომა სერვისის წაშლისას')
+      }
+    })
+  }, [services, supabase, showModal])
+
+  const handleStatusChange = useCallback(async (serviceId: string, newStatus: Service['status']) => {
+    try {
+      const { error } = await supabase.from('services').update({ 
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      }).eq('id', serviceId)
+      if (error) throw error
+
+      setServices(services.map(s => s.id === serviceId ? { ...s, status: newStatus } : s))
+    } catch (error) {
+      console.error('Error updating status:', error)
+      showModal('error', 'შეცდომა სტატუსის შეცვლისას')
+    }
+  }, [services, supabase, showModal])
+
+  const handleEdit = useCallback(async (service: ServiceWithTranslations) => {
+    // Fetch fresh data from database to ensure we have latest translations
+    const { data: freshTranslations } = await supabase
+      .from('service_translations')
+      .select('*')
+      .eq('service_id', service.id)
+
+    const freshService = {
+      ...service,
+      service_translations: freshTranslations || []
+    }
+
+    setEditingService(freshService)
     setShowAddForm(true)
-  }
+  }, [supabase])
 
-  // Filter services based on search and practice
-  const filteredServices = services.filter((service) => {
+  const handleView = useCallback((service: ServiceWithTranslations) => {
     const kaTranslation = service.service_translations.find(t => t.language === 'ka')
-    if (!kaTranslation) return false
-    
-    // Filter by search query
-    const matchesSearch = kaTranslation.title.toLowerCase().includes(searchQuery.toLowerCase())
-    
-    // Filter by selected practice
-    const matchesPractice = selectedPracticeId === '' || service.practice_id === selectedPracticeId
-    
-    return matchesSearch && matchesPractice
-  })
+    if (kaTranslation?.slug) {
+      window.open(`/ka/services/${kaTranslation.slug}`, '_blank')
+    }
+  }, [])
+
+  const clearFilters = useCallback(() => {
+    setSearchTerm('')
+    setStatusFilter('ALL')
+    setPracticeFilter('ALL')
+    setDateFrom('')
+    setDateTo('')
+    setCurrentPage(1)
+  }, [])
+
+  // ============================================================================
+  // Render Functions
+  // ============================================================================
+
+  const SortIcon = ({ column }: { column: SortColumn }) => {
+    if (sortBy !== column) {
+      return <ArrowUpDown className="h-3 w-3 opacity-40" />
+    }
+    return sortOrder === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+  }
 
   // Show Add/Edit Form
   if (showAddForm) {
@@ -259,242 +546,543 @@ export default function ServicesPage() {
   }
 
   return (
-    <div>
-      {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
-            Services
-          </h1>
-          <p className={`mt-2 text-lg ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-            სერვისების მართვა
-          </p>
-        </div>
-        <button
-          onClick={() => setShowAddForm(true)}
-          className={`flex items-center gap-2 rounded-xl px-6 py-3 font-semibold transition-all duration-300 ${
-            isDark
-              ? 'bg-emerald-500 text-white hover:bg-emerald-600'
-              : 'bg-emerald-500 text-white hover:bg-emerald-600'
-          }`}
-        >
-          <Plus className="h-5 w-5" />
-          ახალი სერვისი
-        </button>
-      </div>
-
-      {/* Search Bar and Filter */}
-      <div className="mb-6 flex gap-4">
-        <div className={`relative flex-1 rounded-xl border ${isDark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
-          <Search className={`absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
-          <input
-            type="text"
-            placeholder="ძებნა სერვისებში..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={`w-full rounded-xl bg-transparent py-3 pl-12 pr-4 outline-none transition-colors ${
-              isDark ? 'text-white placeholder:text-white/40' : 'text-black placeholder:text-black/40'
-            }`}
-          />
-        </div>
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className={`flex items-center gap-2 rounded-xl px-6 py-3 font-semibold transition-all duration-300 ${
-            showFilters
-              ? isDark
-                ? 'bg-blue-500 text-white'
-                : 'bg-blue-500 text-white'
-              : isDark
-              ? 'bg-white/10 text-white hover:bg-white/20'
-              : 'bg-black/10 text-black hover:bg-black/20'
-          }`}
-        >
-          <Filter className="h-5 w-5" />
-          ფილტრაცია
-          <ChevronDown className={`h-4 w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-        </button>
-      </div>
-
-      {/* Filter Dropdown */}
-      {showFilters && (
-        <div className={`mb-6 rounded-xl border p-6 ${isDark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
-          <div className="space-y-4">
-            <div>
-              <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>
-                პრაქტიკის არჩევა
-              </label>
-              <select
-                value={selectedPracticeId}
-                onChange={(e) => setSelectedPracticeId(e.target.value)}
-                className={`w-full rounded-xl border px-4 py-3 outline-none transition-colors ${
-                  isDark
-                    ? 'border-white/10 bg-black text-white hover:border-white/20 [&>option]:bg-black [&>option]:text-white'
-                    : 'border-black/10 bg-white text-black hover:border-black/20 [&>option]:bg-white [&>option]:text-black'
-                }`}
-              >
-                <option value="">ყველა პრაქტიკა</option>
-                {practices.map((practice) => (
-                  <option key={practice.id} value={practice.id}>
-                    {practice.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {selectedPracticeId && (
-              <button
-                onClick={() => setSelectedPracticeId('')}
-                className={`text-sm font-medium transition-colors ${
-                  isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
-                }`}
-              >
-                ფილტრის გასუფთავება
-              </button>
-            )}
+    <div className={`min-h-screen p-4 transition-colors ${isDark ? 'bg-black text-white' : 'bg-white text-black'}`}>
+      <div className="mx-auto max-w-[1600px]">
+        {/* Header */}
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+              სერვისების მართვა
+            </h1>
+            <p className={`mt-1 text-[10px] ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+              სრული კონტროლი ყველა სერვისზე
+            </p>
           </div>
+          
+          <button
+            onClick={() => setShowAddForm(true)}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+              isDark ? 'bg-white text-black hover:bg-white/90' : 'bg-black text-white hover:bg-black/90'
+            }`}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            ახალი სერვისი
+          </button>
         </div>
-      )}
 
-      {/* Loading State */}
-      {loading && (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className={`h-8 w-8 animate-spin ${isDark ? 'text-white' : 'text-black'}`} />
+        {/* Stats */}
+        <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-5">
+          <StatsCard label="სულ სერვისი" value={stats.total} isDark={isDark} />
+          <StatsCard label="Published" value={stats.published} isDark={isDark} />
+          <StatsCard label="Draft" value={stats.draft} isDark={isDark} />
+          <StatsCard label="თარგმანი საჭირო" value={stats.needsTranslation} isDark={isDark} />
+          <StatsCard label="ნაპოვნი" value={stats.filtered} isDark={isDark} />
         </div>
-      )}
 
-      {/* Services Table */}
-      {!loading && filteredServices.length > 0 && (
-        <div className={`overflow-hidden rounded-xl border ${isDark ? 'border-white/10' : 'border-black/10'}`}>
-          <table className="w-full">
-            <thead className={`border-b ${isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/5'}`}>
-              <tr>
-                <th className={`px-6 py-4 text-left text-sm font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
-                  სახელი (ქართული)
-                </th>
-                <th className={`px-6 py-4 text-left text-sm font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
-                  Slug
-                </th>
-                <th className={`px-6 py-4 text-left text-sm font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
-                  სტატუსი
-                </th>
-                <th className={`px-6 py-4 text-left text-sm font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
-                  თარიღი
-                </th>
-                <th className={`px-6 py-4 text-right text-sm font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
-                  მოქმედებები
-                </th>
-              </tr>
-            </thead>
-            <tbody className={isDark ? 'bg-black' : 'bg-white'}>
-              {filteredServices.map((service) => {
-                const kaTranslation = service.service_translations.find(t => t.language === 'ka')
-                
-                return (
-                  <tr
-                    key={service.id}
-                    className={`border-b transition-colors ${
-                      isDark
-                        ? 'border-white/10 hover:bg-white/5'
-                        : 'border-black/10 hover:bg-black/5'
-                    }`}
-                  >
-                    <td className={`px-6 py-4 font-medium ${isDark ? 'text-white' : 'text-black'}`}>
-                      {kaTranslation?.title || 'N/A'}
-                    </td>
-                    <td className={`px-6 py-4 text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-                      {kaTranslation?.slug || 'N/A'}
-                    </td>
-                    <td className="px-6 py-4">
-                      <button
-                        onClick={() => handleToggleStatus(service)}
-                        disabled={togglingStatusId === service.id}
-                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-all ${
-                          service.status === 'published'
-                            ? isDark
-                              ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
-                              : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
-                            : isDark
-                            ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
-                            : 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20'
-                        } ${togglingStatusId === service.id ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
-                        title={service.status === 'published' ? 'დაბლოკვა' : 'გამოქვეყნება'}
-                      >
-                        {togglingStatusId === service.id ? (
-                          <>
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                            {service.status === 'published' ? 'გამოქვეყნებული' : 'დრაფტი'}
-                          </>
-                        ) : (
-                          <>
-                            {service.status === 'published' ? (
-                              <>
-                                <Unlock className="h-3 w-3" />
-                                გამოქვეყნებული
-                              </>
-                            ) : (
-                              <>
-                                <Lock className="h-3 w-3" />
-                                დრაფტი
-                              </>
-                            )}
-                          </>
-                        )}
-                      </button>
-                    </td>
-                    <td className={`px-6 py-4 text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-                      {new Date(service.created_at).toLocaleDateString('ka-GE')}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => window.open(`/ka/services/${kaTranslation?.slug}`, '_blank')}
-                          className={`rounded-lg p-2 transition-colors ${
-                            isDark ? 'hover:bg-white/10' : 'hover:bg-black/5'
-                          }`}
-                          title="ნახვა"
-                        >
-                          <Eye className={`h-4 w-4 ${isDark ? 'text-white/60' : 'text-black/60'}`} />
-                        </button>
-                        <button
-                          onClick={() => handleEdit(service)}
-                          className={`rounded-lg p-2 transition-colors ${
-                            isDark ? 'hover:bg-white/10' : 'hover:bg-black/5'
-                          }`}
-                          title="რედაქტირება"
-                        >
-                          <Edit className={`h-4 w-4 ${isDark ? 'text-white/60' : 'text-black/60'}`} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(service.id)}
-                          disabled={deletingId === service.id}
-                          className={`rounded-lg p-2 transition-colors disabled:opacity-50 ${
-                            isDark ? 'hover:bg-red-500/20' : 'hover:bg-red-500/10'
-                          }`}
-                          title="წაშლა"
-                        >
-                          {deletingId === service.id ? (
-                            <Loader2 className={`h-4 w-4 animate-spin ${isDark ? 'text-red-400' : 'text-red-600'}`} />
+        {/* Filters Toggle */}
+        <div className="mb-3">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${
+              isDark ? 'border-white/10 bg-white/5 hover:bg-white/10' : 'border-black/10 bg-black/5 hover:bg-black/10'
+            }`}
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            {showFilters ? 'ფილტრების დამალვა' : 'ფილტრების ჩვენება'}
+            {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          </button>
+        </div>
+
+        {/* Advanced Filters */}
+        {showFilters && (
+          <div className={`mb-4 rounded-xl border p-3 ${
+            isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/5'
+          }`}>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-6">
+              {/* Search */}
+              <div className="relative lg:col-span-2">
+                <Search className={`absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 ${
+                  isDark ? 'text-white/40' : 'text-black/40'
+                }`} />
+                <input
+                  type="text"
+                  placeholder="ძებნა სათაურით, Slug-ით, ID-ით..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className={`w-full rounded-lg border py-1.5 pl-8 pr-3 text-[10px] transition-colors ${
+                    isDark 
+                      ? 'border-white/10 bg-white/5 text-white placeholder:text-white/40' 
+                      : 'border-black/10 bg-black/5 text-black placeholder:text-black/40'
+                  }`}
+                />
+              </div>
+
+              {/* Practice Filter */}
+              <div>
+                <select
+                  value={practiceFilter}
+                  onChange={(e) => setPracticeFilter(e.target.value)}
+                  className={`w-full rounded-lg border px-2 py-1.5 text-[10px] transition-colors ${
+                    isDark ? 'border-white/10 bg-white/5 text-white' : 'border-black/10 bg-black/5 text-black'
+                  }`}
+                  style={isDark ? { colorScheme: 'dark' } : {}}
+                >
+                  <option value="ALL" style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>ყველა პრაქტიკა</option>
+                  {practices.map(practice => (
+                    <option key={practice.id} value={practice.id} style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>
+                      {practice.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Status Filter */}
+              <div>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+                  className={`w-full rounded-lg border px-2 py-1.5 text-[10px] transition-colors ${
+                    isDark ? 'border-white/10 bg-white/5 text-white' : 'border-black/10 bg-black/5 text-black'
+                  }`}
+                  style={isDark ? { colorScheme: 'dark' } : {}}
+                >
+                  <option value="ALL" style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>ყველა სტატუსი</option>
+                  <option value="published" style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>Published</option>
+                  <option value="draft" style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>Draft</option>
+                </select>
+              </div>
+
+              {/* Date From */}
+              <div>
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className={`w-full rounded-lg border px-2 py-1.5 text-[10px] transition-colors ${
+                    isDark ? 'border-white/10 bg-white/5 text-white' : 'border-black/10 bg-black/5 text-black'
+                  }`}
+                  style={isDark ? { colorScheme: 'dark' } : {}}
+                />
+              </div>
+
+              {/* Date To */}
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className={`flex-1 rounded-lg border px-2 py-1.5 text-[10px] transition-colors ${
+                    isDark ? 'border-white/10 bg-white/5 text-white' : 'border-black/10 bg-black/5 text-black'
+                  }`}
+                  style={isDark ? { colorScheme: 'dark' } : {}}
+                />
+                {/* Clear Filters */}
+                <button
+                  onClick={clearFilters}
+                  className={`rounded-lg border px-2 py-1.5 text-[10px] font-medium transition-colors ${
+                    isDark 
+                      ? 'border-white/10 bg-white/5 hover:bg-white/10' 
+                      : 'border-black/10 bg-black/5 hover:bg-black/10'
+                  }`}
+                  title="ფილტრების გასუფთავება"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bulk Actions */}
+        {selectedServices.size > 0 && (
+          <div className={`mb-3 flex items-center gap-2 rounded-lg border p-2 ${
+            isDark ? 'border-blue-500/30 bg-blue-500/10' : 'border-blue-500/30 bg-blue-500/10'
+          }`}>
+            <span className="text-[10px] font-medium text-blue-500">
+              არჩეულია: {selectedServices.size}
+            </span>
+            <button
+              onClick={handleBulkDelete}
+              className="flex items-center gap-1 rounded-md bg-red-500/10 px-2 py-1 text-[10px] font-medium text-red-500 hover:bg-red-500/20"
+            >
+              <Trash className="h-3 w-3" />
+              წაშლა
+            </button>
+            <button
+              onClick={() => handleBulkStatusChange('published')}
+              className="flex items-center gap-1 rounded-md bg-green-500/10 px-2 py-1 text-[10px] font-medium text-green-500 hover:bg-green-500/20"
+            >
+              Published
+            </button>
+            <button
+              onClick={() => handleBulkStatusChange('draft')}
+              className="flex items-center gap-1 rounded-md bg-yellow-500/10 px-2 py-1 text-[10px] font-medium text-yellow-500 hover:bg-yellow-500/20"
+            >
+              Draft
+            </button>
+          </div>
+        )}
+
+        {/* Table */}
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className={`text-xs ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+              იტვირთება...
+            </div>
+          </div>
+        ) : filteredAndSortedServices.length === 0 ? (
+          <div className={`rounded-xl border p-8 text-center ${
+            isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/5'
+          }`}>
+            <Layers className={`mx-auto mb-2 h-8 w-8 ${isDark ? 'text-white/20' : 'text-black/20'}`} />
+            <p className={`text-xs ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+              სერვისები არ მოიძებნა
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className={`overflow-hidden rounded-xl border ${isDark ? 'border-white/10' : 'border-black/10'}`}>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className={`${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
+                    <tr>
+                      <th className="px-2 py-2">
+                        <button onClick={handleSelectAll}>
+                          {selectedServices.size === paginatedServices.length ? (
+                            <CheckSquare className="h-3.5 w-3.5" />
                           ) : (
-                            <Trash2 className={`h-4 w-4 ${isDark ? 'text-red-400' : 'text-red-600'}`} />
+                            <Square className="h-3.5 w-3.5" />
                           )}
                         </button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+                      </th>
+                      <th className={`px-2 py-2 text-left text-[10px] font-medium uppercase tracking-wider ${
+                        isDark ? 'text-white/60' : 'text-black/60'
+                      }`}>
+                        <div className="flex items-center gap-1 cursor-pointer" onClick={() => handleSort('title')}>
+                          სათაური
+                          <SortIcon column="title" />
+                        </div>
+                      </th>
+                      <th className={`px-2 py-2 text-left text-[10px] font-medium uppercase tracking-wider ${
+                        isDark ? 'text-white/60' : 'text-black/60'
+                      }`}>
+                        <div className="flex items-center gap-1 cursor-pointer" onClick={() => handleSort('practice')}>
+                          პრაქტიკა
+                          <SortIcon column="practice" />
+                        </div>
+                      </th>
+                      <th className={`px-2 py-2 text-left text-[10px] font-medium uppercase tracking-wider ${
+                        isDark ? 'text-white/60' : 'text-black/60'
+                      }`}>
+                        <div className="flex items-center gap-1">
+                          <Globe className="h-3 w-3" />
+                          თარგმანი
+                        </div>
+                      </th>
+                      <th className={`px-2 py-2 text-left text-[10px] font-medium uppercase tracking-wider ${
+                        isDark ? 'text-white/60' : 'text-black/60'
+                      }`}>
+                        <div className="flex items-center gap-1 cursor-pointer" onClick={() => handleSort('status')}>
+                          სტატუსი
+                          <SortIcon column="status" />
+                        </div>
+                      </th>
+                      <th className={`px-2 py-2 text-left text-[10px] font-medium uppercase tracking-wider ${
+                        isDark ? 'text-white/60' : 'text-black/60'
+                      }`}>
+                        <div className="flex items-center gap-1 cursor-pointer" onClick={() => handleSort('created_at')}>
+                          შექმნა
+                          <SortIcon column="created_at" />
+                        </div>
+                      </th>
+                      <th className={`px-2 py-2 text-left text-[10px] font-medium uppercase tracking-wider ${
+                        isDark ? 'text-white/60' : 'text-black/60'
+                      }`}>
+                        <div className="flex items-center gap-1 cursor-pointer" onClick={() => handleSort('updated_at')}>
+                          განახლება
+                          <SortIcon column="updated_at" />
+                        </div>
+                      </th>
+                      <th className={`px-2 py-2 text-right text-[10px] font-medium uppercase tracking-wider ${
+                        isDark ? 'text-white/60' : 'text-black/60'
+                      }`}>
+                        მოქმედებები
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className={`divide-y ${isDark ? 'divide-white/10' : 'divide-black/10'}`}>
+                    {paginatedServices.map((service) => {
+                      const isExpanded = expandedServiceId === service.id
+                      const kaTranslation = service.service_translations?.find(t => t.language === 'ka')
+                      const enTranslation = service.service_translations?.find(t => t.language === 'en')
+                      
+                      return (
+                        <Fragment key={service.id}>
+                          <tr className={`transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'}`}>
+                            <td className="px-2 py-2">
+                              <button onClick={() => handleSelectService(service.id)}>
+                                {selectedServices.has(service.id) ? (
+                                  <CheckSquare className="h-3.5 w-3.5 text-blue-500" />
+                                ) : (
+                                  <Square className="h-3.5 w-3.5" />
+                                )}
+                              </button>
+                            </td>
+                            <td className="px-2 py-2">
+                              <div className="flex items-center gap-1.5 max-w-[200px]">
+                                {service.image_url && (
+                                  <img 
+                                    src={service.image_url} 
+                                    alt="" 
+                                    className="h-8 w-8 flex-shrink-0 rounded object-cover"
+                                  />
+                                )}
+                                <div className="min-w-0">
+                                  <span className={`text-[10px] truncate block ${isDark ? 'text-white' : 'text-black'}`}>
+                                    {kaTranslation?.title || 'უსათაურო'}
+                                  </span>
+                                  <span className={`text-[9px] truncate block ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                                    {kaTranslation?.slug || '-'}
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-2 py-2">
+                              <span className={`text-[10px] ${isDark ? 'text-white/70' : 'text-black/70'}`}>
+                                {getPracticeTitle(service.practice_id)}
+                              </span>
+                            </td>
+                            <td className="px-2 py-2">
+                              <TranslationStatus 
+                                translations={service.service_translations} 
+                                isDark={isDark} 
+                              />
+                            </td>
+                            <td className="px-2 py-2">
+                              <select
+                                value={service.status}
+                                onChange={(e) => handleStatusChange(service.id, e.target.value as Service['status'])}
+                                className={`w-full max-w-[90px] rounded-md border px-1.5 py-1 text-[10px] font-medium ${
+                                  service.status === 'published'
+                                    ? 'bg-green-500/10 text-green-500 border-green-500/30'
+                                    : 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30'
+                                }`}
+                                style={isDark ? { colorScheme: 'dark' } : {}}
+                              >
+                                <option value="draft">Draft</option>
+                                <option value="published">Published</option>
+                              </select>
+                            </td>
+                            <td className="px-2 py-2">
+                              <span className={`text-[10px] ${isDark ? 'text-white/70' : 'text-black/70'}`}>
+                                {new Date(service.created_at).toLocaleDateString('ka-GE')}
+                              </span>
+                            </td>
+                            <td className="px-2 py-2">
+                              <span className={`text-[10px] ${isDark ? 'text-white/70' : 'text-black/70'}`}>
+                                {new Date(service.updated_at).toLocaleDateString('ka-GE')}
+                              </span>
+                            </td>
+                            <td className="px-2 py-2">
+                              <div className="flex items-center justify-end gap-1">
+                                <button
+                                  onClick={() => setExpandedServiceId(isExpanded ? null : service.id)}
+                                  className={`rounded-md p-1 transition-colors ${
+                                    isDark ? 'hover:bg-white/10' : 'hover:bg-black/10'
+                                  }`}
+                                  title="დეტალები"
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleView(service)}
+                                  className={`rounded-md p-1 transition-colors ${
+                                    isDark ? 'hover:bg-white/10' : 'hover:bg-black/10'
+                                  }`}
+                                  title="გვერდზე ნახვა"
+                                >
+                                  <ExternalLink className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleEdit(service)}
+                                  className={`rounded-md p-1 transition-colors ${
+                                    isDark ? 'hover:bg-white/10' : 'hover:bg-black/10'
+                                  }`}
+                                  title="რედაქტირება"
+                                >
+                                  <Edit className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(service.id)}
+                                  className="rounded-md p-1 text-red-500 transition-colors hover:bg-red-500/10"
+                                  title="წაშლა"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                          
+                          {/* Expanded Row - Quick View */}
+                          {isExpanded && (
+                            <tr>
+                              <td colSpan={8} className={`px-3 py-3 ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
+                                <div className="space-y-3">
+                                  {/* IDs and Slugs */}
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px]">
+                                    <div>
+                                      <span className={isDark ? 'text-white/40' : 'text-black/40'}>Service ID:</span>
+                                      <span className={`ml-1 font-mono ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+                                        {service.id.substring(0, 8)}...
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <span className={isDark ? 'text-white/40' : 'text-black/40'}>Practice ID:</span>
+                                      <span className={`ml-1 font-mono ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+                                        {service.practice_id.substring(0, 8)}...
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <span className={isDark ? 'text-white/40' : 'text-black/40'}>KA Slug:</span>
+                                      <span className={`ml-1 font-mono ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+                                        {kaTranslation?.slug || '-'}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <span className={isDark ? 'text-white/40' : 'text-black/40'}>EN Slug:</span>
+                                      <span className={`ml-1 font-mono ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+                                        {enTranslation?.slug || '-'}
+                                      </span>
+                                    </div>
+                                  </div>
 
-      {/* Empty State */}
-      {!loading && filteredServices.length === 0 && (
-        <div className={`rounded-xl border p-12 text-center ${isDark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
-          <p className={`text-lg font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-            {searchQuery ? 'სერვისები ვერ მოიძებნა' : 'სერვისები ჯერ არ არის დამატებული'}
-          </p>
-        </div>
-      )}
+                                  {/* SEO Preview */}
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {/* Image */}
+                                    {service.image_url && (
+                                      <div>
+                                        <span className={`text-[10px] block mb-1 ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                                          სურათი:
+                                        </span>
+                                        <img 
+                                          src={service.image_url} 
+                                          alt="Service" 
+                                          className="h-24 w-36 rounded-lg object-cover"
+                                        />
+                                      </div>
+                                    )}
+                                    
+                                    {/* Meta Info */}
+                                    <div className="space-y-1">
+                                      <div>
+                                        <span className={`text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                                          Meta Title:
+                                        </span>
+                                        <span className={`ml-1 text-[10px] ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+                                          {kaTranslation?.meta_title || '-'}
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <span className={`text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                                          Meta Description:
+                                        </span>
+                                        <p className={`text-[10px] line-clamp-2 ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+                                          {kaTranslation?.meta_description || '-'}
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <span className={`text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                                          Word Count:
+                                        </span>
+                                        <span className={`ml-1 text-[10px] ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+                                          {kaTranslation?.word_count || 0} სიტყვა ({kaTranslation?.reading_time || 0} წთ)
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Pagination */}
+            <div className={`mt-3 flex items-center justify-between rounded-lg border p-2 ${
+              isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/5'
+            }`}>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px]">თითო გვერდზე:</span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value))
+                    setCurrentPage(1)
+                  }}
+                  className={`rounded-md border px-2 py-1 text-[10px] ${
+                    isDark ? 'border-white/10 bg-white/5 text-white' : 'border-black/10 bg-black/5 text-black'
+                  }`}
+                  style={isDark ? { colorScheme: 'dark' } : {}}
+                >
+                  <option value={10} style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>10</option>
+                  <option value={25} style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>25</option>
+                  <option value={50} style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>50</option>
+                  <option value={100} style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>100</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className={`rounded-md border px-2 py-1 text-[10px] ${
+                    currentPage === 1
+                      ? 'opacity-50 cursor-not-allowed'
+                      : isDark
+                      ? 'border-white/10 bg-white/5 hover:bg-white/10'
+                      : 'border-black/10 bg-black/5 hover:bg-black/10'
+                  }`}
+                >
+                  წინა
+                </button>
+                <span className="text-[10px]">
+                  {currentPage} / {totalPages || 1}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                  className={`rounded-md border px-2 py-1 text-[10px] ${
+                    currentPage === totalPages || totalPages === 0
+                      ? 'opacity-50 cursor-not-allowed'
+                      : isDark
+                      ? 'border-white/10 bg-white/5 hover:bg-white/10'
+                      : 'border-black/10 bg-black/5 hover:bg-black/10'
+                  }`}
+                >
+                  შემდეგი
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* General Modal */}
+      <Modal
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig({ ...modalConfig, isOpen: false })}
+        type={modalConfig.type}
+        message={modalConfig.message}
+        onConfirm={modalConfig.onConfirm}
+        showCancel={modalConfig.type === 'confirm'}
+        confirmText={modalConfig.type === 'confirm' ? 'დიახ' : 'კარგი'}
+        cancelText="გაუქმება"
+      />
     </div>
   )
 }
