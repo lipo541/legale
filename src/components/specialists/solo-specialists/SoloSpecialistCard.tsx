@@ -2,7 +2,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Mail, Phone, UserCircle } from 'lucide-react';
 import { useParams } from 'next/navigation';
@@ -56,11 +55,9 @@ export default function SoloSpecialistCard({ specialist, viewMode = 'grid' }: So
                 : 'border-black/10 bg-gradient-to-br from-gray-100 to-gray-50'
             }`}>
               {specialist.avatar_url ? (
-                <Image 
+                <img 
                   src={specialist.avatar_url} 
                   alt={specialist.full_name}
-                  width={64}
-                  height={64}
                   className="h-full w-full object-cover"
                   loading="lazy"
                 />
@@ -184,11 +181,9 @@ export default function SoloSpecialistCard({ specialist, viewMode = 'grid' }: So
               : 'border-black/10 bg-gradient-to-br from-gray-100 to-gray-50'
           }`}>
             {specialist.avatar_url ? (
-              <Image 
+              <img 
                 src={specialist.avatar_url} 
                 alt={specialist.full_name}
-                width={80}
-                height={80}
                 className="h-full w-full object-cover"
                 loading="lazy"
               />
