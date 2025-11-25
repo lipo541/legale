@@ -22,7 +22,8 @@ import {
   Clock,
   XCircle,
   Languages,
-  MapPin
+  MapPin,
+  Smartphone
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import ServicesField from '@/components/common/ServicesField'
@@ -56,6 +57,7 @@ interface SpecialistProfile {
   company_name?: string | null
   company_is_blocked?: boolean
   is_blocked: boolean | null
+  info_activate: boolean | null
   blocked_by: string | null
   blocked_at: string | null
   block_reason: string | null
@@ -91,6 +93,7 @@ export default function SpecialistsPage() {
   const [uploadingPhotoId, setUploadingPhotoId] = useState<string | null>(null)
   const [blockingId, setBlockingId] = useState<string | null>(null)
   const [changingVerificationId, setChangingVerificationId] = useState<string | null>(null)
+  const [togglingInfoActivateId, setTogglingInfoActivateId] = useState<string | null>(null)
   const [changingCompanyId, setChangingCompanyId] = useState<string | null>(null)
   const [convertingToSoloId, setConvertingToSoloId] = useState<string | null>(null)
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('')
@@ -115,7 +118,7 @@ export default function SpecialistsPage() {
           bio, philosophy, languages, focus_areas, representative_matters, 
           teaching_writing_speaking, credentials_memberships, values_how_we_work, 
           verification_status, company_id, company_slug, is_blocked, blocked_by, 
-          blocked_at, block_reason, created_at, updated_at,
+          blocked_at, block_reason, created_at, updated_at, info_activate,
           company:company_id(full_name, is_blocked)
         `)
         .eq('role', 'SPECIALIST')
@@ -430,6 +433,39 @@ export default function SpecialistsPage() {
       ...editForm,
       values_how_we_work: { ...editForm.values_how_we_work, [key]: value }
     })
+  }
+
+  const handleToggleInfoActivate = async (specialist: SpecialistProfile) => {
+    const newStatus = !specialist.info_activate
+    const statusText = newStatus ? 'ჩართვა' : 'გამორთვა'
+    
+    if (!confirm(`დარწმუნებული ხართ რომ გსურთ ${specialist.full_name}-ის საკონტაქტო ინფორმაციის ${statusText}?\n\n${newStatus ? 'ჩაირთვება რეალური email, ტელეფონი და სოციალური ლინკები.' : 'გამოჩნდება სტატიკური საკონტაქტო ინფო და დაიმალება სოციალური ლინკები.'}`)) {
+      return
+    }
+
+    setTogglingInfoActivateId(specialist.id)
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          info_activate: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', specialist.id)
+
+      if (error) {
+        console.error('Info activate toggle error:', error)
+        alert('შეცდომა სტატუსის შეცვლისას')
+      } else {
+        await fetchSpecialists()
+      }
+    } catch (err) {
+      console.error('Info activate toggle error:', err)
+      alert('შეცდომა სტატუსის შეცვლისას')
+    } finally {
+      setTogglingInfoActivateId(null)
+    }
   }
 
   const handleToggleBlock = async (specialist: SpecialistProfile) => {
@@ -923,6 +959,28 @@ export default function SpecialistsPage() {
                             </div>
                           )}
                         </div>
+
+                        {/* Info Activate Toggle Button */}
+                        <button
+                          onClick={() => handleToggleInfoActivate(specialist)}
+                          disabled={togglingInfoActivateId === specialist.id}
+                          className={`rounded-lg p-2 transition-colors ${
+                            specialist.info_activate
+                              ? isDark ? 'bg-emerald-500/20' : 'bg-emerald-500/10'
+                              : isDark ? 'bg-gray-500/20' : 'bg-gray-500/10'
+                          } ${isDark ? 'hover:bg-white/10' : 'hover:bg-black/5'}`}
+                          title={specialist.info_activate ? 'საკონტაქტო ინფო ჩართულია - დააჭირეთ გამოსართავად' : 'საკონტაქტო ინფო გამორთულია - დააჭირეთ ჩასართავად'}
+                        >
+                          {togglingInfoActivateId === specialist.id ? (
+                            <Loader2 className={`h-4 w-4 animate-spin ${isDark ? 'text-white/60' : 'text-black/60'}`} />
+                          ) : (
+                            <Smartphone className={`h-4 w-4 ${
+                              specialist.info_activate 
+                                ? isDark ? 'text-emerald-400' : 'text-emerald-600'
+                                : isDark ? 'text-gray-400' : 'text-gray-500'
+                            }`} />
+                          )}
+                        </button>
 
                         {/* Convert to Solo Specialist Button */}
                         <button

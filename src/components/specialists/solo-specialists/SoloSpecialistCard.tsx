@@ -14,6 +14,9 @@ interface SoloSpecialist {
   slug?: string;
   bio: string | null;
   avatar_url?: string | null;
+  email?: string | null;
+  phone_number?: string | null;
+  info_activate?: boolean;
 }
 
 interface SoloSpecialistCardProps {
@@ -28,9 +31,13 @@ export default function SoloSpecialistCard({ specialist, viewMode = 'grid' }: So
   const locale = params?.locale || 'ka';
   const t = specialistsTranslations[locale as keyof typeof specialistsTranslations] || specialistsTranslations.ka;
 
-  // Static contact info - same for all specialists
-  const COMPANY_EMAIL = 'contact@legalsandbox.ge';
-  const COMPANY_PHONE = '+995 551 911 961';
+  // Static contact info - shown when info_activate is false
+  const STATIC_EMAIL = 'info.01199@gmail.com';
+  const STATIC_PHONE = '+995551911961';
+
+  // Determine which contact info to show based on info_activate
+  const displayEmail = specialist?.info_activate ? (specialist.email || STATIC_EMAIL) : STATIC_EMAIL;
+  const displayPhone = specialist?.info_activate ? (specialist.phone_number || STATIC_PHONE) : STATIC_PHONE;
 
   if (!specialist) return null;
 
@@ -104,13 +111,13 @@ export default function SoloSpecialistCard({ specialist, viewMode = 'grid' }: So
                 <div className="flex items-center gap-1.5">
                   <Mail size={12} strokeWidth={2} className={isDark ? 'text-white/50' : 'text-black/50'} />
                   <span className={`text-xs ${isDark ? 'text-white/70' : 'text-black/70'}`}>
-                    {COMPANY_EMAIL}
+                    {displayEmail}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Phone size={12} strokeWidth={2} className={isDark ? 'text-white/50' : 'text-black/50'} />
                   <span className={`text-xs ${isDark ? 'text-white/70' : 'text-black/70'}`}>
-                    {COMPANY_PHONE}
+                    {displayPhone}
                   </span>
                 </div>
               </div>
@@ -232,13 +239,13 @@ export default function SoloSpecialistCard({ specialist, viewMode = 'grid' }: So
               className={isDark ? 'text-white/50' : 'text-black/50'}
             />
             <a 
-              href={`mailto:${COMPANY_EMAIL}`}
+              href={`mailto:${displayEmail}`}
               className={`text-sm transition-colors hover:underline ${
                 isDark ? 'text-white/70 hover:text-white/90' : 'text-black/70 hover:text-black/90'
               }`}
               title="Send email"
             >
-              {COMPANY_EMAIL}
+              {displayEmail}
             </a>
           </div>
 
@@ -250,13 +257,13 @@ export default function SoloSpecialistCard({ specialist, viewMode = 'grid' }: So
               className={isDark ? 'text-white/50' : 'text-black/50'}
             />
             <a
-              href={`tel:${COMPANY_PHONE.replace(/\s/g, '')}`}
+              href={`tel:${displayPhone.replace(/\s/g, '')}`}
               className={`text-xs font-medium transition-colors hover:underline ${
                 isDark ? 'text-white/70 hover:text-white/90' : 'text-black/70 hover:text-black/90'
               }`}
               title="Call phone"
             >
-              {COMPANY_PHONE}
+              {displayPhone}
             </a>
           </div>
         </div>

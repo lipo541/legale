@@ -15,9 +15,12 @@ interface CompanySpecialist {
   company_slug?: string;
   company_email?: string | null;
   company_phone?: string | null;
+  email?: string | null;
+  phone_number?: string | null;
   slug?: string;
   bio: string | null;
   avatar_url?: string | null;
+  info_activate?: boolean;
 }
 
 interface CompanySpecialistCardProps {
@@ -38,9 +41,19 @@ export default function CompanySpecialistCard({ specialist, viewMode = 'grid' }:
     return phone.replace(/[^0-9+\s-]/g, '');
   };
 
-  // Use company contact info from database, fallback to generic if not available
-  const companyEmail = specialist?.company_email || 'info@legal.ge';
-  const companyPhone = cleanPhone(specialist?.company_phone) || '+995 32 2 00 00 00';
+  // Static contact info - shown when info_activate is false
+  const STATIC_EMAIL = 'info.01199@gmail.com';
+  const STATIC_PHONE = '+995551911961';
+
+  // Determine which contact info to show based on info_activate
+  // When info_activate is true, show specialist's real email/phone (fallback to company info)
+  // When info_activate is false, show static info
+  const displayEmail = specialist?.info_activate 
+    ? (specialist.email || specialist.company_email || STATIC_EMAIL) 
+    : STATIC_EMAIL;
+  const displayPhone = specialist?.info_activate 
+    ? cleanPhone(specialist.phone_number || specialist.company_phone) || STATIC_PHONE 
+    : STATIC_PHONE;
 
   if (!specialist) return null;
 
@@ -131,13 +144,13 @@ export default function CompanySpecialistCard({ specialist, viewMode = 'grid' }:
                 <div className="flex items-center gap-1.5">
                   <Mail size={12} strokeWidth={2} className={isDark ? 'text-white/50' : 'text-black/50'} />
                   <span className={`text-xs ${isDark ? 'text-white/70' : 'text-black/70'}`}>
-                    {companyEmail}
+                    {displayEmail}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Phone size={12} strokeWidth={2} className={isDark ? 'text-white/50' : 'text-black/50'} />
                   <span className={`text-xs ${isDark ? 'text-white/70' : 'text-black/70'}`}>
-                    {companyPhone}
+                    {displayPhone}
                   </span>
                 </div>
               </div>
@@ -276,13 +289,13 @@ export default function CompanySpecialistCard({ specialist, viewMode = 'grid' }:
               className={isDark ? 'text-white/50' : 'text-black/50'}
             />
             <a 
-              href={`mailto:${companyEmail}`}
+              href={`mailto:${displayEmail}`}
               className={`text-xs transition-colors hover:underline ${
                 isDark ? 'text-white/70 hover:text-white/90' : 'text-black/70 hover:text-black/90'
               }`}
               title="Send email"
             >
-              {companyEmail}
+              {displayEmail}
             </a>
           </div>
 
@@ -294,13 +307,13 @@ export default function CompanySpecialistCard({ specialist, viewMode = 'grid' }:
               className={isDark ? 'text-white/50' : 'text-black/50'}
             />
             <a
-              href={`tel:${companyPhone.replace(/\s/g, '')}`}
+              href={`tel:${displayPhone.replace(/\s/g, '')}`}
               className={`text-xs font-medium transition-colors hover:underline ${
                 isDark ? 'text-white/70 hover:text-white/90' : 'text-black/70 hover:text-black/90'
               }`}
               title="Call phone"
             >
-              {companyPhone}
+              {displayPhone}
             </a>
           </div>
         </div>

@@ -18,6 +18,9 @@ interface SoloSpecialist {
   bio: string | null;
   avatar_url?: string | null;
   slug?: string;
+  email?: string | null;
+  phone_number?: string | null;
+  info_activate?: boolean;
 }
 
 interface CompanySpecialist {
@@ -28,9 +31,12 @@ interface CompanySpecialist {
   company_slug?: string;
   company_email?: string | null;
   company_phone?: string | null;
+  email?: string | null;
+  phone_number?: string | null;
   bio: string | null;
   avatar_url?: string | null;
   slug?: string;
+  info_activate?: boolean;
 }
 
 export default function SpecialistsPage() {
@@ -201,7 +207,7 @@ export default function SpecialistsPage() {
       if (!selectedSpecialistType || selectedSpecialistType === 'solo') {
         let soloQuery = supabase
           .from('profiles')
-          .select('id, full_name, role_title, bio, avatar_url, slug')
+          .select('id, full_name, role_title, bio, avatar_url, slug, email, phone_number, info_activate')
           .ilike('role', '%solo%')
           .eq('verification_status', 'verified');
 
@@ -247,6 +253,9 @@ export default function SpecialistsPage() {
                 full_name: translation?.full_name || specialist.full_name,
                 role_title: translation?.role_title || specialist.role_title,
                 bio: translation?.bio || specialist.bio,
+                email: specialist.email,
+                phone_number: specialist.phone_number,
+                info_activate: specialist.info_activate,
               };
             });
 
@@ -263,7 +272,7 @@ export default function SpecialistsPage() {
       if (!selectedSpecialistType || selectedSpecialistType === 'company') {
         let companyQuery = supabase
           .from('profiles')
-          .select('id, full_name, role_title, bio, avatar_url, company_id, slug')
+          .select('id, full_name, role_title, bio, avatar_url, company_id, slug, email, phone_number, info_activate')
           .eq('role', 'SPECIALIST')
           .not('company_id', 'is', null)
           .eq('verification_status', 'verified');
@@ -311,7 +320,7 @@ export default function SpecialistsPage() {
               ]) || []
             );
             
-            const mappedData = companyData.map((s: { id: string; full_name: string; role_title: string; bio: string; company_id: string; photo_url?: string; email?: string; phone_number?: string; avatar_url?: string; slug?: string }) => {
+            const mappedData = companyData.map((s: { id: string; full_name: string; role_title: string; bio: string; company_id: string; photo_url?: string; email?: string; phone_number?: string; avatar_url?: string; slug?: string; info_activate?: boolean }) => {
               const companyInfo = companyMap.get(s.company_id);
               const translation = translationMap.get(s.id);
               return {
@@ -325,7 +334,10 @@ export default function SpecialistsPage() {
                 company_slug: companyInfo?.slug,
                 company_email: companyInfo?.email,
                 company_phone: companyInfo?.phone,
-                slug: translation?.slug || s.slug
+                slug: translation?.slug || s.slug,
+                email: s.email,
+                phone_number: s.phone_number,
+                info_activate: s.info_activate,
               };
             });
             

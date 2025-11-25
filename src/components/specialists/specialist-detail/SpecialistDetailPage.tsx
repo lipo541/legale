@@ -48,6 +48,11 @@ interface Specialist {
   role: string
   company_id: string | null
   verification_status: string
+  info_activate?: boolean
+  facebook_link?: string | null
+  linkedin_link?: string | null
+  twitter_link?: string | null
+  instagram_link?: string | null
   specialist_translations: SpecialistTranslation[]
   company?: {
     full_name: string
@@ -423,44 +428,99 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
             )}
 
             {/* Contact Info - Minimal */}
-            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 mt-8">
-              {specialist.email && (
-                <a
-                  href={`mailto:${specialist.email}`}
-                  className={`flex items-center gap-2 text-sm font-light transition-colors ${
-                    isDark ? 'text-white/50 hover:text-white' : 'text-black/50 hover:text-black'
-                  }`}
-                >
-                  <Mail className="h-4 w-4" />
-                  <span className="hidden sm:inline">{specialist.email}</span>
-                  <span className="sm:hidden">Email</span>
-                </a>
-              )}
-              {(specialist.phone_number || specialist.role === 'SOLO_SPECIALIST') && (
-                <a
-                  href={`tel:${specialist.role === 'SOLO_SPECIALIST' ? '+995551911961' : specialist.phone_number}`}
-                  className={`flex items-center gap-2 text-sm font-light transition-colors ${
-                    isDark ? 'text-white/50 hover:text-white' : 'text-black/50 hover:text-black'
-                  }`}
-                >
-                  <Phone className="h-4 w-4" />
-                  {specialist.role === 'SOLO_SPECIALIST' ? '+995 551 911 961' : specialist.phone_number}
-                </a>
-              )}
-              {cities.length > 0 && (
-                <div className={`flex items-center gap-2 text-sm font-light ${
-                  isDark ? 'text-white/50' : 'text-black/50'
-                }`}>
-                  <MapPin className="h-4 w-4" />
-                  {cities.map((city, index) => (
-                    <span key={city.id}>
-                      {locale === 'ka' ? city.name_ka : locale === 'en' ? city.name_en : city.name_ru}
-                      {index < cities.length - 1 && ', '}
-                    </span>
-                  ))}
+            {/* Static contact info when info_activate is false */}
+            {(() => {
+              const STATIC_EMAIL = 'info.01199@gmail.com';
+              const STATIC_PHONE = '+995551911961';
+              const displayEmail = specialist.info_activate ? specialist.email : STATIC_EMAIL;
+              const displayPhone = specialist.info_activate ? specialist.phone_number : STATIC_PHONE;
+              
+              return (
+                <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 mt-8">
+                  {displayEmail && (
+                    <a
+                      href={`mailto:${displayEmail}`}
+                      className={`flex items-center gap-2 text-sm font-light transition-colors ${
+                        isDark ? 'text-white/50 hover:text-white' : 'text-black/50 hover:text-black'
+                      }`}
+                    >
+                      <Mail className="h-4 w-4" />
+                      <span className="hidden sm:inline">{displayEmail}</span>
+                      <span className="sm:hidden">Email</span>
+                    </a>
+                  )}
+                  {displayPhone && (
+                    <a
+                      href={`tel:${displayPhone.replace(/\s/g, '')}`}
+                      className={`flex items-center gap-2 text-sm font-light transition-colors ${
+                        isDark ? 'text-white/50 hover:text-white' : 'text-black/50 hover:text-black'
+                      }`}
+                    >
+                      <Phone className="h-4 w-4" />
+                      {displayPhone}
+                    </a>
+                  )}
+                  {cities.length > 0 && (
+                    <div className={`flex items-center gap-2 text-sm font-light ${
+                      isDark ? 'text-white/50' : 'text-black/50'
+                    }`}>
+                      <MapPin className="h-4 w-4" />
+                      {cities.map((city, index) => (
+                        <span key={city.id}>
+                          {locale === 'ka' ? city.name_ka : locale === 'en' ? city.name_en : city.name_ru}
+                          {index < cities.length - 1 && ', '}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              );
+            })()}
+
+            {/* Social Links - Only show when info_activate is true */}
+            {specialist.info_activate && (specialist.facebook_link || specialist.linkedin_link || specialist.twitter_link || specialist.instagram_link) && (
+              <div className="flex flex-wrap items-center justify-center gap-3 mt-4">
+                {specialist.facebook_link && (
+                  <a
+                    href={specialist.facebook_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`p-2 rounded-full transition-colors ${
+                      isDark ? 'hover:bg-white/10' : 'hover:bg-black/10'
+                    }`}
+                    title="Facebook"
+                  >
+                    <Facebook className={`h-5 w-5 ${isDark ? 'text-white/50 hover:text-white' : 'text-black/50 hover:text-black'}`} />
+                  </a>
+                )}
+                {specialist.linkedin_link && (
+                  <a
+                    href={specialist.linkedin_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`p-2 rounded-full transition-colors ${
+                      isDark ? 'hover:bg-white/10' : 'hover:bg-black/10'
+                    }`}
+                    title="LinkedIn"
+                  >
+                    <Linkedin className={`h-5 w-5 ${isDark ? 'text-white/50 hover:text-white' : 'text-black/50 hover:text-black'}`} />
+                  </a>
+                )}
+                {specialist.twitter_link && (
+                  <a
+                    href={specialist.twitter_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`p-2 rounded-full transition-colors ${
+                      isDark ? 'hover:bg-white/10' : 'hover:bg-black/10'
+                    }`}
+                    title="Twitter"
+                  >
+                    <Twitter className={`h-5 w-5 ${isDark ? 'text-white/50 hover:text-white' : 'text-black/50 hover:text-black'}`} />
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
