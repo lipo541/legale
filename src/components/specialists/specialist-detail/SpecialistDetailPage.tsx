@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useTheme } from '@/contexts/ThemeContext'
 import { specialistDetailTranslations } from '@/translations/specialist-detail'
@@ -57,8 +58,15 @@ interface Specialist {
     services: {
       service_translations: Array<{
         title: string
+        slug: string
         language: string
       }>
+      practices: {
+        practice_translations: Array<{
+          slug: string
+          language: string
+        }>
+      }
     }
   }>
 }
@@ -208,9 +216,17 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
           .select(`
             service_id,
             services (
+              practice_id,
               service_translations (
                 title,
+                slug,
                 language
+              ),
+              practices (
+                practice_translations (
+                  slug,
+                  language
+                )
               )
             )
           `)
@@ -577,18 +593,26 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
                 {specialist.services.map((service) => {
                   const serviceTranslation = service.services?.service_translations?.find(t => t.language === locale) ||
                                             service.services?.service_translations?.[0]
-                  return serviceTranslation ? (
-                    <span
+                  const practiceTranslation = service.services?.practices?.practice_translations?.find(t => t.language === locale) ||
+                                              service.services?.practices?.practice_translations?.[0]
+                  
+                  if (!serviceTranslation || !practiceTranslation) return null
+                  
+                  const serviceUrl = `/${locale}/practices/${practiceTranslation.slug}/${serviceTranslation.slug}`
+                  
+                  return (
+                    <Link
                       key={service.service_id}
-                      className={`px-4 py-2 rounded-full text-sm font-light border ${
+                      href={serviceUrl}
+                      className={`px-4 py-2 rounded-full text-sm font-light border transition-colors ${
                         isDark 
-                          ? 'border-white/10 bg-white/5' 
-                          : 'border-black/10 bg-black/5'
+                          ? 'border-white/10 bg-white/5 hover:bg-white/10' 
+                          : 'border-black/10 bg-black/5 hover:bg-black/10'
                       }`}
                     >
                       {serviceTranslation.title}
-                    </span>
-                  ) : null
+                    </Link>
+                  )
                 })}
               </div>
             </div>
