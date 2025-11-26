@@ -25,7 +25,12 @@ import {
   RefreshCw,
   SlidersHorizontal,
   Globe,
-  ExternalLink
+  ExternalLink,
+  BarChart3,
+  FileCheck,
+  FileEdit,
+  Languages,
+  Filter
 } from 'lucide-react'
 
 // ============================================================================
@@ -80,18 +85,25 @@ type SortOrder = 'asc' | 'desc'
 const StatsCard = memo(function StatsCard({ 
   label, 
   value, 
-  isDark 
+  isDark,
+  icon: Icon
 }: { 
   label: string
   value: number
-  isDark: boolean 
+  isDark: boolean
+  icon?: React.ComponentType<{ className?: string }>
 }) {
   return (
     <div className={`rounded-lg border p-3 ${
       isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/5'
     }`}>
-      <div className={`text-xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
-        {value}
+      <div className="flex items-center justify-between">
+        <div className={`text-xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+          {value}
+        </div>
+        {Icon && (
+          <Icon className={`h-4 w-4 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
+        )}
       </div>
       <div className={`text-[10px] ${isDark ? 'text-white/60' : 'text-black/60'}`}>
         {label}
@@ -546,37 +558,60 @@ export default function ServicesPage() {
   }
 
   return (
-    <div className={`min-h-screen p-4 transition-colors ${isDark ? 'bg-black text-white' : 'bg-white text-black'}`}>
+    <div className={`min-h-screen px-4 sm:px-6 lg:px-8 py-4 transition-colors ${isDark ? 'bg-black text-white' : 'bg-white text-black'}`}>
       <div className="mx-auto max-w-[1600px]">
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
-              სერვისების მართვა
-            </h1>
-            <p className={`mt-1 text-[10px] ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-              სრული კონტროლი ყველა სერვისზე
-            </p>
+          <div className="flex items-center gap-3">
+            {/* Gradient Icon */}
+            <div className="relative">
+              <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+                isDark 
+                  ? 'bg-gradient-to-br from-emerald-500/20 to-blue-500/20' 
+                  : 'bg-gradient-to-br from-emerald-500/10 to-blue-500/10'
+              }`}>
+                <Layers className="h-5 w-5 text-emerald-500" />
+              </div>
+              {/* Pulsating indicator */}
+              {stats.draft > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-yellow-400 opacity-75"></span>
+                  <span className="relative inline-flex h-3 w-3 items-center justify-center rounded-full bg-yellow-500 text-[7px] font-bold text-black">
+                    {stats.draft > 9 ? '9+' : stats.draft}
+                  </span>
+                </span>
+              )}
+            </div>
+            <div>
+              <h1 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+                სერვისების მართვა
+              </h1>
+              <p className={`text-[10px] ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                სრული კონტროლი ყველა სერვისზე
+              </p>
+            </div>
           </div>
           
           <button
             onClick={() => setShowAddForm(true)}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
-              isDark ? 'bg-white text-black hover:bg-white/90' : 'bg-black text-white hover:bg-black/90'
+            className={`group flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
+              isDark 
+                ? 'bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-105' 
+                : 'bg-gradient-to-r from-emerald-600 to-blue-600 text-white shadow-lg shadow-emerald-600/25 hover:shadow-emerald-600/40 hover:scale-105'
             }`}
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="h-3.5 w-3.5 transition-transform group-hover:rotate-90" />
             ახალი სერვისი
           </button>
         </div>
 
         {/* Stats */}
         <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-5">
-          <StatsCard label="სულ სერვისი" value={stats.total} isDark={isDark} />
-          <StatsCard label="Published" value={stats.published} isDark={isDark} />
-          <StatsCard label="Draft" value={stats.draft} isDark={isDark} />
-          <StatsCard label="თარგმანი საჭირო" value={stats.needsTranslation} isDark={isDark} />
-          <StatsCard label="ნაპოვნი" value={stats.filtered} isDark={isDark} />
+          <StatsCard label="სულ სერვისი" value={stats.total} isDark={isDark} icon={BarChart3} />
+          <StatsCard label="Published" value={stats.published} isDark={isDark} icon={FileCheck} />
+          <StatsCard label="Draft" value={stats.draft} isDark={isDark} icon={FileEdit} />
+          <StatsCard label="თარგმანი საჭირო" value={stats.needsTranslation} isDark={isDark} icon={Languages} />
+          <StatsCard label="ნაპოვნი" value={stats.filtered} isDark={isDark} icon={Filter} />
         </div>
 
         {/* Filters Toggle */}
@@ -618,38 +653,44 @@ export default function ServicesPage() {
               </div>
 
               {/* Practice Filter */}
-              <div>
+              <div className="relative">
                 <select
                   value={practiceFilter}
                   onChange={(e) => setPracticeFilter(e.target.value)}
-                  className={`w-full rounded-lg border px-2 py-1.5 text-[10px] transition-colors ${
-                    isDark ? 'border-white/10 bg-white/5 text-white' : 'border-black/10 bg-black/5 text-black'
+                  className={`w-full appearance-none rounded-lg border py-1.5 pl-2 pr-7 text-[10px] transition-all cursor-pointer ${
+                    isDark 
+                      ? 'border-white/10 bg-white/5 text-white hover:border-white/20 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20' 
+                      : 'border-black/10 bg-black/5 text-black hover:border-black/20 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20'
                   }`}
                   style={isDark ? { colorScheme: 'dark' } : {}}
                 >
-                  <option value="ALL" style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>ყველა პრაქტიკა</option>
+                  <option value="ALL" style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>📁 ყველა პრაქტიკა</option>
                   {practices.map(practice => (
                     <option key={practice.id} value={practice.id} style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>
-                      {practice.title}
+                      📂 {practice.title}
                     </option>
                   ))}
                 </select>
+                <ChevronDown className={`pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
               </div>
 
               {/* Status Filter */}
-              <div>
+              <div className="relative">
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-                  className={`w-full rounded-lg border px-2 py-1.5 text-[10px] transition-colors ${
-                    isDark ? 'border-white/10 bg-white/5 text-white' : 'border-black/10 bg-black/5 text-black'
+                  className={`w-full appearance-none rounded-lg border py-1.5 pl-2 pr-7 text-[10px] transition-all cursor-pointer ${
+                    isDark 
+                      ? 'border-white/10 bg-white/5 text-white hover:border-white/20 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20' 
+                      : 'border-black/10 bg-black/5 text-black hover:border-black/20 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20'
                   }`}
                   style={isDark ? { colorScheme: 'dark' } : {}}
                 >
-                  <option value="ALL" style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>ყველა სტატუსი</option>
-                  <option value="published" style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>Published</option>
-                  <option value="draft" style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>Draft</option>
+                  <option value="ALL" style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>📊 ყველა სტატუსი</option>
+                  <option value="published" style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>✅ Published</option>
+                  <option value="draft" style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>📝 Draft</option>
                 </select>
+                <ChevronDown className={`pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
               </div>
 
               {/* Date From */}
@@ -1018,22 +1059,27 @@ export default function ServicesPage() {
             }`}>
               <div className="flex items-center gap-2">
                 <span className="text-[10px]">თითო გვერდზე:</span>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value))
-                    setCurrentPage(1)
-                  }}
-                  className={`rounded-md border px-2 py-1 text-[10px] ${
-                    isDark ? 'border-white/10 bg-white/5 text-white' : 'border-black/10 bg-black/5 text-black'
-                  }`}
-                  style={isDark ? { colorScheme: 'dark' } : {}}
-                >
-                  <option value={10} style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>10</option>
-                  <option value={25} style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>25</option>
-                  <option value={50} style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>50</option>
-                  <option value={100} style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>100</option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value))
+                      setCurrentPage(1)
+                    }}
+                    className={`appearance-none rounded-md border py-1 pl-2 pr-6 text-[10px] cursor-pointer ${
+                      isDark 
+                        ? 'border-white/10 bg-white/5 text-white hover:border-white/20' 
+                        : 'border-black/10 bg-black/5 text-black hover:border-black/20'
+                    }`}
+                    style={isDark ? { colorScheme: 'dark' } : {}}
+                  >
+                    <option value={10} style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>10</option>
+                    <option value={25} style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>25</option>
+                    <option value={50} style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>50</option>
+                    <option value={100} style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>100</option>
+                  </select>
+                  <ChevronDown className={`pointer-events-none absolute right-1.5 top-1/2 h-2.5 w-2.5 -translate-y-1/2 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
+                </div>
               </div>
 
               <div className="flex items-center gap-2">

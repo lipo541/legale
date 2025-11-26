@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import type { Locale } from '@/lib/i18n/config'
-import { Shield, Loader2 } from 'lucide-react'
+import { Cookie, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 interface Section {
@@ -12,11 +12,11 @@ interface Section {
   content: string
 }
 
-interface PrivacyContentProps {
+interface CookiesContentProps {
   locale: Locale
 }
 
-export default function PrivacyContent({ locale }: PrivacyContentProps) {
+export default function CookiesContent({ locale }: CookiesContentProps) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
   const supabase = createClient()
@@ -32,11 +32,11 @@ export default function PrivacyContent({ locale }: PrivacyContentProps) {
     const fetchContent = async () => {
       setLoading(true)
       
-      // Get privacy page
+      // Get cookies page
       const { data: pageData } = await supabase
         .from('legal_pages')
         .select('id, updated_at')
-        .eq('page_type', 'privacy')
+        .eq('page_type', 'cookies')
         .single()
 
       if (pageData) {
@@ -95,7 +95,7 @@ export default function PrivacyContent({ locale }: PrivacyContentProps) {
           <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border mb-6 ${
             isDark ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/10'
           }`}>
-            <Shield className={`w-3.5 h-3.5 ${isDark ? 'text-white/70' : 'text-black/70'}`} />
+            <Cookie className={`w-3.5 h-3.5 ${isDark ? 'text-white/70' : 'text-black/70'}`} />
             <span className={`text-xs font-medium ${isDark ? 'text-white/70' : 'text-black/70'}`}>
               {labels[locale].lastUpdated}: {formatDate(lastUpdated)}
             </span>

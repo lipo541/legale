@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
-import { X, Users, Eye, Clock, Mail } from 'lucide-react'
+import { X, Users, Eye, Clock, Mail, Loader2, TrendingUp } from 'lucide-react'
 import { getMessageReadStats } from '@/lib/actions/messages'
 import { MessageReadStat } from '@/lib/types'
 
@@ -42,166 +42,159 @@ export default function ReadStatsModal({ messageId, messageTitle, onClose }: Rea
 
   const getRoleLabel = (role: string) => {
     const roleLabels: Record<string, string> = {
-      'USER': 'მომხმარებელი',
-      'AUTHOR': 'ავტორი',
-      'SPECIALIST': 'სპეციალისტი',
-      'SOLO_SPECIALIST': 'სოლო სპეციალისტი',
-      'COMPANY': 'კომპანია',
-      'MODERATOR': 'მოდერატორი'
+      'USER': 'User',
+      'AUTHOR': 'Author',
+      'SPECIALIST': 'Specialist',
+      'SOLO_SPECIALIST': 'Solo Spec',
+      'COMPANY': 'Company',
+      'MODERATOR': 'Moderator'
     }
     return roleLabels[role] || role
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div
-        className={`w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl ${
-          isDark ? 'bg-gray-900 text-white' : 'bg-white text-black'
-        }`}
-      >
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm">
+      <div className={`w-full max-w-lg max-h-[95vh] sm:max-h-[85vh] overflow-hidden rounded-xl shadow-2xl flex flex-col ${
+        isDark ? 'bg-zinc-900' : 'bg-white'
+      }`}>
         {/* Header */}
-        <div className={`sticky top-0 z-10 flex items-center justify-between p-6 border-b ${
-          isDark ? 'bg-gray-900 border-white/10' : 'bg-white border-black/10'
+        <div className={`flex items-center justify-between px-4 py-3 border-b flex-shrink-0 ${
+          isDark ? 'border-white/10' : 'border-black/10'
         }`}>
-          <div>
-            <h2 className="text-2xl font-bold">წაკითხვის სტატისტიკა</h2>
-            <p className={`text-sm mt-1 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+          <div className="min-w-0 flex-1 pr-2">
+            <h2 className={`text-sm font-bold truncate ${isDark ? 'text-white' : 'text-black'}`}>
+              სტატისტიკა
+            </h2>
+            <p className={`text-[10px] truncate ${isDark ? 'text-white/50' : 'text-black/50'}`}>
               {messageTitle}
             </p>
           </div>
           <button
             onClick={onClose}
-            className={`p-2 rounded-lg transition-colors ${
-              isDark ? 'hover:bg-white/10' : 'hover:bg-black/10'
+            className={`p-1.5 rounded-lg transition-colors flex-shrink-0 ${
+              isDark ? 'hover:bg-white/10 text-white/60' : 'hover:bg-black/10 text-black/60'
             }`}
           >
-            <X className="w-6 h-6" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4">
           {loading ? (
-            <div className="text-center py-12">
-              <div className="inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-              <p className={`mt-4 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-                იტვირთება...
-              </p>
+            <div className="flex flex-col items-center justify-center py-12">
+              <Loader2 className={`h-6 w-6 animate-spin mb-2 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
+              <span className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>იტვირთება...</span>
             </div>
           ) : stats ? (
-            <>
-              {/* Stats Overview */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className={`p-4 rounded-lg ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 rounded-lg bg-blue-500/20">
-                      <Eye className="w-6 h-6 text-blue-500" />
-                    </div>
-                    <div>
-                      <p className={`text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-                        წაკითხული
-                      </p>
-                      <p className="text-2xl font-bold">{stats.read_count}</p>
-                    </div>
+            <div className="space-y-4">
+              {/* Stats Cards */}
+              <div className="grid grid-cols-3 gap-2">
+                <div className={`p-3 rounded-lg text-center ${isDark ? 'bg-blue-500/10' : 'bg-blue-50'}`}>
+                  <Eye className="h-4 w-4 mx-auto mb-1 text-blue-500" />
+                  <div className={`text-lg font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+                    {stats.read_count}
+                  </div>
+                  <div className={`text-[9px] ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+                    წაკითხული
                   </div>
                 </div>
 
-                <div className={`p-4 rounded-lg ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 rounded-lg bg-green-500/20">
-                      <Users className="w-6 h-6 text-green-500" />
-                    </div>
-                    <div>
-                      <p className={`text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-                        სულ მომხმარებელი
-                      </p>
-                      <p className="text-2xl font-bold">{stats.target_count}</p>
-                    </div>
+                <div className={`p-3 rounded-lg text-center ${isDark ? 'bg-green-500/10' : 'bg-green-50'}`}>
+                  <Users className="h-4 w-4 mx-auto mb-1 text-green-500" />
+                  <div className={`text-lg font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+                    {stats.target_count}
+                  </div>
+                  <div className={`text-[9px] ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+                    სულ
                   </div>
                 </div>
 
-                <div className={`p-4 rounded-lg ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 rounded-lg bg-purple-500/20">
-                      <Clock className="w-6 h-6 text-purple-500" />
-                    </div>
-                    <div>
-                      <p className={`text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-                        წაკითხვის პროცენტი
-                      </p>
-                      <p className="text-2xl font-bold">{getReadPercentage()}%</p>
-                    </div>
+                <div className={`p-3 rounded-lg text-center ${isDark ? 'bg-purple-500/10' : 'bg-purple-50'}`}>
+                  <TrendingUp className="h-4 w-4 mx-auto mb-1 text-purple-500" />
+                  <div className={`text-lg font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+                    {getReadPercentage()}%
+                  </div>
+                  <div className={`text-[9px] ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+                    პროცენტი
                   </div>
                 </div>
               </div>
 
               {/* Progress Bar */}
               <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span>{stats.read_count} / {stats.target_count} მომხმარებელი</span>
-                  <span>{getReadPercentage()}%</span>
+                <div className="flex justify-between text-[10px] mb-1">
+                  <span className={isDark ? 'text-white/60' : 'text-black/60'}>
+                    {stats.read_count} / {stats.target_count}
+                  </span>
+                  <span className={isDark ? 'text-white/60' : 'text-black/60'}>
+                    {getReadPercentage()}%
+                  </span>
                 </div>
-                <div className={`h-3 rounded-full overflow-hidden ${isDark ? 'bg-white/10' : 'bg-black/10'}`}>
+                <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-white/10' : 'bg-black/10'}`}>
                   <div
-                    className="h-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-500"
+                    className="h-full bg-gradient-to-r from-emerald-500 to-blue-500 transition-all duration-500"
                     style={{ width: `${getReadPercentage()}%` }}
-                  ></div>
+                  />
                 </div>
               </div>
 
               {/* Users List */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">
-                  წაკითხული მომხმარებლები ({stats.read_users.length})
+                <h3 className={`text-xs font-semibold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
+                  წაკითხული ({stats.read_users.length})
                 </h3>
                 
                 {stats.read_users.length === 0 ? (
-                  <div className={`text-center py-8 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-                    <Eye className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <p>ჯერ არავინ წაუკითხავს ეს შეტყობინება</p>
+                  <div className={`text-center py-8 ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                    <Eye className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-xs">ჯერ არავის წაუკითხავს</p>
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
                     {stats.read_users.map((user) => (
                       <div
                         key={user.user_id}
-                        className={`p-4 rounded-lg border ${
+                        className={`p-2.5 rounded-lg border ${
                           isDark
-                            ? 'bg-white/5 border-white/10 hover:bg-white/10'
-                            : 'bg-black/5 border-black/10 hover:bg-black/10'
-                        } transition-colors`}
+                            ? 'bg-white/[0.02] border-white/10'
+                            : 'bg-black/[0.02] border-black/10'
+                        }`}
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
-                                isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-500/20 text-blue-600'
-                              }`}>
-                                {user.full_name?.charAt(0)?.toUpperCase() || user.email.charAt(0).toUpperCase()}
-                              </div>
-                              <div>
-                                <p className="font-medium">
-                                  {user.full_name || 'სახელი არ არის მითითებული'}
-                                </p>
-                                <div className="flex items-center gap-2 text-sm">
-                                  <Mail className="w-3 h-3" />
-                                  <span className={isDark ? 'text-white/60' : 'text-black/60'}>
-                                    {user.email}
-                                  </span>
-                                </div>
-                              </div>
+                        <div className="flex items-center gap-2">
+                          {/* Avatar */}
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                            isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-500/20 text-emerald-600'
+                          }`}>
+                            {user.full_name?.charAt(0)?.toUpperCase() || user.email.charAt(0).toUpperCase()}
+                          </div>
+
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-[11px] font-medium truncate ${isDark ? 'text-white' : 'text-black'}`}>
+                              {user.full_name || 'N/A'}
+                            </p>
+                            <div className="flex items-center gap-1.5">
+                              <Mail className={`h-2.5 w-2.5 flex-shrink-0 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
+                              <span className={`text-[9px] truncate ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+                                {user.email}
+                              </span>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <span className={`inline-block px-2 py-1 rounded text-xs ${
-                              isDark ? 'bg-white/10' : 'bg-black/10'
+
+                          {/* Role & Time */}
+                          <div className="text-right flex-shrink-0">
+                            <span className={`inline-block px-1.5 py-0.5 rounded text-[8px] font-medium ${
+                              isDark ? 'bg-white/10 text-white/70' : 'bg-black/10 text-black/70'
                             }`}>
                               {getRoleLabel(user.role)}
                             </span>
-                            <p className={`text-xs mt-1 ${isDark ? 'text-white/50' : 'text-black/50'}`}>
-                              <Clock className="w-3 h-3 inline mr-1" />
-                              {new Date(user.read_at).toLocaleString('ka-GE')}
-                            </p>
+                            <div className={`flex items-center justify-end gap-0.5 mt-0.5 text-[8px] ${
+                              isDark ? 'text-white/40' : 'text-black/40'
+                            }`}>
+                              <Clock className="h-2 w-2" />
+                              {new Date(user.read_at).toLocaleDateString('ka-GE')}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -209,26 +202,22 @@ export default function ReadStatsModal({ messageId, messageTitle, onClose }: Rea
                   </div>
                 )}
               </div>
-            </>
+            </div>
           ) : (
-            <div className="text-center py-12">
-              <p className={isDark ? 'text-white/60' : 'text-black/60'}>
-                ვერ ჩაიტვირთა სტატისტიკა
-              </p>
+            <div className={`text-center py-12 ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+              <p className="text-xs">ვერ ჩაიტვირთა</p>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className={`sticky bottom-0 flex items-center justify-end p-6 border-t ${
-          isDark ? 'bg-gray-900 border-white/10' : 'bg-white border-black/10'
+        <div className={`flex items-center justify-end px-4 py-3 border-t flex-shrink-0 ${
+          isDark ? 'border-white/10' : 'border-black/10'
         }`}>
           <button
             onClick={onClose}
-            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-              isDark
-                ? 'bg-white/5 hover:bg-white/10'
-                : 'bg-black/5 hover:bg-black/10'
+            className={`px-4 py-2 rounded-lg text-xs font-medium transition-colors ${
+              isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-black/5 hover:bg-black/10 text-black'
             }`}
           >
             დახურვა

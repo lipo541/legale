@@ -3,16 +3,20 @@
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useTheme } from '@/contexts/ThemeContext'
-import { X, Send, AlertCircle } from 'lucide-react'
+import { X, Send, AlertCircle, Loader2 } from 'lucide-react'
 import { createGlobalMessage, updateGlobalMessage } from '@/lib/actions/messages'
 import { GlobalMessage, MessageFormData } from '@/lib/types'
 import { MessageTargetRole, MessagePriority } from '@/lib/enums'
 import { useToast } from '@/contexts/ToastContext'
 
-// Lazy load RichTextEditor for better performance
+// Lazy load RichTextEditor
 const RichTextEditor = dynamic(() => import('@/components/common/RichTextEditor'), {
   ssr: false,
-  loading: () => <div className="h-[200px] flex items-center justify-center text-sm opacity-50">იტვირთება...</div>
+  loading: () => (
+    <div className="h-[150px] flex items-center justify-center rounded-lg border border-dashed border-white/10">
+      <Loader2 className="h-5 w-5 animate-spin text-white/40" />
+    </div>
+  )
 })
 
 type MessageWithRoles = GlobalMessage & { target_roles: string[] }
@@ -52,16 +56,22 @@ export default function CreateMessageModal({ message, onClose }: CreateMessageMo
     { value: MessageTargetRole.USER, label: 'User' },
     { value: MessageTargetRole.AUTHOR, label: 'Author' },
     { value: MessageTargetRole.SPECIALIST, label: 'Specialist' },
-    { value: MessageTargetRole.SOLO_SPECIALIST, label: 'Solo Specialist' },
+    { value: MessageTargetRole.SOLO_SPECIALIST, label: 'Solo Spec' },
     { value: MessageTargetRole.COMPANY, label: 'Company' },
     { value: MessageTargetRole.MODERATOR, label: 'Moderator' }
   ]
 
   const priorities = [
-    { value: MessagePriority.LOW, label: 'დაბალი' },
-    { value: MessagePriority.NORMAL, label: 'ჩვეულებრივი' },
-    { value: MessagePriority.HIGH, label: 'მაღალი' },
-    { value: MessagePriority.URGENT, label: 'სასწრაფო' }
+    { value: MessagePriority.LOW, label: 'დაბალი', color: 'bg-gray-500' },
+    { value: MessagePriority.NORMAL, label: 'ჩვეული', color: 'bg-blue-500' },
+    { value: MessagePriority.HIGH, label: 'მაღალი', color: 'bg-orange-500' },
+    { value: MessagePriority.URGENT, label: 'სასწრაფო', color: 'bg-red-500' }
+  ]
+
+  const languages = [
+    { id: 'ka' as const, label: 'ქართული', flag: '🇬🇪' },
+    { id: 'en' as const, label: 'English', flag: '🇬🇧' },
+    { id: 'ru' as const, label: 'Русский', flag: '🇷🇺' }
   ]
 
   const handleRoleToggle = (role: string) => {
@@ -76,31 +86,22 @@ export default function CreateMessageModal({ message, onClose }: CreateMessageMo
 
   const validateForm = (): boolean => {
     const newErrors: string[] = []
+    const stripHtml = (html: string) => html.replace(/<[^>]*>/g, '').trim()
 
-    // Check titles
     if (!formData.titles.ka.trim()) newErrors.push('ქართული სათაური აუცილებელია')
     if (!formData.titles.en.trim()) newErrors.push('ინგლისური სათაური აუცილებელია')
     if (!formData.titles.ru.trim()) newErrors.push('რუსული სათაური აუცილებელია')
-
-    // Check contents - remove HTML tags to check if there's actual content
-    const stripHtml = (html: string) => html.replace(/<[^>]*>/g, '').trim()
     if (!stripHtml(formData.contents.ka)) newErrors.push('ქართული ტექსტი აუცილებელია')
     if (!stripHtml(formData.contents.en)) newErrors.push('ინგლისური ტექსტი აუცილებელია')
     if (!stripHtml(formData.contents.ru)) newErrors.push('რუსული ტექსტი აუცილებელია')
-
-    // Check target roles
-    if (formData.target_roles.size === 0) {
-      newErrors.push('მინიმუმ ერთი როლი უნდა აირჩიოთ')
-    }
+    if (formData.target_roles.size === 0) newErrors.push('მინიმუმ ერთი როლი აირჩიეთ')
 
     setErrors(newErrors)
     return newErrors.length === 0
   }
 
   const handleSubmit = async () => {
-    if (!validateForm()) {
-      return
-    }
+    if (!validateForm()) return
 
     setLoading(true)
 
@@ -126,212 +127,199 @@ export default function CreateMessageModal({ message, onClose }: CreateMessageMo
     setLoading(false)
 
     if (result.success) {
-      showToast(
-        isEditMode ? 'შეტყობინება განახლდა' : 'შეტყობინება შეიქმნა',
-        'success'
-      )
+      showToast(isEditMode ? 'განახლდა' : 'შეიქმნა', 'success')
       onClose()
     } else {
-      showToast(result.message || 'Error occurred', 'error')
+      showToast(result.message || 'შეცდომა', 'error')
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div
-        className={`w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl ${
-          isDark ? 'bg-gray-900 text-white' : 'bg-white text-black'
-        }`}
-      >
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm">
+      <div className={`w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden rounded-xl shadow-2xl flex flex-col ${
+        isDark ? 'bg-zinc-900' : 'bg-white'
+      }`}>
         {/* Header */}
-        <div className={`sticky top-0 z-10 flex items-center justify-between p-6 border-b ${
-          isDark ? 'bg-gray-900 border-white/10' : 'bg-white border-black/10'
+        <div className={`flex items-center justify-between px-4 py-3 border-b flex-shrink-0 ${
+          isDark ? 'border-white/10' : 'border-black/10'
         }`}>
-          <h2 className="text-2xl font-bold">
-            {isEditMode ? 'შეტყობინების რედაქტირება' : 'ახალი შეტყობინება'}
+          <h2 className={`text-sm font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+            {isEditMode ? 'რედაქტირება' : 'ახალი შეტყობინება'}
           </h2>
           <button
             onClick={onClose}
-            className={`p-2 rounded-lg transition-colors ${
-              isDark ? 'hover:bg-white/10' : 'hover:bg-black/10'
+            className={`p-1.5 rounded-lg transition-colors ${
+              isDark ? 'hover:bg-white/10 text-white/60' : 'hover:bg-black/10 text-black/60'
             }`}
           >
-            <X className="w-6 h-6" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-6">
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Errors */}
           {errors.length > 0 && (
-            <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
+            <div className={`p-3 rounded-lg border ${
+              isDark ? 'bg-red-500/10 border-red-500/20' : 'bg-red-50 border-red-200'
+            }`}>
               <div className="flex items-start gap-2">
-                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <h3 className="font-semibold text-red-500 mb-1">შეცდომები:</h3>
-                  <ul className="list-disc list-inside text-sm text-red-500/80">
-                    {errors.map((error, index) => (
-                      <li key={index}>{error}</li>
-                    ))}
-                  </ul>
-                </div>
+                <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
+                <ul className="text-[10px] text-red-500 space-y-0.5">
+                  {errors.map((error, i) => <li key={i}>• {error}</li>)}
+                </ul>
               </div>
             </div>
           )}
 
           {/* Target Roles */}
           <div>
-            <label className="block text-sm font-medium mb-3">
+            <label className={`block text-[10px] font-medium mb-2 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
               მიმღები როლები *
             </label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
               {availableRoles.map((role) => (
-                <label
-                  key={role.value}
-                  className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${
-                    formData.target_roles.has(role.value)
-                      ? isDark
-                        ? 'bg-blue-500/20 border-blue-500'
-                        : 'bg-blue-500/10 border-blue-500'
-                      : isDark
-                      ? 'border-white/10 hover:bg-white/5'
-                      : 'border-black/10 hover:bg-black/5'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={formData.target_roles.has(role.value)}
-                    onChange={() => handleRoleToggle(role.value)}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm font-medium">{role.label}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Priority */}
-          <div>
-            <label className="block text-sm font-medium mb-3">
-              პრიორიტეტი
-            </label>
-            <div className="grid grid-cols-4 gap-3">
-              {priorities.map((priority) => (
                 <button
-                  key={priority.value}
-                  onClick={() => setFormData({ ...formData, priority: priority.value })}
-                  className={`p-3 rounded-lg border transition-all ${
-                    formData.priority === priority.value
-                      ? isDark
-                        ? 'bg-blue-500/20 border-blue-500'
-                        : 'bg-blue-500/10 border-blue-500'
+                  key={role.value}
+                  type="button"
+                  onClick={() => handleRoleToggle(role.value)}
+                  className={`px-2 py-1.5 rounded-md text-[9px] font-medium transition-all border ${
+                    formData.target_roles.has(role.value)
+                      ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-500'
                       : isDark
-                      ? 'border-white/10 hover:bg-white/5'
-                      : 'border-black/10 hover:bg-black/5'
+                        ? 'border-white/10 text-white/60 hover:bg-white/5'
+                        : 'border-black/10 text-black/60 hover:bg-black/5'
                   }`}
                 >
-                  <span className="text-sm font-medium">{priority.label}</span>
+                  {role.label}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Expiration Date */}
-          <div>
-            <label className="block text-sm font-medium mb-3">
-              ვადის გასვლა (არასავალდებულო)
-            </label>
-            <input
-              type="datetime-local"
-              value={formData.expires_at?.toISOString().slice(0, 16) || ''}
-              onChange={(e) =>
-                setFormData({
+          {/* Priority & Expiration Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Priority */}
+            <div>
+              <label className={`block text-[10px] font-medium mb-2 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                პრიორიტეტი
+              </label>
+              <div className="grid grid-cols-4 gap-1">
+                {priorities.map((p) => (
+                  <button
+                    key={p.value}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, priority: p.value })}
+                    className={`px-2 py-1.5 rounded-md text-[9px] font-medium transition-all border ${
+                      formData.priority === p.value
+                        ? `${p.color}/20 border-current`
+                        : isDark
+                          ? 'border-white/10 text-white/60 hover:bg-white/5'
+                          : 'border-black/10 text-black/60 hover:bg-black/5'
+                    }`}
+                    style={formData.priority === p.value ? { 
+                      color: p.color.replace('bg-', '').replace('-500', '') === 'gray' ? '#6b7280' :
+                             p.color.replace('bg-', '').replace('-500', '') === 'blue' ? '#3b82f6' :
+                             p.color.replace('bg-', '').replace('-500', '') === 'orange' ? '#f97316' : '#ef4444'
+                    } : {}}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Expiration */}
+            <div>
+              <label className={`block text-[10px] font-medium mb-2 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                ვადა (არასავალდებულო)
+              </label>
+              <input
+                type="datetime-local"
+                value={formData.expires_at?.toISOString().slice(0, 16) || ''}
+                onChange={(e) => setFormData({
                   ...formData,
                   expires_at: e.target.value ? new Date(e.target.value) : undefined
-                })
-              }
-              className={`w-full px-4 py-2 rounded-lg border ${
-                isDark
-                  ? 'bg-white/5 border-white/10 focus:border-blue-500'
-                  : 'bg-black/5 border-black/10 focus:border-blue-500'
-              } outline-none transition-colors`}
-            />
+                })}
+                className={`w-full px-3 py-1.5 rounded-md border text-[10px] outline-none transition-colors ${
+                  isDark
+                    ? 'bg-white/5 border-white/10 text-white focus:border-emerald-500'
+                    : 'bg-black/5 border-black/10 text-black focus:border-emerald-500'
+                }`}
+                style={isDark ? { colorScheme: 'dark' } : {}}
+              />
+            </div>
           </div>
 
           {/* Language Tabs */}
           <div>
-            <div className="flex gap-2 mb-4">
-              {(['ka', 'en', 'ru'] as const).map((lang) => (
+            <div className="flex gap-1 mb-3">
+              {languages.map((lang) => (
                 <button
-                  key={lang}
-                  onClick={() => setActiveLanguage(lang)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                    activeLanguage === lang
-                      ? isDark
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-blue-500 text-white'
+                  key={lang.id}
+                  type="button"
+                  onClick={() => setActiveLanguage(lang.id)}
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-[10px] font-medium transition-all ${
+                    activeLanguage === lang.id
+                      ? 'bg-emerald-500 text-white'
                       : isDark
-                      ? 'bg-white/5 hover:bg-white/10'
-                      : 'bg-black/5 hover:bg-black/10'
+                        ? 'bg-white/5 text-white/60 hover:bg-white/10'
+                        : 'bg-black/5 text-black/60 hover:bg-black/10'
                   }`}
                 >
-                  {lang.toUpperCase()}
+                  <span>{lang.flag}</span>
+                  <span className="hidden sm:inline">{lang.label}</span>
+                  <span className="sm:hidden">{lang.id.toUpperCase()}</span>
                 </button>
               ))}
             </div>
 
-            {/* Title */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">
+            {/* Title Input */}
+            <div className="mb-3">
+              <label className={`block text-[10px] font-medium mb-1.5 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                 სათაური ({activeLanguage.toUpperCase()}) *
               </label>
               <input
                 type="text"
                 value={formData.titles[activeLanguage]}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    titles: { ...formData.titles, [activeLanguage]: e.target.value }
-                  })
-                }
-                placeholder={`შეიყვანეთ სათაური ${activeLanguage === 'ka' ? 'ქართულად' : activeLanguage === 'en' ? 'ინგლისურად' : 'რუსულად'}`}
-                className={`w-full px-4 py-3 rounded-lg border ${
+                onChange={(e) => setFormData({
+                  ...formData,
+                  titles: { ...formData.titles, [activeLanguage]: e.target.value }
+                })}
+                placeholder="შეიყვანეთ სათაური..."
+                className={`w-full px-3 py-2 rounded-md border text-xs outline-none transition-colors ${
                   isDark
-                    ? 'bg-white/5 border-white/10 focus:border-blue-500'
-                    : 'bg-black/5 border-black/10 focus:border-blue-500'
-                } outline-none transition-colors`}
+                    ? 'bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-emerald-500'
+                    : 'bg-black/5 border-black/10 text-black placeholder:text-black/30 focus:border-emerald-500'
+                }`}
               />
             </div>
 
-            {/* Content */}
+            {/* Content Editor */}
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label className={`block text-[10px] font-medium mb-1.5 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                 ტექსტი ({activeLanguage.toUpperCase()}) *
               </label>
               <RichTextEditor
                 content={formData.contents[activeLanguage]}
-                onChange={(html) =>
-                  setFormData({
-                    ...formData,
-                    contents: { ...formData.contents, [activeLanguage]: html }
-                  })
-                }
+                onChange={(html) => setFormData({
+                  ...formData,
+                  contents: { ...formData.contents, [activeLanguage]: html }
+                })}
               />
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className={`sticky bottom-0 flex items-center justify-end gap-3 p-6 border-t ${
-          isDark ? 'bg-gray-900 border-white/10' : 'bg-white border-black/10'
+        <div className={`flex items-center justify-end gap-2 px-4 py-3 border-t flex-shrink-0 ${
+          isDark ? 'border-white/10' : 'border-black/10'
         }`}>
           <button
             onClick={onClose}
             disabled={loading}
-            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-              isDark
-                ? 'bg-white/5 hover:bg-white/10'
-                : 'bg-black/5 hover:bg-black/10'
+            className={`px-4 py-2 rounded-lg text-xs font-medium transition-colors ${
+              isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-black/5 hover:bg-black/10 text-black'
             }`}
           >
             გაუქმება
@@ -339,13 +327,13 @@ export default function CreateMessageModal({ message, onClose }: CreateMessageMo
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors ${
-              isDark
-                ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                : 'bg-blue-500 hover:bg-blue-600 text-white'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium bg-emerald-500 hover:bg-emerald-600 text-white transition-colors disabled:opacity-50"
           >
-            <Send className="w-5 h-5" />
+            {loading ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Send className="h-3.5 w-3.5" />
+            )}
             {loading ? 'იგზავნება...' : isEditMode ? 'განახლება' : 'გაგზავნა'}
           </button>
         </div>
