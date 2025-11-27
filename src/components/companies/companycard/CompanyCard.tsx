@@ -2,7 +2,6 @@
 
 import { useTheme } from '@/contexts/ThemeContext';
 import { Building2, MapPin, Phone, Globe } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { companiesTranslations } from '@/translations/companies';
@@ -64,11 +63,9 @@ export default function CompanyCard({
                 : 'border-black/10 bg-gradient-to-br from-gray-100 to-gray-50'
             }`}>
               {logo_url ? (
-                <Image 
+                <img 
                   src={logo_url} 
                   alt={full_name}
-                  width={64}
-                  height={64}
                   className="h-full w-full object-cover p-1"
                   loading="lazy"
                 />
@@ -170,11 +167,11 @@ export default function CompanyCard({
       <div className={`flex flex-col items-center justify-center border-b p-2.5 ${isDark ? 'border-white/10' : 'border-black/10'}`}>
         {logo_url ? (
           <div className="relative h-16 w-16 overflow-hidden rounded-full bg-white">
-            <Image
+            <img
               src={logo_url}
               alt={full_name}
-              fill
-              className="object-cover p-1"
+              className="h-full w-full object-cover p-1"
+              loading="lazy"
             />
           </div>
         ) : (
