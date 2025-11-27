@@ -1,4 +1,5 @@
 import { GeistSans } from "geist/font/sans";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
 
@@ -15,6 +16,7 @@ export default function RootLayout({
         className={`${geistSans.variable} antialiased flex flex-col min-h-screen`}
       >
         {children}
+        <Analytics />
       </body>
     </html>
   );
