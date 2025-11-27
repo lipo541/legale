@@ -1,7 +1,6 @@
 'use client'
 
 import { useTheme } from '@/contexts/ThemeContext'
-import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight, Tag } from 'lucide-react'
 
@@ -56,12 +55,10 @@ export default function PracticeCard({
       <div className={`relative aspect-[4/3] overflow-hidden ${
         isDark ? 'bg-gradient-to-br from-white/5 to-white/10' : 'bg-gradient-to-br from-black/5 to-black/10'
       }`}>
-        <Image
+        <img
           src={hero_image_url}
           alt={translation.hero_image_alt}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-102"
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-102"
           loading="lazy"
         />
         
@@ -124,12 +121,10 @@ export default function PracticeCard({
       <div className={`relative w-24 md:w-32 aspect-[4/3] flex-shrink-0 overflow-hidden ${
         isDark ? 'bg-gradient-to-br from-white/5 to-white/10' : 'bg-gradient-to-br from-black/5 to-black/10'
       }`}>
-        <Image
+        <img
           src={hero_image_url}
           alt={translation.hero_image_alt}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-102"
-          sizes="(max-width: 640px) 128px, 192px"
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-102"
           loading="lazy"
         />
         

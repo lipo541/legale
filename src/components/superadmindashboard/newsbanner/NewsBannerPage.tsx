@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { createClient } from '@/lib/supabase/client'
 import { Plus, Upload, X, Image as ImageIcon, Trash2, Eye, ChevronDown, ChevronRight, Save } from 'lucide-react'
-import Image from 'next/image'
 
 interface Banner {
   id: string
@@ -568,11 +567,10 @@ export default function NewsBannerPage() {
                         {item.label}
                       </div>
                       <div className="relative w-full overflow-hidden rounded-xl" style={{ paddingBottom: '40%' }}>
-                        <Image
+                        <img
                           src={item.url}
                           alt={`${item.label} banner`}
-                          fill
-                          className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300">
                           <button
@@ -730,11 +728,10 @@ export default function NewsBannerPage() {
               >
                 {previewUrls[selectedLanguage] ? (
                   <div className="relative w-full overflow-hidden rounded-2xl" style={{ paddingBottom: '40%' }}>
-                    <Image
+                    <img
                       src={previewUrls[selectedLanguage]!}
                       alt="Preview"
-                      fill
-                      className="object-cover"
+                      className="absolute inset-0 w-full h-full object-cover"
                     />
                     <div className={`absolute top-3 right-3 px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-sm ${
                       isDark ? 'bg-black/50 text-white' : 'bg-white/90 text-black'

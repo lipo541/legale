@@ -5,7 +5,6 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import { ArrowRight } from 'lucide-react'
 import NewsSearch from './common/NewsSearch'
 import NewsFilter from './common/NewsFilter'
@@ -510,12 +509,10 @@ export default function AllPostsSection() {
                           : 'h-28 md:h-32 w-32 md:w-48'
                       }`}>
                         {post.featured_image_url ? (
-                          <Image
+                          <img
                             src={post.featured_image_url}
                             alt={translation.title}
-                            fill
-                            className="object-cover transition-transform group-hover:scale-105"
-                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                            className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
                             loading="lazy"
                           />
                         ) : (

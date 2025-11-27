@@ -2,7 +2,6 @@
 
 import { useTheme } from '@/contexts/ThemeContext'
 import { useParams } from 'next/navigation'
-import Image from 'next/image'
 import { BookOpen } from 'lucide-react'
 import Link from 'next/link'
 import { newsTranslations } from '@/translations/news'
@@ -71,12 +70,10 @@ export default function Position10({ posts }: Position10Props) {
         {/* Image Section (Top 70%) */}
         {post.featured_image_url && (
           <div className="relative h-[70%] w-full overflow-hidden">
-            <Image
+            <img
               src={post.featured_image_url}
               alt={translation.title}
-              fill
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
-              sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 33vw"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               loading="lazy"
             />
             <div className={`absolute inset-0 ${

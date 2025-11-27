@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { Locale, getWindowWidth } from '@/lib/enums'
-import Image from 'next/image'
 import Link from 'next/link'
 import { IoTimeOutline, IoCalendarOutline, IoArrowBack, IoDocumentTextOutline, IoChevronForward, IoBriefcaseOutline, IoLogoFacebook, IoLogoLinkedin, IoLogoTwitter, IoChevronDown, IoChevronUp } from 'react-icons/io5'
 import { createClient } from '@/lib/supabase/client'
@@ -383,14 +382,11 @@ export default function PracticeDetail({
               isDark ? 'border border-white/10' : 'border border-gray-200'
             }`}>
               <div className="relative w-full aspect-[21/9]">
-                <Image
+                <img
                   src={practice.pageHeroImageUrl}
                   alt={translation.pageHeroImageAlt}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 66vw, 50vw"
-                  priority
-                  quality={90}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  loading="eager"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.src = '/images/placeholder-news.svg';

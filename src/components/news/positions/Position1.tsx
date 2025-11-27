@@ -5,7 +5,6 @@ import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay, Pagination } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/pagination'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { newsTranslations } from '@/translations/news'
@@ -84,17 +83,14 @@ export default function Position1({ posts }: Position1Props) {
                   {/* Background Image */}
                   {post.featured_image_url && (
                     <div className="absolute inset-0">
-                      <Image
+                      <img
                         src={post.featured_image_url}
                         alt={translation.title}
-                        fill
-                        className="object-cover"
+                        className="absolute inset-0 w-full h-full object-cover"
                         style={{
                           objectPosition: `${focalPointX}% ${focalPointY}%`
                         }}
-                        quality={90}
-                        priority
-                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        loading="eager"
                       />
                       {/* LIGHTER Gradient for better image visibility */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />

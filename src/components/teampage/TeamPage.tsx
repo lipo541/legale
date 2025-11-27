@@ -2,7 +2,6 @@
 
 import { useTheme } from '@/contexts/ThemeContext'
 import { Users, ChevronDown, ArrowLeft } from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
@@ -158,11 +157,11 @@ const CollapsibleSection = ({
                           isDark ? 'bg-white/5' : 'bg-black/5'
                         } group-hover:scale-105 transition-transform duration-300`}></div>
                         {member.avatar_url ? (
-                          <Image
+                          <img
                             src={member.avatar_url}
                             alt={member.full_name || 'Team Member'}
-                            fill
-                            className="object-cover rounded-full group-hover:scale-105 transition-transform duration-300"
+                            className="absolute inset-0 w-full h-full object-cover rounded-full group-hover:scale-105 transition-transform duration-300"
+                            loading="lazy"
                           />
                         ) : (
                           <div className="absolute inset-0 flex items-center justify-center">

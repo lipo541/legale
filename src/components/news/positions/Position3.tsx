@@ -7,7 +7,6 @@ import 'swiper/css'
 import 'swiper/css/effect-fade'
 import { useState } from 'react'
 import { useParams } from 'next/navigation'
-import Image from 'next/image'
 import Link from 'next/link'
 import { newsTranslations } from '@/translations/news'
 
@@ -72,12 +71,10 @@ export default function Position3({ posts }: Position3Props) {
                   {/* Featured Image (optional) */}
                   {post.featured_image_url && (
                     <div className="absolute inset-0 z-0">
-                      <Image
+                      <img
                         src={post.featured_image_url}
                         alt={translation.title}
-                        fill
-                        className="object-cover opacity-70 transition-transform duration-500 hover:scale-105"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 50vw"
+                        className="absolute inset-0 w-full h-full object-cover opacity-70 transition-transform duration-500 hover:scale-105"
                         loading="lazy"
                       />
                       {/* Lighter overlay for better text readability */}

@@ -5,7 +5,6 @@ import { usePostTranslations } from '@/contexts/PostTranslationsContext'
 import { ChevronRight, Check, Upload, X } from 'lucide-react'
 import { useState, useMemo, useEffect, useCallback, memo } from 'react'
 import dynamic from 'next/dynamic'
-import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import Modal from '@/components/common/Modal'
 
@@ -700,11 +699,10 @@ export default function ContentTab() {
           </label>
         ) : (
           <div className="relative w-full h-32 rounded-lg overflow-hidden">
-            <Image
+            <img
               src={featuredImagePreview || currentTranslation.featured_image || ''}
               alt="Featured image preview"
-              fill
-              className="object-cover"
+              className="absolute inset-0 w-full h-full object-cover"
             />
             <button
               onClick={removeImage}

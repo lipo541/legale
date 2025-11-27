@@ -4,7 +4,6 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { useParams, useRouter } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import Image from 'next/image'
 
 interface BannerData {
   id: string
@@ -252,12 +251,11 @@ export default function NewsBanner() {
                   key={banner.id} 
                   className="relative flex-shrink-0 w-full h-full"
                 >
-                  <Image
+                  <img
                     src={imageUrl}
                     alt={`News Banner ${index + 1}`}
-                    fill
-                    className="object-cover"
-                    priority={index === 0}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    loading={index === 0 ? 'eager' : 'lazy'}
                   />
                 </div>
               )

@@ -3,7 +3,6 @@
 import { useTheme } from '@/contexts/ThemeContext'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState, useRef } from 'react'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 
 interface TeamBanner {
@@ -244,12 +243,11 @@ export default function TeamBannerSlider({ language = 'ka' }: TeamBannerSliderPr
                 key={team.id} 
                 className="relative flex-shrink-0 w-full h-full"
               >
-                <Image
+                <img
                   src={team.bannerImageUrl || ''}
                   alt={team.bannerAlt || team.name}
-                  fill
-                  className="object-cover"
-                  priority={index === 0}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  loading={index === 0 ? 'eager' : 'lazy'}
                 />
               </div>
             ))}
