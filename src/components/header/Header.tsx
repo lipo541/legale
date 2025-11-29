@@ -2,24 +2,32 @@
 
 import Link from 'next/link'
 import { Menu, X, LayoutDashboard, LogOut } from 'lucide-react'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTheme } from '@/contexts/ThemeContext'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { LanguageSwitcher } from '@/components/language/LanguageSwitcher'
 import NotificationBell from './NotificationBell'
 import type { Locale } from '@/lib/i18n/config'
-import { createClient } from '@/lib/supabase/client'
 import { headerTranslations } from '@/translations/header'
 
-// Create the Supabase client once, outside the component
-const supabase = createClient()
+// Lazy load Supabase client - only initialize when needed
+let supabaseClient: ReturnType<typeof import('@/lib/supabase/client').createClient> | null = null
+
+async function getSupabaseClient() {
+  if (!supabaseClient) {
+    const { createClient } = await import('@/lib/supabase/client')
+    supabaseClient = createClient()
+  }
+  return supabaseClient
+}
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { theme } = useTheme()
   const pathname = usePathname()
   const router = useRouter()
+  const supabaseRef = useRef<typeof supabaseClient>(null)
 
   // Unified auth state
   const [authState, setAuthState] = useState({
@@ -51,6 +59,10 @@ export default function Header() {
     (fetchUserSession as unknown as { lastFetchTime: number }).lastFetchTime = now
     
     setAuthState(prev => ({ ...prev, loading: true }))
+    
+    // Lazy load Supabase client
+    const supabase = await getSupabaseClient()
+    supabaseRef.current = supabase
     
     // Get the current session
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
@@ -107,22 +119,27 @@ export default function Header() {
     // Initial fetch
     fetchUserSession()
 
-    // Listen for auth state changes (only SIGNED_IN and SIGNED_OUT)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state change:', event)
-      
-      // Handle token refresh errors
-      if (event === 'TOKEN_REFRESHED' && !session) {
-        console.log('Token refresh failed - signing out')
-        supabase.auth.signOut()
-        setAuthState({ user: null, role: null, hasPendingRequest: false, loading: false })
-        return
-      }
-      
-      // Only re-fetch on actual sign in/out events, NOT on token refresh
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-        fetchUserSession()
-      }
+    // Set up auth state listener after initial fetch
+    let subscription: { unsubscribe: () => void } | undefined
+    
+    getSupabaseClient().then(supabase => {
+      const { data } = supabase.auth.onAuthStateChange((event, session) => {
+        console.log('Auth state change:', event)
+        
+        // Handle token refresh errors
+        if (event === 'TOKEN_REFRESHED' && !session) {
+          console.log('Token refresh failed - signing out')
+          supabase.auth.signOut()
+          setAuthState({ user: null, role: null, hasPendingRequest: false, loading: false })
+          return
+        }
+        
+        // Only re-fetch on actual sign in/out events, NOT on token refresh
+        if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+          fetchUserSession()
+        }
+      })
+      subscription = data.subscription
     })
 
     return () => {
@@ -132,6 +149,7 @@ export default function Header() {
 
   // Handle logout
   const handleLogout = async () => {
+    const supabase = await getSupabaseClient()
     await supabase.auth.signOut()
     setAuthState({ user: null, role: null, hasPendingRequest: false, loading: false })
     router.push(`/${currentLocale}`)
