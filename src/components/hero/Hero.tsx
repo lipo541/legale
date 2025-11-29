@@ -13,25 +13,26 @@ export default function Hero() {
 
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden -mt-16 pt-16">
-      {/* Background Image */}
+      {/* Background Images - both loaded, visibility controlled by CSS */}
       <div className="absolute inset-0 z-0">
-        {isDark ? (
-          <img
-            src="https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=75&w=1200&auto=format&fit=crop"
-            alt="Night cityscape"
-            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-150"
-            loading="eager"
-            fetchPriority="high"
-          />
-        ) : (
-          <img
-            src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=75&w=1200&auto=format&fit=crop"
-            alt="Day cityscape"
-            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-150"
-            loading="eager"
-            fetchPriority="high"
-          />
-        )}
+        <img
+          src="https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=75&w=1200&auto=format&fit=crop"
+          alt="Night cityscape"
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
+            isDark ? 'opacity-100' : 'opacity-0'
+          }`}
+          loading="eager"
+          fetchPriority="high"
+        />
+        <img
+          src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=75&w=1200&auto=format&fit=crop"
+          alt="Day cityscape"
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
+            isDark ? 'opacity-0' : 'opacity-100'
+          }`}
+          loading="eager"
+          fetchPriority="high"
+        />
         
         {/* Overlay gradient */}
         <div className={`absolute inset-0 transition-colors duration-150 ${
@@ -60,61 +61,28 @@ export default function Hero() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-3">
-            {/* დაგვიკავშირდით Button */}
+            {/* დაგვიკავშირდით Button - Pure CSS hover */}
             <Link
               href={`/${locale}/contact`}
-              style={{
-                backgroundColor: isDark ? '#FFFFFF' : '#000000',
-                borderColor: isDark ? '#FFFFFF' : '#000000',
-                color: isDark ? '#000000' : '#FFFFFF',
-                borderWidth: '1px',
-                borderStyle: 'solid',
-                backdropFilter: 'none'
-              }}
-              onMouseEnter={(e) => {
-                if (isDark) {
-                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'
-                  e.currentTarget.style.backdropFilter = 'blur(16px) saturate(150%)'
-                  e.currentTarget.style.color = '#FFFFFF'
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)'
-                } else {
-                  e.currentTarget.style.backgroundColor = '#FFFFFF'
-                  e.currentTarget.style.color = '#000000'
-                  e.currentTarget.style.borderColor = '#000000'
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = isDark ? '#FFFFFF' : '#000000'
-                e.currentTarget.style.backdropFilter = 'none'
-                e.currentTarget.style.color = isDark ? '#000000' : '#FFFFFF'
-                e.currentTarget.style.borderColor = isDark ? '#FFFFFF' : '#000000'
-              }}
-              className="group inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
+              className={`group inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl border ${
+                isDark 
+                  ? 'bg-white text-black border-white hover:bg-white/10 hover:text-white hover:border-white/20 hover:backdrop-blur-md' 
+                  : 'bg-black text-white border-black hover:bg-white hover:text-black'
+              }`}
             >
               <Phone className="w-4 h-4" />
               დაგვიკავშირდით
               <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
 
-            {/* იხილეთ პრაქტიკა Button */}
+            {/* იხილეთ პრაქტიკა Button - Pure CSS hover */}
             <Link
               href={`/${locale}/practices`}
-              style={{
-                backgroundColor: 'transparent',
-                borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
-                color: isDark ? '#FFFFFF' : '#000000',
-                borderWidth: '1px',
-                borderStyle: 'solid'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
-                e.currentTarget.style.borderColor = isDark ? '#FFFFFF' : '#000000'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent'
-                e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'
-              }}
-              className="group inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+              className={`group inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border ${
+                isDark 
+                  ? 'bg-transparent text-white border-white/30 hover:bg-white/10 hover:border-white' 
+                  : 'bg-transparent text-black border-black/30 hover:bg-black/10 hover:border-black'
+              }`}
             >
               იხილეთ პრაქტიკა
               <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
