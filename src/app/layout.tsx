@@ -28,19 +28,33 @@ export default function RootLayout({
           href="https://images.unsplash.com"
           crossOrigin="anonymous"
         />
-        {/* Preload critical hero images for LCP - both themes */}
+        {/* Preload critical hero images for LCP - both themes with srcset */}
         <link
           rel="preload"
           href="https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=50&w=1200&auto=format&fit=crop&fm=webp"
           as="image"
           type="image/webp"
           fetchPriority="high"
+          imageSrcSet="
+            https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=50&w=640&auto=format&fit=crop&fm=webp 640w,
+            https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=50&w=1024&auto=format&fit=crop&fm=webp 1024w,
+            https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=50&w=1200&auto=format&fit=crop&fm=webp 1200w,
+            https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=50&w=1920&auto=format&fit=crop&fm=webp 1920w
+          "
+          imageSizes="100vw"
         />
         <link
           rel="preload"
           href="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=50&w=1200&auto=format&fit=crop&fm=webp"
           as="image"
           type="image/webp"
+          imageSrcSet="
+            https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=50&w=640&auto=format&fit=crop&fm=webp 640w,
+            https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=50&w=1024&auto=format&fit=crop&fm=webp 1024w,
+            https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=50&w=1200&auto=format&fit=crop&fm=webp 1200w,
+            https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=50&w=1920&auto=format&fit=crop&fm=webp 1920w
+          "
+          imageSizes="100vw"
         />
         {/* Preload logo */}
         <link
