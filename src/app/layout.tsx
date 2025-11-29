@@ -1,7 +1,6 @@
 import { GeistSans } from "geist/font/sans";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
-// Leaflet CSS moved to MapPicker component only (not needed globally)
 
 const geistSans = GeistSans;
 
@@ -13,57 +12,19 @@ export default function RootLayout({
   return (
     <html lang="ka" suppressHydrationWarning>
       <head>
-        {/* Preconnect to external domains for faster loading */}
-        <link
-          rel="preconnect"
-          href="https://fbxooowagcadiqpppniy.supabase.co"
-          crossOrigin="anonymous"
-        />
-        <link
-          rel="dns-prefetch"
-          href="https://fbxooowagcadiqpppniy.supabase.co"
-        />
-        <link
-          rel="preconnect"
-          href="https://images.unsplash.com"
-          crossOrigin="anonymous"
-        />
-        {/* Preload critical hero images for LCP - both themes with srcset */}
+        {/* Preconnect to critical origins */}
+        <link rel="preconnect" href="https://images.unsplash.com" />
+        <link rel="preconnect" href="https://fbxooowagcadiqpppniy.supabase.co" />
+        <link rel="dns-prefetch" href="https://images.unsplash.com" />
+        <link rel="dns-prefetch" href="https://fbxooowagcadiqpppniy.supabase.co" />
+        {/* Preload LCP hero image - Night (dark mode) */}
         <link
           rel="preload"
+          as="image"
+          type="image/webp"
           href="https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=50&w=1200&auto=format&fit=crop&fm=webp"
-          as="image"
-          type="image/webp"
-          fetchPriority="high"
-          imageSrcSet="
-            https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=50&w=640&auto=format&fit=crop&fm=webp 640w,
-            https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=50&w=1024&auto=format&fit=crop&fm=webp 1024w,
-            https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=50&w=1200&auto=format&fit=crop&fm=webp 1200w,
-            https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=50&w=1920&auto=format&fit=crop&fm=webp 1920w
-          "
-          imageSizes="100vw"
         />
-        <link
-          rel="preload"
-          href="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=50&w=1200&auto=format&fit=crop&fm=webp"
-          as="image"
-          type="image/webp"
-          imageSrcSet="
-            https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=50&w=640&auto=format&fit=crop&fm=webp 640w,
-            https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=50&w=1024&auto=format&fit=crop&fm=webp 1024w,
-            https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=50&w=1200&auto=format&fit=crop&fm=webp 1200w,
-            https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=50&w=1920&auto=format&fit=crop&fm=webp 1920w
-          "
-          imageSizes="100vw"
-        />
-        {/* Preload logo */}
-        <link
-          rel="preload"
-          href="/asset/Legal.ge.webp"
-          as="image"
-          type="image/webp"
-        />
-        {/* Preload Geist font for faster text rendering */}
+        {/* Preload Geist font */}
         <link
           rel="preload"
           href="/_next/static/media/a34f9d1faa5f3315-s.p.woff2"
