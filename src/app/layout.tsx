@@ -28,13 +28,19 @@ export default function RootLayout({
           href="https://images.unsplash.com"
           crossOrigin="anonymous"
         />
-        {/* Preload critical hero image for LCP */}
+        {/* Preload critical hero images for LCP - both themes */}
+        <link
+          rel="preload"
+          href="https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=60&w=1920&auto=format&fit=crop&fm=webp"
+          as="image"
+          type="image/webp"
+          fetchPriority="high"
+        />
         <link
           rel="preload"
           href="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=60&w=1920&auto=format&fit=crop&fm=webp"
           as="image"
           type="image/webp"
-          fetchPriority="high"
         />
         {/* Preload logo */}
         <link
