@@ -142,7 +142,7 @@ export default function LoginForm() {
       <div className="w-full max-w-md space-y-4">
         <div className="flex justify-center">
           <img
-            src={isDark ? "/asset/Legal.ge.png" : "/asset/legal.ge.black.png"}
+            src={isDark ? "/asset/Legal.ge.webp" : "/asset/legal.ge.black.webp"}
             alt="LegalGE"
             width={140}
             height={40}

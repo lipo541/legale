@@ -17,15 +17,19 @@ export default function Hero() {
       <div className="absolute inset-0 z-0">
         {isDark ? (
           <img
-            src="https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=80&w=2064&auto=format&fit=crop"
+            src="https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=75&w=1200&auto=format&fit=crop"
             alt="Night cityscape"
             className="absolute inset-0 w-full h-full object-cover transition-opacity duration-150"
+            loading="eager"
+            fetchPriority="high"
           />
         ) : (
           <img
-            src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop"
+            src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=75&w=1200&auto=format&fit=crop"
             alt="Day cityscape"
             className="absolute inset-0 w-full h-full object-cover transition-opacity duration-150"
+            loading="eager"
+            fetchPriority="high"
           />
         )}
         

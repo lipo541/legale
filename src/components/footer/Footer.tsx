@@ -53,7 +53,7 @@ export default function Footer() {
           <div className="space-y-4">
             <Link href={`/${currentLocale}`} className="inline-block">
               <img
-                src={isDark ? "/asset/Legal.ge.png" : "/asset/legal.ge.black.png"}
+                src={isDark ? "/asset/Legal.ge.webp" : "/asset/legal.ge.black.webp"}
                 alt="LegalGE"
                 width={140}
                 height={40}
