@@ -16,12 +16,12 @@ export default function Hero() {
       {/* Background Images - both loaded, visibility controlled by CSS */}
       <div className="absolute inset-0 z-0">
         <img
-          src="https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=50&w=1200&auto=format&fit=crop&fm=webp"
+          src="https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=30&w=1200&auto=format&fit=crop&fm=webp"
           srcSet="
-            https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=50&w=640&auto=format&fit=crop&fm=webp 640w,
-            https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=50&w=1024&auto=format&fit=crop&fm=webp 1024w,
-            https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=50&w=1200&auto=format&fit=crop&fm=webp 1200w,
-            https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=50&w=1920&auto=format&fit=crop&fm=webp 1920w
+            https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=30&w=640&auto=format&fit=crop&fm=webp 640w,
+            https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=30&w=1024&auto=format&fit=crop&fm=webp 1024w,
+            https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=30&w=1200&auto=format&fit=crop&fm=webp 1200w,
+            https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=30&w=1920&auto=format&fit=crop&fm=webp 1920w
           "
           sizes="100vw"
           alt="Night cityscape"
@@ -33,12 +33,12 @@ export default function Hero() {
           decoding="async"
         />
         <img
-          src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=50&w=1200&auto=format&fit=crop&fm=webp"
+          src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=30&w=1200&auto=format&fit=crop&fm=webp"
           srcSet="
-            https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=50&w=640&auto=format&fit=crop&fm=webp 640w,
-            https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=50&w=1024&auto=format&fit=crop&fm=webp 1024w,
-            https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=50&w=1200&auto=format&fit=crop&fm=webp 1200w,
-            https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=50&w=1920&auto=format&fit=crop&fm=webp 1920w
+            https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=30&w=640&auto=format&fit=crop&fm=webp 640w,
+            https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=30&w=1024&auto=format&fit=crop&fm=webp 1024w,
+            https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=30&w=1200&auto=format&fit=crop&fm=webp 1200w,
+            https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=30&w=1920&auto=format&fit=crop&fm=webp 1920w
           "
           sizes="100vw"
           alt="Day cityscape"

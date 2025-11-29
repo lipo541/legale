@@ -10,6 +10,12 @@ const nextConfig: NextConfig = {
     removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
   },
   
+  // Modern JavaScript optimizations
+  experimental: {
+    // Enable modern JS output (ES2020+)
+    optimizePackageImports: ['@supabase/supabase-js', 'lucide-react', 'date-fns'],
+  },
+  
   // Transpile only for modern browsers (ES2020+)
   transpilePackages: [],
   

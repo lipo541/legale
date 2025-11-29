@@ -12,17 +12,18 @@ export default function RootLayout({
   return (
     <html lang="ka" suppressHydrationWarning>
       <head>
-        {/* Preconnect to critical origins */}
-        <link rel="preconnect" href="https://images.unsplash.com" />
-        <link rel="preconnect" href="https://fbxooowagcadiqpppniy.supabase.co" />
+        {/* Preconnect to critical origins with crossorigin for CORS */}
+        <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://fbxooowagcadiqpppniy.supabase.co" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
         <link rel="dns-prefetch" href="https://fbxooowagcadiqpppniy.supabase.co" />
-        {/* Preload LCP hero image - Night (dark mode) */}
+        {/* Preload LCP hero image */}
         <link
           rel="preload"
           as="image"
           type="image/webp"
-          href="https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=50&w=1200&auto=format&fit=crop&fm=webp"
+          href="https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=30&w=1200&auto=format&fit=crop&fm=webp"
+          fetchPriority="high"
         />
       </head>
       <body
