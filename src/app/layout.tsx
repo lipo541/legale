@@ -31,16 +31,25 @@ export default function RootLayout({
         {/* Preload critical hero image for LCP */}
         <link
           rel="preload"
-          href="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=75&w=1200&auto=format&fit=crop"
+          href="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=60&w=1920&auto=format&fit=crop&fm=webp"
           as="image"
           type="image/webp"
+          fetchPriority="high"
         />
         {/* Preload logo */}
         <link
           rel="preload"
-          href="/asset/legal.ge.black.webp"
+          href="/asset/Legal.ge.webp"
           as="image"
           type="image/webp"
+        />
+        {/* Preload Geist font for faster text rendering */}
+        <link
+          rel="preload"
+          href="/_next/static/media/a34f9d1faa5f3315-s.p.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
         />
       </head>
       <body
