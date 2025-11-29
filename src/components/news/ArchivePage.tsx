@@ -3,7 +3,6 @@
 import { useTheme } from '@/contexts/ThemeContext'
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { Calendar, ChevronRight, ChevronDown, ArrowLeft, Tag, Filter, X } from 'lucide-react'
 import NewsSearch from './common/NewsSearch'
 import NewsSort, { SortOption } from './common/NewsSort'
@@ -594,13 +593,11 @@ export default function ArchivePage({ locale }: ArchivePageProps) {
                         {/* Image */}
                         {post.featured_image_url && (
                           <div className="relative w-full aspect-[16/9] overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
-                            <Image
+                            <img
                               src={getOptimizedImageUrl(post.featured_image_url, imagePresets.cardLarge)}
                               alt={translation.title}
-                              fill
-                              className="object-cover transition-transform group-hover:scale-105"
-                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 384px"
-                              unoptimized
+                              className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
+                              loading="lazy"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement
                                 target.style.display = 'none'
@@ -661,13 +658,11 @@ export default function ArchivePage({ locale }: ArchivePageProps) {
                         {/* Image - Smaller on mobile */}
                         {post.featured_image_url && (
                           <div className="relative flex-shrink-0 rounded-lg overflow-hidden w-24 h-24 sm:w-32 sm:h-24 md:w-48 md:h-32 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
-                            <Image
+                            <img
                               src={getOptimizedImageUrl(post.featured_image_url, imagePresets.cardThumbnail)}
                               alt={translation.title}
-                              fill
-                              className="object-cover transition-transform group-hover:scale-105"
-                              sizes="(max-width: 640px) 96px, (max-width: 768px) 128px, 192px"
-                              unoptimized
+                              className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
+                              loading="lazy"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement
                                 target.style.display = 'none'

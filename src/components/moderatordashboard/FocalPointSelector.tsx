@@ -2,7 +2,6 @@
 
 import { useState, useRef } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
-import Image from 'next/image'
 import { X } from 'lucide-react'
 
 interface FocalPointSelectorProps {
@@ -109,12 +108,10 @@ export default function FocalPointSelector({
                 isDark ? 'border-blue-500' : 'border-blue-600'
               }`}
             >
-              <Image
+              <img
                 src={imageUrl}
                 alt={postTitle}
-                fill
-                className="object-contain"
-                unoptimized
+                className="absolute inset-0 w-full h-full object-contain pointer-events-none"
               />
               
               {/* Crosshair */}
@@ -160,15 +157,13 @@ export default function FocalPointSelector({
                 }`}
                 style={{ aspectRatio: '580/300' }}
               >
-                <Image
+                <img
                   src={imageUrl}
                   alt="Desktop Preview"
-                  fill
-                  className="object-cover"
+                  className="absolute inset-0 w-full h-full object-cover"
                   style={{
                     objectPosition: `${focalPoint.x}% ${focalPoint.y}%`
                   }}
-                  unoptimized
                 />
               </div>
             </div>
@@ -183,15 +178,13 @@ export default function FocalPointSelector({
                   isDark ? 'border border-white/10' : 'border border-black/10'
                 }`}
               >
-                <Image
+                <img
                   src={imageUrl}
                   alt="Tablet Preview"
-                  fill
-                  className="object-cover"
+                  className="absolute inset-0 w-full h-full object-cover"
                   style={{
                     objectPosition: `${focalPoint.x}% ${focalPoint.y}%`
                   }}
-                  unoptimized
                 />
               </div>
             </div>
@@ -206,15 +199,13 @@ export default function FocalPointSelector({
                   isDark ? 'border border-white/10' : 'border border-black/10'
                 }`}
               >
-                <Image
+                <img
                   src={imageUrl}
                   alt="Mobile Preview"
-                  fill
-                  className="object-cover"
+                  className="absolute inset-0 w-full h-full object-cover"
                   style={{
                     objectPosition: `${focalPoint.x}% ${focalPoint.y}%`
                   }}
-                  unoptimized
                 />
               </div>
             </div>

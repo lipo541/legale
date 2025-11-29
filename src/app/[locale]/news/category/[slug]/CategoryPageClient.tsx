@@ -2,7 +2,7 @@
 
 import { useTheme } from '@/contexts/ThemeContext'
 import Link from 'next/link'
-import Image from 'next/image'
+import { getOptimizedImageUrl, imagePresets } from '@/lib/utils'
 import { ArrowLeft, Calendar, User, Clock } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
@@ -131,11 +131,11 @@ export default function CategoryPageClient({ category, posts, locale }: Category
                   {/* Image */}
                   <div className="relative h-56 overflow-hidden">
                     {post.featured_image_url ? (
-                      <Image
-                        src={post.featured_image_url}
+                      <img
+                        src={getOptimizedImageUrl(post.featured_image_url, imagePresets.cardLargeAspect)}
                         alt={translation?.title || 'Post image'}
-                        fill
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        loading="lazy"
                       />
                     ) : (
                       <div className={`h-full ${isDark ? 'bg-white/10' : 'bg-black/10'}`}>

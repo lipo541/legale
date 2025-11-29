@@ -2,7 +2,7 @@
 
 import { useTheme } from '@/contexts/ThemeContext'
 import Link from 'next/link'
-import Image from 'next/image'
+import { getOptimizedImageUrl, imagePresets } from '@/lib/utils'
 import { ArrowLeft, Calendar, User, Clock, FolderOpen } from 'lucide-react'
 import { useState, useMemo } from 'react'
 
@@ -128,11 +128,10 @@ export default function AuthorPageClient({ author, posts, locale }: AuthorPageCl
             {/* Avatar */}
             <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-full">
               {author.avatar_url ? (
-                <Image
-                  src={author.avatar_url}
+                <img
+                  src={getOptimizedImageUrl(author.avatar_url, imagePresets.avatarLarge)}
                   alt={authorName}
-                  fill
-                  className="object-cover"
+                  className="absolute inset-0 w-full h-full object-cover"
                 />
               ) : (
                 <div className={`flex h-full w-full items-center justify-center ${
@@ -280,11 +279,11 @@ export default function AuthorPageClient({ author, posts, locale }: AuthorPageCl
                   {/* Image */}
                   <div className="relative h-56 overflow-hidden">
                     {post.featured_image_url ? (
-                      <Image
-                        src={post.featured_image_url}
+                      <img
+                        src={getOptimizedImageUrl(post.featured_image_url, imagePresets.cardLargeAspect)}
                         alt={translation?.title || 'Post image'}
-                        fill
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        loading="lazy"
                       />
                     ) : (
                       <div className={`h-full ${isDark ? 'bg-white/10' : 'bg-black/10'}`}>

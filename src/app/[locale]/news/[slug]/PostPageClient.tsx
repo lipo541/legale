@@ -2,7 +2,6 @@
 
 import { useTheme } from '@/contexts/ThemeContext'
 import Link from 'next/link'
-import Image from 'next/image'
 import { ArrowLeft, Calendar, User, Clock, Tag, Facebook, Twitter, Linkedin } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { getOptimizedImageUrl, imagePresets } from '@/lib/utils'
@@ -266,13 +265,10 @@ export default function PostPageClient({ post, author, category, relatedPosts, l
           {/* Featured Image */}
           {post.featuredImage && (
             <div className="relative w-full h-96 mb-8 rounded-xl overflow-hidden ring-1 ring-black/5">
-              <Image
-                src={getOptimizedImageUrl(post.featuredImage, imagePresets.heroBanner)}
+              <img
+                src={getOptimizedImageUrl(post.featuredImage, imagePresets.practiceHero)}
                 alt={post.title}
-                fill
-                className="object-cover"
-                priority
-                unoptimized
+                className="absolute inset-0 w-full h-full object-cover"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.src = '/images/placeholder-news.svg';
@@ -316,13 +312,12 @@ export default function PostPageClient({ post, author, category, relatedPosts, l
                     }`}
                   >
                     {relatedPost.featured_image_url && (
-                      <div className="relative h-48 overflow-hidden">
-                        <Image
-                          src={relatedPost.featured_image_url}
+                      <div className="relative h-56 overflow-hidden">
+                        <img
+                          src={getOptimizedImageUrl(relatedPost.featured_image_url, imagePresets.cardLargeAspect)}
                           alt={translation.title}
-                          fill
-                          className="object-cover transition-transform group-hover:scale-105"
-                          unoptimized
+                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          loading="lazy"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.src = '/images/placeholder-news.svg';

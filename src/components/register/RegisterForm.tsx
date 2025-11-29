@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import type { ReactNode } from 'react'
 import { useState, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
@@ -156,13 +155,12 @@ export default function RegisterForm() {
     <div className="relative isolate flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-4">
         <div className="flex justify-center">
-          <Image
+          <img
             src={isDark ? "/asset/Legal.ge.png" : "/asset/legal.ge.black.png"}
             alt="LegalGE"
             width={140}
             height={40}
             className="object-contain h-8 sm:h-9"
-            priority
           />
         </div>
 

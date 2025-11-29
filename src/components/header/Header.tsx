@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { Menu, X, LayoutDashboard, LogOut } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
@@ -153,13 +152,12 @@ export default function Header() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center">
-            <Image
+            <img
               src={isDark ? "/asset/Legal.ge.png" : "/asset/legal.ge.black.png"}
               alt="LegalGE"
               width={140}
               height={40}
               className="object-contain object-left h-8 sm:h-9"
-              priority
             />
             {/* Visible text for screen-readers only (keeps semantic branding) */}
             <span className="sr-only">LegalGE</span>

@@ -56,11 +56,11 @@ export default function Position6({ posts }: Position6Props) {
       }`}>
         {/* Image Section (Top Half) */}
         {post.featured_image_url && (
-          <div className="relative h-[70%] w-full overflow-hidden">
+          <div className="relative h-[70%] w-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
             <img
-              src={getOptimizedImageUrl(post.featured_image_url, imagePresets.cardThumbnail)}
+              src={getOptimizedImageUrl(post.featured_image_url, imagePresets.cardLarge)}
               alt={translation.title}
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              className="absolute inset-0 w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
               loading="lazy"
             />
             <div className={`absolute inset-0 ${

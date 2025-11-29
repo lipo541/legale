@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { ArrowRight, Phone } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useParams } from 'next/navigation'
@@ -17,22 +16,16 @@ export default function Hero() {
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
         {isDark ? (
-          <Image
+          <img
             src="https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=80&w=2064&auto=format&fit=crop"
             alt="Night cityscape"
-            fill
-            priority
-            className="object-cover transition-opacity duration-150"
-            quality={90}
+            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-150"
           />
         ) : (
-          <Image
+          <img
             src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop"
             alt="Day cityscape"
-            fill
-            priority
-            className="object-cover transition-opacity duration-150"
-            quality={90}
+            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-150"
           />
         )}
         

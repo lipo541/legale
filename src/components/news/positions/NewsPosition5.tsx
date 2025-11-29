@@ -3,7 +3,6 @@
 import { useTheme } from '@/contexts/ThemeContext'
 import { motion } from 'framer-motion'
 import { Flame, ArrowUpRight } from 'lucide-react'
-import Image from 'next/image'
 
 export default function NewsPosition5() {
   const { theme } = useTheme()
@@ -48,11 +47,11 @@ export default function NewsPosition5() {
             className="group relative rounded-xl overflow-hidden cursor-pointer"
           >
             <div className="relative h-32">
-              <Image
+              <img
                 src={news.image}
                 alt={news.title}
-                fill
-                className="object-cover transition-transform group-hover:scale-110"
+                className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-110"
+                loading="lazy"
               />
               <div className={`absolute inset-0 ${
                 isDark ? 'bg-gradient-to-t from-black/80 to-transparent' : 'bg-gradient-to-t from-white/80 to-transparent'

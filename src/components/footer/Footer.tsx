@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useTheme } from '@/contexts/ThemeContext'
 import type { Locale } from '@/lib/i18n/config'
@@ -53,7 +52,7 @@ export default function Footer() {
           {/* Brand Section */}
           <div className="space-y-4">
             <Link href={`/${currentLocale}`} className="inline-block">
-              <Image
+              <img
                 src={isDark ? "/asset/Legal.ge.png" : "/asset/legal.ge.black.png"}
                 alt="LegalGE"
                 width={140}
