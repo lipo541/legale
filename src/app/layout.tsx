@@ -16,12 +16,12 @@ export default function RootLayout({
         {/* Preconnect to Supabase Storage for faster image loading */}
         <link
           rel="preconnect"
-          href="https://enijaqzdvzbwwjxzabgp.supabase.co"
+          href="https://fbxooowagcadiqpppniy.supabase.co"
           crossOrigin="anonymous"
         />
         <link
           rel="dns-prefetch"
-          href="https://enijaqzdvzbwwjxzabgp.supabase.co"
+          href="https://fbxooowagcadiqpppniy.supabase.co"
         />
       </head>
       <body

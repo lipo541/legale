@@ -8,6 +8,7 @@ import 'swiper/css/pagination'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { newsTranslations } from '@/translations/news'
+import { getOptimizedImageUrl, imagePresets } from '@/lib/utils'
 
 interface PostTranslation {
   title: string
@@ -84,7 +85,7 @@ export default function Position1({ posts }: Position1Props) {
                   {post.featured_image_url && (
                     <div className="absolute inset-0">
                       <img
-                        src={post.featured_image_url}
+                        src={getOptimizedImageUrl(post.featured_image_url, imagePresets.heroBanner)}
                         alt={translation.title}
                         className="absolute inset-0 w-full h-full object-cover"
                         style={{

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useTheme } from '@/contexts/ThemeContext'
 import { specialistDetailTranslations } from '@/translations/specialist-detail'
+import { getOptimizedImageUrl, imagePresets } from '@/lib/utils'
 import { 
   Briefcase, 
   Mail, 
@@ -383,7 +384,7 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
             <div className="mb-6">
               {specialist.avatar_url ? (
                 <img
-                  src={specialist.avatar_url}
+                  src={getOptimizedImageUrl(specialist.avatar_url, imagePresets.avatarLarge)}
                   alt={displayTranslation.full_name}
                   className={`w-32 h-32 sm:w-40 sm:h-40 rounded-full object-cover ring-1 ${
                     isDark ? 'ring-white/10' : 'ring-black/10'

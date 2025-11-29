@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { Locale, getWindowWidth } from '@/lib/enums'
+import { getOptimizedImageUrl, imagePresets } from '@/lib/utils'
 import Link from 'next/link'
 import { IoTimeOutline, IoCalendarOutline, IoArrowBack, IoDocumentTextOutline, IoChevronForward, IoBriefcaseOutline, IoLogoFacebook, IoLogoLinkedin, IoLogoTwitter, IoChevronDown, IoChevronUp } from 'react-icons/io5'
 import { createClient } from '@/lib/supabase/client'
@@ -381,11 +382,11 @@ export default function PracticeDetail({
             <div className={`relative rounded-2xl overflow-hidden mb-8 ${
               isDark ? 'border border-white/10' : 'border border-gray-200'
             }`}>
-              <div className="relative w-full aspect-[21/9]">
+              <div className="relative w-full">
                 <img
-                  src={practice.pageHeroImageUrl}
+                  src={getOptimizedImageUrl(practice.pageHeroImageUrl, imagePresets.practiceHero)}
                   alt={translation.pageHeroImageAlt}
-                  className="absolute inset-0 w-full h-full object-cover"
+                  className="w-full h-auto"
                   loading="eager"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;

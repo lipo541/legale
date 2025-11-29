@@ -9,6 +9,7 @@ import NewsSearch from './common/NewsSearch'
 import NewsSort, { SortOption } from './common/NewsSort'
 import ViewModeToggle from '@/components/common/ViewModeToggle'
 import { newsTranslations } from '@/translations/news'
+import { getOptimizedImageUrl, imagePresets } from '@/lib/utils'
 
 interface Category {
   id: string
@@ -594,12 +595,12 @@ export default function ArchivePage({ locale }: ArchivePageProps) {
                         {post.featured_image_url && (
                           <div className="relative w-full aspect-[16/9] overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
                             <Image
-                              src={post.featured_image_url}
+                              src={getOptimizedImageUrl(post.featured_image_url, imagePresets.cardLarge)}
                               alt={translation.title}
                               fill
                               className="object-cover transition-transform group-hover:scale-105"
                               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 384px"
-                              unoptimized={post.featured_image_url.includes('supabase.co')}
+                              unoptimized
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement
                                 target.style.display = 'none'
@@ -661,12 +662,12 @@ export default function ArchivePage({ locale }: ArchivePageProps) {
                         {post.featured_image_url && (
                           <div className="relative flex-shrink-0 rounded-lg overflow-hidden w-24 h-24 sm:w-32 sm:h-24 md:w-48 md:h-32 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
                             <Image
-                              src={post.featured_image_url}
+                              src={getOptimizedImageUrl(post.featured_image_url, imagePresets.cardThumbnail)}
                               alt={translation.title}
                               fill
                               className="object-cover transition-transform group-hover:scale-105"
                               sizes="(max-width: 640px) 96px, (max-width: 768px) 128px, 192px"
-                              unoptimized={post.featured_image_url.includes('supabase.co')}
+                              unoptimized
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement
                                 target.style.display = 'none'

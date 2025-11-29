@@ -3,6 +3,7 @@
 import { useTheme } from '@/contexts/ThemeContext'
 import Link from 'next/link'
 import { ArrowRight, Tag } from 'lucide-react'
+import { getOptimizedImageUrl, imagePresets } from '@/lib/utils'
 
 interface PracticeTranslation {
   title: string
@@ -56,7 +57,7 @@ export default function PracticeCard({
         isDark ? 'bg-gradient-to-br from-white/5 to-white/10' : 'bg-gradient-to-br from-black/5 to-black/10'
       }`}>
         <img
-          src={hero_image_url}
+          src={getOptimizedImageUrl(hero_image_url, imagePresets.practiceCard)}
           alt={translation.hero_image_alt}
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-102"
           loading="lazy"
@@ -122,7 +123,7 @@ export default function PracticeCard({
         isDark ? 'bg-gradient-to-br from-white/5 to-white/10' : 'bg-gradient-to-br from-black/5 to-black/10'
       }`}>
         <img
-          src={hero_image_url}
+          src={getOptimizedImageUrl(hero_image_url, imagePresets.cardThumbnail)}
           alt={translation.hero_image_alt}
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-102"
           loading="lazy"

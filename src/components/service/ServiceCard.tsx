@@ -3,6 +3,7 @@
 import { useTheme } from '@/contexts/ThemeContext'
 import Link from 'next/link'
 import { ArrowRight, FileText } from 'lucide-react'
+import { getOptimizedImageUrl, imagePresets } from '@/lib/utils'
 
 interface ServiceTranslation {
   title: string
@@ -54,7 +55,7 @@ export default function ServiceCard({
         isDark ? 'bg-gradient-to-br from-white/5 to-white/10' : 'bg-gradient-to-br from-black/5 to-black/10'
       }`}>
         <img
-          src={image_url}
+          src={getOptimizedImageUrl(image_url, imagePresets.serviceCard)}
           alt={translation.image_alt}
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-102"
           loading="lazy"
@@ -120,7 +121,7 @@ export default function ServiceCard({
         isDark ? 'bg-gradient-to-br from-white/5 to-white/10' : 'bg-gradient-to-br from-black/5 to-black/10'
       }`}>
         <img
-          src={image_url}
+          src={getOptimizedImageUrl(image_url, imagePresets.cardThumbnail)}
           alt={translation.image_alt}
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-102"
           loading="lazy"

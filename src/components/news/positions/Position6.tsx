@@ -4,6 +4,7 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { newsTranslations } from '@/translations/news'
+import { getOptimizedImageUrl, imagePresets } from '@/lib/utils'
 
 interface PostTranslation {
   title: string
@@ -57,7 +58,7 @@ export default function Position6({ posts }: Position6Props) {
         {post.featured_image_url && (
           <div className="relative h-[70%] w-full overflow-hidden">
             <img
-              src={post.featured_image_url}
+              src={getOptimizedImageUrl(post.featured_image_url, imagePresets.cardThumbnail)}
               alt={translation.title}
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               loading="lazy"

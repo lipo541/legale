@@ -9,6 +9,7 @@ import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { newsTranslations } from '@/translations/news'
+import { getOptimizedImageUrl, imagePresets } from '@/lib/utils'
 
 interface PostTranslation {
   title: string
@@ -72,7 +73,7 @@ export default function Position3({ posts }: Position3Props) {
                   {post.featured_image_url && (
                     <div className="absolute inset-0 z-0">
                       <img
-                        src={post.featured_image_url}
+                        src={getOptimizedImageUrl(post.featured_image_url, imagePresets.heroBanner)}
                         alt={translation.title}
                         className="absolute inset-0 w-full h-full object-cover opacity-70 transition-transform duration-500 hover:scale-105"
                         loading="lazy"

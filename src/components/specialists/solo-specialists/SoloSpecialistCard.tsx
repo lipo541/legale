@@ -6,6 +6,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Mail, Phone, UserCircle } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { specialistsTranslations } from '@/translations/specialists';
+import { getOptimizedImageUrl, imagePresets } from '@/lib/utils';
 
 interface SoloSpecialist {
   id: string;
@@ -63,7 +64,7 @@ export default function SoloSpecialistCard({ specialist, viewMode = 'grid' }: So
             }`}>
               {specialist.avatar_url ? (
                 <img 
-                  src={specialist.avatar_url} 
+                  src={getOptimizedImageUrl(specialist.avatar_url, imagePresets.avatarMedium)} 
                   alt={specialist.full_name}
                   className="h-full w-full object-cover"
                   loading="lazy"
@@ -189,7 +190,7 @@ export default function SoloSpecialistCard({ specialist, viewMode = 'grid' }: So
           }`}>
             {specialist.avatar_url ? (
               <img 
-                src={specialist.avatar_url} 
+                src={getOptimizedImageUrl(specialist.avatar_url, imagePresets.avatarMedium)} 
                 alt={specialist.full_name}
                 className="h-full w-full object-cover"
                 loading="lazy"

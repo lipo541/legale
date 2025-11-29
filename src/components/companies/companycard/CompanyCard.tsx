@@ -5,6 +5,7 @@ import { Building2, MapPin, Phone, Globe } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { companiesTranslations } from '@/translations/companies';
+import { getOptimizedImageUrl, imagePresets } from '@/lib/utils';
 
 interface CompanyCardProps {
   full_name: string;
@@ -64,7 +65,7 @@ export default function CompanyCard({
             }`}>
               {logo_url ? (
                 <img 
-                  src={logo_url} 
+                  src={getOptimizedImageUrl(logo_url, imagePresets.avatarMedium)} 
                   alt={full_name}
                   className="h-full w-full object-cover p-1"
                   loading="lazy"
@@ -168,7 +169,7 @@ export default function CompanyCard({
         {logo_url ? (
           <div className="relative h-16 w-16 overflow-hidden rounded-full bg-white">
             <img
-              src={logo_url}
+              src={getOptimizedImageUrl(logo_url, imagePresets.avatarMedium)}
               alt={full_name}
               className="h-full w-full object-cover p-1"
               loading="lazy"

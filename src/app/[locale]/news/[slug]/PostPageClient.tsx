@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowLeft, Calendar, User, Clock, Tag, Facebook, Twitter, Linkedin } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { getOptimizedImageUrl, imagePresets } from '@/lib/utils'
 
 interface Translation {
   language: string
@@ -266,7 +267,7 @@ export default function PostPageClient({ post, author, category, relatedPosts, l
           {post.featuredImage && (
             <div className="relative w-full h-96 mb-8 rounded-xl overflow-hidden ring-1 ring-black/5">
               <Image
-                src={post.featuredImage}
+                src={getOptimizedImageUrl(post.featuredImage, imagePresets.heroBanner)}
                 alt={post.title}
                 fill
                 className="object-cover"

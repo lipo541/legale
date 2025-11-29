@@ -5,6 +5,7 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { useToast } from '@/contexts/ToastContext'
 import { UserRole, Locale } from '@/lib/enums'
 import { getServiceDetailTranslations } from '@/translations/service-detail'
+import { getOptimizedImageUrl, imagePresets } from '@/lib/utils'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
@@ -180,7 +181,7 @@ export default function ServiceSpecialistCard({ serviceId, locale }: ServiceSpec
               {/* Profile Image - Wider aspect ratio */}
               <div className="relative w-full aspect-[16/10] overflow-hidden bg-gray-100 dark:bg-gray-800">
                 <img
-                  src={specialist.avatar_url ?? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=500&fit=crop'}
+                  src={getOptimizedImageUrl(specialist.avatar_url, imagePresets.cardLarge) || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=500&fit=crop'}
                   alt={specialist.full_name}
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   loading="lazy"

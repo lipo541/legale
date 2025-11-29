@@ -5,6 +5,7 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { useToast } from '@/contexts/ToastContext'
 import { Locale, getWindowWidth } from '@/lib/enums'
 import { getServiceDetailTranslations } from '@/translations/service-detail'
+import { getOptimizedImageUrl, imagePresets } from '@/lib/utils'
 import Link from 'next/link'
 import { IoTimeOutline, IoCalendarOutline, IoArrowBack, IoDocumentTextOutline, IoChevronForward, IoBriefcaseOutline, IoLogoFacebook, IoLogoLinkedin, IoLogoTwitter, IoChevronDown, IoChevronUp } from 'react-icons/io5'
 import { createClient } from '@/lib/supabase/client'
@@ -388,11 +389,11 @@ export default function ServiceDetail({
             <div className={`relative rounded-2xl overflow-hidden mb-8 ${
               isDark ? 'border border-white/10' : 'border border-gray-200'
             }`}>
-              <div className="relative w-full aspect-[21/9]">
+              <div className="relative w-full">
                 <img
-                  src={service.imageUrl}
+                  src={getOptimizedImageUrl(service.imageUrl, imagePresets.practiceHero)}
                   alt={translation.imageAlt || translation.title}
-                  className="absolute inset-0 w-full h-full object-cover"
+                  className="w-full h-auto"
                   loading="eager"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;

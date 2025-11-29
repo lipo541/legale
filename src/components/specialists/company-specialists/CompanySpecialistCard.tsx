@@ -6,6 +6,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Mail, Phone, Building2 } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { specialistsTranslations } from '@/translations/specialists';
+import { getOptimizedImageUrl, imagePresets } from '@/lib/utils';
 
 interface CompanySpecialist {
   id: string;
@@ -79,7 +80,7 @@ export default function CompanySpecialistCard({ specialist, viewMode = 'grid' }:
             }`}>
               {specialist.avatar_url ? (
                 <img 
-                  src={specialist.avatar_url} 
+                  src={getOptimizedImageUrl(specialist.avatar_url, imagePresets.avatarMedium)} 
                   alt={specialist.full_name}
                   className="h-full w-full object-cover"
                   loading="lazy"
@@ -222,7 +223,7 @@ export default function CompanySpecialistCard({ specialist, viewMode = 'grid' }:
           }`}>
             {specialist.avatar_url ? (
               <img 
-                src={specialist.avatar_url} 
+                src={getOptimizedImageUrl(specialist.avatar_url, imagePresets.avatarMedium)} 
                 alt={specialist.full_name}
                 className="h-full w-full object-cover"
                 loading="lazy"

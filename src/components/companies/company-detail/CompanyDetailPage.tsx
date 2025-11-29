@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useTheme } from '@/contexts/ThemeContext'
 import { companyDetailTranslations } from '@/translations/company-detail'
+import { getOptimizedImageUrl, imagePresets } from '@/lib/utils'
 import { 
   Building2,
   Mail, 
@@ -314,7 +315,7 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
             <div className="mb-6">
               {company.logo_url ? (
                 <img
-                  src={company.logo_url}
+                  src={getOptimizedImageUrl(company.logo_url, imagePresets.avatarLarge)}
                   alt={translation?.company_name || company.company_slug}
                   className={`w-32 h-32 sm:w-40 sm:h-40 rounded-2xl object-cover ring-1 ${
                     isDark ? 'ring-white/10' : 'ring-black/10'
@@ -628,7 +629,7 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
                 >
                   {specialist.avatar_url ? (
                     <img
-                      src={specialist.avatar_url}
+                      src={getOptimizedImageUrl(specialist.avatar_url, imagePresets.avatarMedium)}
                       alt={specialist.full_name}
                       className="h-14 w-14 rounded-full object-cover ring-1 ring-black/5"
                     />

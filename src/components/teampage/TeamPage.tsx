@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
+import { getOptimizedImageUrl, imagePresets } from '@/lib/utils'
 
 interface TeamMember {
   id: string
@@ -158,7 +159,7 @@ const CollapsibleSection = ({
                         } group-hover:scale-105 transition-transform duration-300`}></div>
                         {member.avatar_url ? (
                           <img
-                            src={member.avatar_url}
+                            src={getOptimizedImageUrl(member.avatar_url, imagePresets.avatarMedium)}
                             alt={member.full_name || 'Team Member'}
                             className="absolute inset-0 w-full h-full object-cover rounded-full group-hover:scale-105 transition-transform duration-300"
                             loading="lazy"
