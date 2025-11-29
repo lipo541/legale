@@ -12,6 +12,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ka" suppressHydrationWarning>
+      <head>
+        {/* Preconnect to Supabase Storage for faster image loading */}
+        <link
+          rel="preconnect"
+          href="https://enijaqzdvzbwwjxzabgp.supabase.co"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="dns-prefetch"
+          href="https://enijaqzdvzbwwjxzabgp.supabase.co"
+        />
+      </head>
       <body
         className={`${geistSans.variable} antialiased flex flex-col min-h-screen`}
       >
