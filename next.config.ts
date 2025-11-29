@@ -9,6 +9,15 @@ const nextConfig: NextConfig = {
     optimizeCss: true, // Enable CSS optimization (critters for critical CSS)
   },
   
+  // SWC compiler options for modern browsers (removes unnecessary polyfills)
+  compiler: {
+    // Remove console.log in production
+    removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
+  },
+  
+  // Transpile only for modern browsers (ES2020+)
+  transpilePackages: [],
+  
   images: {
     formats: ['image/avif', 'image/webp'],
     qualities: [75, 90, 100],

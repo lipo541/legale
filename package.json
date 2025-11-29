@@ -64,12 +64,13 @@
     "typescript": "^5"
   },
   "browserslist": [
-    "Chrome >= 87",
-    "Firefox >= 78",
-    "Safari >= 14",
-    "Edge >= 88",
-    "Opera >= 73",
+    "Chrome >= 92",
+    "Firefox >= 91",
+    "Safari >= 15",
+    "Edge >= 92",
+    "Opera >= 78",
     "not dead",
-    "not IE 11"
+    "not IE 11",
+    "not op_mini all"
   ]
 }
