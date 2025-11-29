@@ -3,6 +3,12 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   compress: true, // Enable gzip compression
   poweredByHeader: false, // Remove X-Powered-By header for security
+  
+  // Experimental optimizations for better performance
+  experimental: {
+    optimizeCss: true, // Enable CSS optimization (critters for critical CSS)
+  },
+  
   images: {
     formats: ['image/avif', 'image/webp'],
     qualities: [75, 90, 100],
