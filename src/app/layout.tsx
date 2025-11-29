@@ -24,14 +24,6 @@ export default function RootLayout({
           type="image/webp"
           href="https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=50&w=1200&auto=format&fit=crop&fm=webp"
         />
-        {/* Preload Geist font */}
-        <link
-          rel="preload"
-          href="/_next/static/media/a34f9d1faa5f3315-s.p.woff2"
-          as="font"
-          type="font/woff2"
-          crossOrigin="anonymous"
-        />
       </head>
       <body
         className={`${geistSans.variable} antialiased flex flex-col min-h-screen`}

@@ -4,11 +4,6 @@ const nextConfig: NextConfig = {
   compress: true, // Enable gzip compression
   poweredByHeader: false, // Remove X-Powered-By header for security
   
-  // Experimental optimizations for better performance
-  experimental: {
-    optimizeCss: true, // Enable CSS optimization (critters for critical CSS)
-  },
-  
   // SWC compiler options for modern browsers (removes unnecessary polyfills)
   compiler: {
     // Remove console.log in production
