@@ -16,7 +16,7 @@ export default function Hero() {
       {/* Background Images - both loaded, visibility controlled by CSS */}
       <div className="absolute inset-0 z-0">
         <img
-          src="https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=75&w=1200&auto=format&fit=crop"
+          src="https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=60&w=1920&auto=format&fit=crop&fm=webp"
           alt="Night cityscape"
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
             isDark ? 'opacity-100' : 'opacity-0'
@@ -25,7 +25,7 @@ export default function Hero() {
           fetchPriority="high"
         />
         <img
-          src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=75&w=1200&auto=format&fit=crop"
+          src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=60&w=1920&auto=format&fit=crop&fm=webp"
           alt="Day cityscape"
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
             isDark ? 'opacity-0' : 'opacity-100'
