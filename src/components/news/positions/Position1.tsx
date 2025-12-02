@@ -99,17 +99,17 @@ export default function Position1({ posts }: Position1Props) {
                   )}
                   
                   {/* Content - LEFT ALIGNED, BOTTOM */}
-                  <div className="relative z-10 flex h-full flex-col justify-end p-4 md:p-5 lg:p-6">
-                    <div className="max-w-2xl space-y-3">
+                  <div className="relative z-10 flex h-full flex-col justify-end p-3 sm:p-4 md:p-5 lg:p-6">
+                    <div className="max-w-2xl space-y-2 sm:space-y-3">
                       {/* Category Badge */}
                       {translation.category && (
-                        <span className="inline-block rounded-lg px-2 py-0.5 text-[8px] md:text-[9px] font-bold uppercase bg-red-600 text-white backdrop-blur-sm">
+                        <span className="inline-block rounded-lg px-2.5 py-1 text-[9px] sm:text-[8px] md:text-[9px] font-bold uppercase bg-red-600 text-white backdrop-blur-sm">
                           {translation.category}
                         </span>
                       )}
                       
                       {/* Title */}
-                      <h2 className="text-xs md:text-sm lg:text-base font-bold leading-tight text-white line-clamp-5">
+                      <h2 className="text-sm sm:text-xs md:text-sm lg:text-base font-bold leading-tight text-white line-clamp-4 sm:line-clamp-5">
                         {translation.title}
                       </h2>
                     </div>

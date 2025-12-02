@@ -43,7 +43,7 @@ export default function Position2({ posts }: Position2Props) {
   }
 
   return (
-    <div className="flex h-full flex-col gap-3">
+    <div className="flex h-full flex-col gap-2 sm:gap-3">
       {posts.map((post) => {
         const translation = post.post_translations?.[0]
         if (!translation) return null
@@ -58,7 +58,7 @@ export default function Position2({ posts }: Position2Props) {
             href={`/${locale}/news/${translation.slug}`}
             onMouseEnter={() => setHoveredId(post.id)}
             onMouseLeave={() => setHoveredId(null)}
-            className={`group relative block cursor-pointer rounded-xl p-4 transition-all duration-300 ${
+            className={`group relative block cursor-pointer rounded-xl p-3 sm:p-4 transition-all duration-300 ${
               isDark 
                 ? 'bg-white/5 hover:bg-white/10' 
                 : 'bg-black hover:bg-gray-900'
@@ -73,7 +73,7 @@ export default function Position2({ posts }: Position2Props) {
                 : 'opacity-0'
             }`} />
             
-            <div className="relative space-y-2">
+            <div className="relative space-y-1.5 sm:space-y-2">
               <div className="flex items-center justify-between">
                 <span className={`text-[10px] ${isDark ? 'text-white/40' : 'text-white/60'}`}>
                   {publishedDate}
@@ -83,14 +83,14 @@ export default function Position2({ posts }: Position2Props) {
                 </span>
               </div>
               
-              <h3 className={`text-[11px] md:text-xs font-medium leading-snug transition-opacity ${
+              <h3 className={`text-xs sm:text-[11px] md:text-xs font-medium leading-snug transition-opacity ${
                 isDark ? 'text-white' : 'text-white'
               } ${hoveredId === post.id ? 'opacity-60' : 'opacity-100'}`}>
                 {translation.title}
               </h3>
               
               {translation.excerpt && (
-                <p className={`text-[10px] md:text-xs leading-relaxed ${isDark ? 'text-white/50' : 'text-white/70'}`}>
+                <p className={`hidden sm:block text-[10px] md:text-xs leading-relaxed ${isDark ? 'text-white/50' : 'text-white/70'}`}>
                   {translation.excerpt.slice(0, 80)}...
                 </p>
               )}

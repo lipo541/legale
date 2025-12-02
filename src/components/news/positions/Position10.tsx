@@ -63,7 +63,43 @@ export default function Position10({ posts }: Position10Props) {
 
   return (
     <Link href={`/${locale}/news/${translation.slug}`} className="block h-full">
-      <div className={`group relative h-full overflow-hidden rounded-xl transition-all duration-300 hover:shadow-lg ${
+      {/* Mobile: Horizontal compact card */}
+      <div className={`md:hidden group flex items-center gap-3 p-2 rounded-xl transition-all duration-300 active:scale-[0.98] ${
+        isDark 
+          ? 'bg-white/5 border border-white/10' 
+          : 'bg-black/5 border border-black/10'
+      }`}>
+        {/* Left: Square image */}
+        <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg">
+          {post.featured_image_url ? (
+            <img
+              src={getOptimizedImageUrl(post.featured_image_url, imagePresets.cardThumbnail)}
+              alt={translation.title}
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <div className={`h-full w-full ${isDark ? 'bg-white/10' : 'bg-black/10'}`} />
+          )}
+        </div>
+        
+        {/* Right: Content */}
+        <div className="flex-1 min-w-0">
+          <span className={`inline-block mb-0.5 rounded px-1 py-0.5 text-[8px] font-medium ${
+            isDark ? 'bg-white/10 text-white/70' : 'bg-black/10 text-black/70'
+          }`}>
+            {translation.category}
+          </span>
+          <h3 className={`text-xs font-medium leading-snug line-clamp-2 ${
+            isDark ? 'text-white' : 'text-black'
+          }`}>
+            {translation.title}
+          </h3>
+        </div>
+      </div>
+
+      {/* Desktop: Original vertical card */}
+      <div className={`hidden md:block group relative h-full overflow-hidden rounded-xl transition-all duration-300 hover:shadow-lg ${
         isDark 
           ? 'bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/10 hover:border-white/20' 
           : 'bg-black border border-gray-800 hover:border-gray-700'

@@ -99,47 +99,47 @@ export default function NewsLayout() {
             </div>
 
             {/* Main Grid Layout - Apple minimalist approach */}
-            <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-2.5 md:gap-3.5 lg:gap-4">
-          {/* TOP ROW - 3 POSITIONS */}
-          {/* Position 1 - Hero Slider (Left, spans 3 rows) */}
-          <div className="md:col-span-6 lg:col-span-3 lg:row-span-3">
-            <div className="h-[320px] md:h-[450px] lg:h-[580px]">
+            {/* Mobile: Single column stack | Desktop: Complex grid */}
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-6 md:gap-3.5 lg:grid-cols-12 lg:gap-4">
+          {/* Position 1 - Hero Slider */}
+          <div className="col-span-1 md:col-span-6 lg:col-span-3 lg:row-span-3 order-1">
+            <div className="h-[280px] sm:h-[320px] md:h-[450px] lg:h-[580px]">
               <Position1 posts={position1Posts} />
             </div>
           </div>
 
-          {/* Position 3 - Main Feature Slider (Center, spans 2 rows) */}
-          <div className="md:col-span-6 lg:col-span-6 lg:row-span-2">
-            <div className="h-[240px] md:h-[350px] lg:h-[380px]">
+          {/* Position 3 - Main Feature Slider */}
+          <div className="col-span-1 md:col-span-6 lg:col-span-6 lg:row-span-2 order-2">
+            <div className="h-[220px] sm:h-[240px] md:h-[350px] lg:h-[380px]">
               <Position3 posts={position3Posts} />
             </div>
           </div>
 
-          {/* Position 5 - News Ticker (Right, spans 2 rows) */}
-          <div className="md:col-span-6 lg:col-span-3 lg:row-span-2">
-            <div className="h-[200px] md:h-[300px] lg:h-[380px]">
+          {/* Position 5 - News Ticker */}
+          <div className="col-span-1 md:col-span-6 lg:col-span-3 lg:row-span-2 order-3">
+            <div className="h-[180px] sm:h-[200px] md:h-[300px] lg:h-[380px]">
               <Position5 posts={position5Posts} />
             </div>
           </div>
 
-          {/* MIDDLE ROW - 3 EQUAL CARDS (below Position 3 and 5) */}
+          {/* MIDDLE ROW - 3 Cards: 2-column grid on mobile, 3-column on desktop */}
           {/* Position 4 - Stats Card */}
-          <div className="md:col-span-2 lg:col-span-3">
-            <div className="h-[120px] md:h-[180px] lg:h-[190px]">
+          <div className="col-span-1 md:col-span-2 lg:col-span-3 order-4">
+            <div className="h-auto sm:h-[120px] md:h-[180px] lg:h-[190px]">
               <Position4 />
             </div>
           </div>
 
           {/* Position 6 - Category Card */}
-          <div className="md:col-span-2 lg:col-span-3">
-            <div className="h-[120px] md:h-[180px] lg:h-[190px]">
+          <div className="col-span-1 md:col-span-2 lg:col-span-3 order-5">
+            <div className="h-auto sm:h-[120px] md:h-[180px] lg:h-[190px]">
               <Position6 posts={position6Posts} />
             </div>
           </div>
 
           {/* Position 7 - Quick Link */}
-          <div className="md:col-span-2 lg:col-span-3">
-            <div className="h-[120px] md:h-[180px] lg:h-[190px]">
+          <div className="col-span-1 md:col-span-2 lg:col-span-3 order-6">
+            <div className="h-auto sm:h-[120px] md:h-[180px] lg:h-[190px]">
               <Position7 posts={position7Posts} />
             </div>
           </div>
@@ -151,25 +151,24 @@ export default function NewsLayout() {
         </div>
 
         {/* Second Grid Section */}
-        <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-2.5 md:gap-3.5 lg:gap-4">
-          {/* BOTTOM ROW - 3 EQUAL CARDS (below Position 1) */}
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-6 md:gap-3.5 lg:grid-cols-12 lg:gap-4">
           {/* Position 2 - Vertical News Feed */}
-          <div className="md:col-span-2 lg:col-span-4">
-            <div className="h-[160px] md:h-[220px] lg:h-[240px]">
+          <div className="col-span-1 md:col-span-2 lg:col-span-4">
+            <div className="h-[180px] sm:h-[160px] md:h-[220px] lg:h-[240px]">
               <Position2 posts={position2Posts} />
             </div>
           </div>
 
           {/* Position 9 - Horizontal News Carousel */}
-          <div className="md:col-span-2 lg:col-span-4">
-            <div className="h-[180px] md:h-[280px] lg:h-[335px]">
+          <div className="col-span-1 md:col-span-2 lg:col-span-4">
+            <div className="h-[200px] sm:h-[180px] md:h-[280px] lg:h-[335px]">
               <Position9 posts={position9Posts} />
             </div>
           </div>
 
           {/* Position 10 - Featured Topics */}
-          <div className="md:col-span-2 lg:col-span-4">
-            <div className="h-[180px] md:h-[280px] lg:h-[335px]">
+          <div className="col-span-1 md:col-span-2 lg:col-span-4">
+            <div className="h-auto sm:h-[180px] md:h-[280px] lg:h-[335px]">
               <Position10 posts={position10Posts} />
             </div>
           </div>

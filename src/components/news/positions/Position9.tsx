@@ -45,66 +45,125 @@ export default function Position9({ posts }: Position9Props) {
   }
 
   return (
-    <div className={`relative h-full overflow-hidden rounded-2xl ${
-      isDark ? 'bg-white/5' : 'bg-black/5'
-    }`}>
-      {/* Header */}
-      <div className="border-b p-3" style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
-        <div className="flex items-center gap-2">
-          <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
-          <span className={`text-[10px] font-medium uppercase tracking-wider ${
+    <>
+      {/* Mobile: Apple-style compact list */}
+      <div className={`md:hidden rounded-xl overflow-hidden ${
+        isDark ? 'bg-white/5 border border-white/10' : 'bg-black/5 border border-black/10'
+      }`}>
+        {/* Header */}
+        <div className={`flex items-center gap-2 px-3 py-2 border-b ${
+          isDark ? 'border-white/10' : 'border-black/10'
+        }`}>
+          <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
+          <span className={`text-[9px] font-medium uppercase tracking-wider ${
             isDark ? 'text-white/60' : 'text-black/60'
           }`}>
             {t.newsTitle}
           </span>
         </div>
-      </div>
-
-      {/* Vertical Slider */}
-      <div className="h-[calc(100%-3.5rem)] p-3">
-        <Swiper
-          modules={[Autoplay]}
-          direction="vertical"
-          slidesPerView={3}
-          spaceBetween={10}
-          autoplay={{ delay: 3000, disableOnInteraction: false }}
-          loop={posts.length > 3}
-          className="h-full"
-        >
-          {posts.map((post) => {
+        
+        {/* News items */}
+        <div className="divide-y" style={{ borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}>
+          {posts.slice(0, 3).map((post) => {
             const translation = post.post_translations[0]
             const publishedTime = post.published_at ? new Date(post.published_at).toLocaleTimeString(locale, { 
               hour: '2-digit', 
               minute: '2-digit' 
             }) : ''
-
             return (
-              <SwiperSlide key={post.id}>
-                <Link
-                  href={`/${locale}/news/${translation.slug}`}
-                  className={`block cursor-pointer rounded-lg p-2.5 transition-colors hover:${
-                    isDark ? 'bg-white/10' : 'bg-black/10'
-                  }`}
-                >
-                  <div className="mb-1.5 flex items-center justify-between">
-                    <span className={`text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-                      {publishedTime}
-                    </span>
-                    <span className="rounded-full px-1.5 py-0.5 text-[9px] bg-red-600 text-white">
-                      {translation.category}
-                    </span>
-                  </div>
-                  <p className={`text-xs leading-snug line-clamp-2 ${
-                    isDark ? 'text-white/80' : 'text-black/80'
+              <Link 
+                key={post.id}
+                href={`/${locale}/news/${translation.slug}`}
+                className={`flex items-center gap-3 px-3 py-2.5 transition-colors active:scale-[0.99] ${
+                  isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'
+                }`}
+              >
+                <div className="flex-1 min-w-0">
+                  <p className={`text-xs font-medium leading-snug line-clamp-1 ${
+                    isDark ? 'text-white' : 'text-black'
                   }`}>
                     {translation.title}
                   </p>
-                </Link>
-              </SwiperSlide>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className={`text-[9px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                      {publishedTime}
+                    </span>
+                    <span className="rounded px-1 py-0.5 text-[8px] bg-red-600 text-white">
+                      {translation.category}
+                    </span>
+                  </div>
+                </div>
+                <svg className={`h-4 w-4 flex-shrink-0 ${isDark ? 'text-white/20' : 'text-black/20'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
             )
           })}
-        </Swiper>
+        </div>
       </div>
-    </div>
+
+      {/* Desktop: Original vertical ticker */}
+      <div className={`hidden md:block relative h-full overflow-hidden rounded-2xl ${
+        isDark ? 'bg-white/5' : 'bg-black/5'
+      }`}>
+        {/* Header */}
+        <div className="border-b p-3" style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
+          <div className="flex items-center gap-2">
+            <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
+            <span className={`text-[10px] font-medium uppercase tracking-wider ${
+              isDark ? 'text-white/60' : 'text-black/60'
+            }`}>
+              {t.newsTitle}
+            </span>
+          </div>
+        </div>
+
+        {/* Vertical slider */}
+        <div className="h-[calc(100%-3.5rem)] p-3">
+          <Swiper
+            modules={[Autoplay]}
+            direction="vertical"
+            slidesPerView={3}
+            spaceBetween={10}
+            autoplay={{ delay: 3000, disableOnInteraction: false }}
+            loop={posts.length > 3}
+            className="h-full"
+          >
+            {posts.map((post) => {
+              const translation = post.post_translations[0]
+              const publishedTime = post.published_at ? new Date(post.published_at).toLocaleTimeString(locale, { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+              }) : ''
+
+              return (
+                <SwiperSlide key={post.id}>
+                  <Link
+                    href={`/${locale}/news/${translation.slug}`}
+                    className={`block cursor-pointer rounded-lg p-2.5 transition-colors hover:${
+                      isDark ? 'bg-white/10' : 'bg-black/10'
+                    }`}
+                  >
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <span className={`text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                        {publishedTime}
+                      </span>
+                      <span className="rounded-full px-1.5 py-0.5 text-[9px] bg-red-600 text-white">
+                        {translation.category}
+                      </span>
+                    </div>
+                    <p className={`text-xs leading-snug line-clamp-2 ${
+                      isDark ? 'text-white/80' : 'text-black/80'
+                    }`}>
+                      {translation.title}
+                    </p>
+                  </Link>
+                </SwiperSlide>
+              )
+            })}
+          </Swiper>
+        </div>
+      </div>
+    </>
   )
 }
