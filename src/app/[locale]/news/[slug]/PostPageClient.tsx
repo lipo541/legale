@@ -264,11 +264,11 @@ export default function PostPageClient({ post, author, category, relatedPosts, l
 
           {/* Featured Image */}
           {post.featuredImage && (
-            <div className="relative w-full h-96 mb-8 rounded-xl overflow-hidden ring-1 ring-black/5">
+            <div className="relative w-full mb-8 rounded-xl overflow-hidden ring-1 ring-black/5">
               <img
                 src={getOptimizedImageUrl(post.featuredImage, imagePresets.practiceHero)}
                 alt={post.title}
-                className="absolute inset-0 w-full h-full object-cover"
+                className="w-full h-auto object-contain"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.src = '/images/placeholder-news.svg';

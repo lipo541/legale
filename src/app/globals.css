@@ -180,3 +180,35 @@ body:not(.dark) .scrollbar-thin::-webkit-scrollbar-thumb {
 body:not(.dark) .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.3);
 }
+
+/* YouTube Video Responsive Embed */
+.prose div[data-youtube-video],
+div[data-youtube-video] {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  height: 0;
+  overflow: hidden;
+  margin: 1.5rem 0;
+  border-radius: 0.75rem;
+}
+
+.prose div[data-youtube-video] iframe,
+div[data-youtube-video] iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 0.75rem;
+}
+
+/* Also handle direct iframe embeds in prose */
+.prose iframe[src*="youtube"],
+.prose iframe[src*="youtu.be"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 16 / 9;
+  border-radius: 0.75rem;
+}
