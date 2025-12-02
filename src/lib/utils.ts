@@ -70,7 +70,7 @@ export const imagePresets = {
   avatarLarge: { width: 200, height: 200, quality: 85, resize: 'cover' as const },
   
   // Card thumbnails (with size limit for small cards)
-  cardThumbnail: { width: 400, quality: 80 },
+  cardThumbnail: { width: 400, quality: 80, resize: 'contain' as const },
   cardLarge: { width: 800, quality: 85 },
   // Card with aspect ratio for proper cropping (16:10 for h-56 cards ~380x224)
   cardLargeAspect: { width: 800, height: 500, quality: 85, resize: 'cover' as const },
