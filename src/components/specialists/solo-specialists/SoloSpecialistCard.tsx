@@ -55,7 +55,7 @@ export default function SoloSpecialistCard({ specialist, viewMode = 'grid' }: So
         {/* Compact mobile layout, full desktop layout */}
         <div className="flex w-full items-center gap-3 p-3 sm:gap-0 sm:p-0">
           {/* Left: Avatar and Name - Always visible */}
-          <div className="flex flex-1 items-center gap-3 sm:w-1/3 sm:gap-4 sm:p-4">
+          <div className="flex flex-1 max-w-[calc(100%-70px)] sm:max-w-none items-center gap-3 sm:w-1/3 sm:flex-none sm:gap-4 sm:p-4">
             {/* Avatar - Smaller on mobile */}
             <div className={`h-12 w-12 sm:h-16 sm:w-16 flex-shrink-0 overflow-hidden rounded-full border-2 ${
               isDark 
@@ -135,7 +135,7 @@ export default function SoloSpecialistCard({ specialist, viewMode = 'grid' }: So
           </div>
 
           {/* Right: Action Button */}
-          <div className={`flex items-center sm:border-l p-0 sm:p-3 ${
+          <div className={`flex-shrink-0 flex items-center sm:border-l p-0 sm:p-3 ${
             isDark ? 'sm:border-white/10' : 'sm:border-black/10'
           }`}>
             {specialist.slug ? (

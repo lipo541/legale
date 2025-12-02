@@ -5,7 +5,7 @@ export const headerTranslations = {
     specialists: 'სპეციალისტები',
     companies: 'კომპანიები',
     practices: 'პრაქტიკა',
-    news: 'ახალი ამბები',
+    news: 'ბლოგი',
     contact: 'კონტაქტი',
     
     // Auth buttons
