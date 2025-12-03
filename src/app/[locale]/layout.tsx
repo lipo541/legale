@@ -1,15 +1,28 @@
 import { ReactNode } from 'react'
+import { notFound } from 'next/navigation'
 import Header from '@/components/header/Header'
 import Footer from '@/components/footer/Footer'
 import { Providers } from '@/components/providers/Providers'
+import { siteConfig, getLanguageAlternates } from '@/lib/config'
+import { locales } from '@/lib/i18n/config'
 
 interface LocaleLayoutProps {
   children: ReactNode
   params: Promise<{ locale: string }>
 }
 
+// Generate static params for valid locales only
+export function generateStaticParams() {
+  return locales.map((locale) => ({ locale }))
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
+  
+  // Validate locale
+  if (!locales.includes(locale as typeof locales[number])) {
+    return {}
+  }
   
   const titles: Record<string, string> = {
     ka: 'LegalGE - იურიდიული სერვისების პლატფორმა',
@@ -23,18 +36,14 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     ru: 'Найдите лучших юристов и юридические компании в Грузии',
   }
 
-  const baseUrl = 'https://www.legal.ge'
+  const baseUrl = siteConfig.baseUrl
 
   return {
     title: titles[locale] || titles.ka,
     description: descriptions[locale] || descriptions.ka,
     alternates: {
       canonical: `${baseUrl}/${locale}`,
-      languages: {
-        'ka': `${baseUrl}/ka`,
-        'en': `${baseUrl}/en`,
-        'ru': `${baseUrl}/ru`,
-      },
+      languages: getLanguageAlternates(''),
     },
     other: {
       'lang': locale,
@@ -44,25 +53,27 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 export default async function LocaleLayout({ children, params }: LocaleLayoutProps) {
   const { locale } = await params
-  const baseUrl = 'https://www.legal.ge'
+  
+  // If locale is not valid, show 404
+  if (!locales.includes(locale as typeof locales[number])) {
+    notFound()
+  }
+  
+  const baseUrl = siteConfig.baseUrl
 
   const organizationSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'LegalGE',
+    name: siteConfig.name,
     url: baseUrl,
-    logo: `${baseUrl}/images/logo.png`,
+    logo: `${baseUrl}${siteConfig.logo}`,
     description:
       locale === 'en'
         ? 'Legal Services Platform in Georgia - Find the Best Lawyers and Law Firms'
         : locale === 'ru'
         ? 'Платформа юридических услуг в Грузии - Найдите лучших юристов и юридические компании'
         : 'იურიდიული სერვისების პლატფორმა საქართველოში - იპოვეთ საუკეთესო იურისტები და იურიდიული კომპანიები',
-    sameAs: [
-      'https://www.facebook.com/legal.ge',
-      'https://www.linkedin.com/company/legal-ge',
-      'https://twitter.com/legal_ge',
-    ],
+    sameAs: Object.values(siteConfig.social),
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'Customer Service',
@@ -73,7 +84,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   const websiteSchema = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: 'LegalGE',
+    name: siteConfig.name,
     url: baseUrl,
     description:
       locale === 'en'
@@ -81,7 +92,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
         : locale === 'ru'
         ? 'Платформа юридических услуг - Найдите юристов, компании и юридические услуги'
         : 'იურიდიული სერვისების პლატფორმა - იპოვეთ იურისტები, კომპანიები და იურიდიული მომსახურება',
-    inLanguage: ['ka', 'en', 'ru'],
+    inLanguage: siteConfig.locales,
     potentialAction: {
       '@type': 'SearchAction',
       target: {

@@ -1,8 +1,15 @@
 import { GeistSans } from "geist/font/sans";
 import { Analytics } from "@vercel/analytics/next";
+import { Metadata } from "next";
+import { siteConfig } from "@/lib/config";
 import "./globals.css";
 
 const geistSans = GeistSans;
+
+// Next.js 14+ metadataBase - ავტომატური URL resolution SEO-სთვის
+export const metadata: Metadata = {
+  metadataBase: new URL(siteConfig.baseUrl),
+};
 
 export default function RootLayout({
   children,

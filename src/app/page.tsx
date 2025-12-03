@@ -1,17 +1,11 @@
-'use client'
+import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-
-export default function RootRedirect() {
-  const router = useRouter()
-
-  useEffect(() => {
-    const cookies = document.cookie.split(';')
-    const localeCookie = cookies.find(c => c.trim().startsWith('NEXT_LOCALE='))
-    const locale = localeCookie?.split('=')[1] || 'ka'
-    router.replace(`/${locale}`)
-  }, [router])
-
-  return null
+export default async function RootRedirect() {
+  // Get locale from cookie or default to 'ka'
+  const cookieStore = await cookies()
+  const locale = cookieStore.get('NEXT_LOCALE')?.value || 'ka'
+  
+  // Server-side redirect to locale page (better for SEO)
+  redirect(`/${locale}`)
 }

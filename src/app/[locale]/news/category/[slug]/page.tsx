@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import CategoryPageClient from './CategoryPageClient'
+import { siteConfig, getAssetUrl } from '@/lib/config'
 
 interface PageProps {
   params: Promise<{
@@ -27,9 +28,44 @@ interface Post {
   [key: string]: unknown
 }
 
+// Helper function to check slug ownership and get redirect info
+async function getCategoryBySlug(slug: string, locale: string) {
+  const supabase = await createClient()
+  
+  // Check if slug exists in ANY language
+  const { data: slugCheck } = await supabase
+    .from('post_category_translations')
+    .select('category_id, language, slug')
+    .eq('slug', slug)
+    .single()
+  
+  if (!slugCheck) {
+    return { shouldRedirect: false, categoryId: null }
+  }
+  
+  // If slug's language doesn't match current locale, we need to redirect
+  if (slugCheck.language !== locale) {
+    return { 
+      shouldRedirect: true, 
+      redirectLocale: slugCheck.language,
+      redirectSlug: slugCheck.slug,
+      categoryId: slugCheck.category_id
+    }
+  }
+  
+  return { shouldRedirect: false, categoryId: slugCheck.category_id }
+}
+
 export default async function CategoryPage({ params }: PageProps) {
   const { locale, slug } = await params
   const supabase = await createClient()
+
+  // Check if slug belongs to different language - server-side redirect
+  const { shouldRedirect, redirectLocale, redirectSlug } = await getCategoryBySlug(slug, locale)
+  
+  if (shouldRedirect && redirectLocale && redirectSlug) {
+    redirect(`/${redirectLocale}/news/category/${encodeURIComponent(redirectSlug)}`)
+  }
 
   // Fetch category by slug
   const { data: categoryData, error: categoryError } = await supabase
@@ -182,6 +218,20 @@ export async function generateMetadata({ params }: PageProps) {
     .single()
 
   if (!categoryData) {
+    // Check if slug exists in other language
+    const { data: otherLang } = await supabase
+      .from('post_category_translations')
+      .select('language')
+      .eq('slug', slug)
+      .single()
+    
+    if (otherLang) {
+      return {
+        title: 'Redirecting... | Legal',
+        robots: { index: false, follow: true },
+      }
+    }
+    
     return {
       title: 'კატეგორია ვერ მოიძებნა',
       description: 'მოთხოვნილი კატეგორია ვერ მოიძებნა.',
@@ -197,15 +247,15 @@ export async function generateMetadata({ params }: PageProps) {
   const languageAlternates: { [key: string]: string } = {}
   if (allTranslations) {
     allTranslations.forEach(trans => {
-      languageAlternates[trans.language] = `https://legal.ge/${trans.language}/news/category/${trans.slug}`
+      languageAlternates[trans.language] = `${siteConfig.baseUrl}/${trans.language}/news/category/${trans.slug}`
     })
   }
 
   // Build metadata
   const title = categoryData.seo_title || `${categoryData.name} - Legal.ge`
   const description = categoryData.seo_description || `იხილეთ სტატიები კატეგორიაში "${categoryData.name}" Legal.ge-ზე`
-  const canonicalUrl = `https://legal.ge/${locale}/news/category/${slug}`
-  const ogImage = 'https://legal.ge/asset/images/og-image.jpg'
+  const canonicalUrl = `${siteConfig.baseUrl}/${locale}/news/category/${slug}`
+  const ogImage = getAssetUrl(siteConfig.defaultOgImage)
 
   // CollectionPage Schema Markup
   const collectionPageSchema = {
@@ -217,8 +267,8 @@ export async function generateMetadata({ params }: PageProps) {
     inLanguage: locale,
     isPartOf: {
       '@type': 'WebSite',
-      name: 'Legal.ge',
-      url: 'https://www.legal.ge',
+      name: siteConfig.name,
+      url: siteConfig.baseUrl,
     },
   }
 

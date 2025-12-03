@@ -14,7 +14,7 @@ export async function middleware(request: NextRequest) {
     // Check if user has a preferred locale in cookies
     const localeCookie = request.cookies.get('NEXT_LOCALE')?.value as typeof defaultLocale | undefined
     const locale = localeCookie && locales.includes(localeCookie) ? localeCookie : defaultLocale
-    
+
     // Redirect to locale-prefixed URL
     const newPathname = pathname === '/' ? '' : pathname
     const newUrl = new URL(`/${locale}${newPathname}`, request.url)
@@ -24,13 +24,9 @@ export async function middleware(request: NextRequest) {
 
   // Run Supabase session middleware
   return await updateSession(request)
-}
-
-export const config = {
+}export const config = {
   matcher: [
-    // Match all paths including root
-    '/',
-    '/(ka|en|ru)/:path*',
-    '/((?!_next|_static|_vercel|api|favicon.ico|.*\\..*).)*',
+    // Match all paths except static files, api, and files with extensions
+    '/((?!api|_next|favicon.ico|.*\\..*).*)',
   ],
 }

@@ -1,5 +1,6 @@
 import SpecialistsPage from '@/components/specialists/SpecialistsPage'
 import { Metadata } from 'next'
+import { siteConfig, getLanguageAlternates } from '@/lib/config'
 
 export async function generateMetadata({
   params,
@@ -7,7 +8,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>
 }): Promise<Metadata> {
   const { locale } = await params
-  const baseUrl = 'https://www.legal.ge'
+  const baseUrl = siteConfig.baseUrl
 
   const metadata: Record<
     string,
@@ -34,14 +35,14 @@ export async function generateMetadata({
   }
 
   const meta = metadata[locale] || metadata.ka
-  const canonicalUrl =
-    locale === 'ka' ? `${baseUrl}/specialists` : `${baseUrl}/${locale}/specialists`
+  const canonicalUrl = `${baseUrl}/${locale}/specialists`
 
   return {
     title: meta.title,
     description: meta.description,
     alternates: {
       canonical: canonicalUrl,
+      languages: getLanguageAlternates('/specialists'),
     },
     openGraph: {
       title: meta.title,

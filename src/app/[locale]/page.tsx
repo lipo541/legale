@@ -1,5 +1,6 @@
 import Hero from '@/components/hero/Hero'
 import { Metadata } from 'next'
+import { siteConfig, getLanguageAlternates } from '@/lib/config'
 
 export async function generateMetadata({
   params,
@@ -7,7 +8,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>
 }): Promise<Metadata> {
   const { locale } = await params
-  const baseUrl = 'https://www.legal.ge'
+  const baseUrl = siteConfig.baseUrl
 
   const metadata: Record<
     string,
@@ -34,13 +35,14 @@ export async function generateMetadata({
   }
 
   const meta = metadata[locale] || metadata.ka
-  const canonicalUrl = locale === 'ka' ? baseUrl : `${baseUrl}/${locale}`
+  const canonicalUrl = `${baseUrl}/${locale}`
 
   return {
     title: meta.title,
     description: meta.description,
     alternates: {
       canonical: canonicalUrl,
+      languages: getLanguageAlternates(''),
     },
     openGraph: {
       title: meta.title,

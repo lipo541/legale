@@ -1,5 +1,6 @@
 import ArchivePage from '@/components/news/ArchivePage'
 import { Metadata } from 'next'
+import { siteConfig, getLanguageAlternates } from '@/lib/config'
 
 interface PageProps {
   params: Promise<{
@@ -15,6 +16,7 @@ export default async function NewsArchivePage({ params }: PageProps) {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale } = await params
+  const baseUrl = siteConfig.baseUrl
 
   const metadata = {
     ka: {
@@ -37,7 +39,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const currentLocale = (locale as keyof typeof metadata) || 'ka'
   const meta = metadata[currentLocale] || metadata.ka
 
-  const baseUrl = 'https://www.legal.ge'
   const canonicalUrl = `${baseUrl}/${locale}/news/archive`
 
   return {
@@ -50,7 +51,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: meta.title,
       description: meta.description,
       url: canonicalUrl,
-      siteName: 'Legal.ge',
+      siteName: siteConfig.name,
       locale: locale,
       type: 'website',
       images: [
@@ -76,11 +77,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     // Additional Meta Tags
     alternates: {
       canonical: canonicalUrl,
-      languages: {
-        'ka': `${baseUrl}/ka/news/archive`,
-        'en': `${baseUrl}/en/news/archive`,
-        'ru': `${baseUrl}/ru/news/archive`,
-      },
+      languages: getLanguageAlternates('/news/archive'),
     },
     
     robots: {

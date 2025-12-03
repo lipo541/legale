@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import type { Locale } from '@/lib/i18n/config'
 import ContactInfo from '@/components/contact/ContactInfo'
+import { siteConfig, getLanguageAlternates, getAssetUrl } from '@/lib/config'
 
 type Props = {
   params: Promise<{ locale: Locale }>
@@ -9,6 +10,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
+  const baseUrl = siteConfig.baseUrl
 
   const metadata = {
     ka: {
@@ -26,16 +28,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const meta = metadata[locale] || metadata.ka
-  const canonicalUrl = `https://www.legal.ge/${locale}/contact`
-  const ogImage = 'https://www.legal.ge/asset/images/og-image.jpg'
+  const canonicalUrl = `${baseUrl}/${locale}/contact`
+  const ogImage = getAssetUrl(siteConfig.defaultOgImage)
 
   // Organization Schema Markup with Contact Information
   const organizationSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'Legal.ge',
-    url: 'https://www.legal.ge',
-    logo: 'https://www.legal.ge/asset/images/logo.png',
+    name: siteConfig.name,
+    url: baseUrl,
+    logo: getAssetUrl(siteConfig.logo),
     contactPoint: {
       '@type': 'ContactPoint',
       telephone: '+995-XXX-XXX-XXX',
@@ -55,11 +57,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: meta.description,
     alternates: {
       canonical: canonicalUrl,
-      languages: {
-        ka: 'https://www.legal.ge/ka/contact',
-        en: 'https://www.legal.ge/en/contact',
-        ru: 'https://www.legal.ge/ru/contact',
-      },
+      languages: getLanguageAlternates('/contact'),
     },
     openGraph: {
       title: meta.title,

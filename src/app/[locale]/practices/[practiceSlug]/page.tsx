@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createClient as createBrowserClient } from '@/lib/supabase/client'
 import { Locale } from '@/lib/enums'
 import PracticeDetail from '@/components/practice/PracticeDetail'
+import { siteConfig, getAssetUrl } from '@/lib/config'
 
 // Enable Incremental Static Regeneration - revalidate every 1 hour
 export const revalidate = 3600
@@ -64,7 +65,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const languageAlternates: { [key: string]: string } = {};
   if (allTranslations) {
     allTranslations.forEach(trans => {
-      languageAlternates[trans.language] = `https://www.legal.ge/${trans.language}/practices/${trans.slug}`;
+      languageAlternates[trans.language] = `${siteConfig.baseUrl}/${trans.language}/practices/${trans.slug}`;
     });
   }
 
@@ -73,10 +74,44 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = translationData.meta_description || 'პროფესიონალური იურიდიული კონსულტაცია და მომსახურება Legal.ge-ზე';
   const ogTitle = translationData.og_title || translationData.meta_title || translationData.title;
   const ogDescription = translationData.og_description || description;
-  const ogImage = translationData.og_image_url || 'https://www.legal.ge/asset/images/og-image.jpg';
-  const canonicalUrl = `https://www.legal.ge/${locale}/practices/${slug}`;
+  const ogImage = translationData.og_image_url || getAssetUrl(siteConfig.defaultOgImage);
+  const canonicalUrl = `${siteConfig.baseUrl}/${locale}/practices/${slug}`;
 
-  // Service Schema Markup
+  // Breadcrumb labels by locale
+  const breadcrumbLabels = {
+    ka: { home: 'მთავარი', practices: 'პრაქტიკები' },
+    en: { home: 'Home', practices: 'Practices' },
+    ru: { home: 'Главная', practices: 'Практики' },
+  }
+  const labels = breadcrumbLabels[locale as keyof typeof breadcrumbLabels] || breadcrumbLabels.ka
+
+  // BreadcrumbList Schema
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: labels.home,
+        item: `${siteConfig.baseUrl}/${locale}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: labels.practices,
+        item: `${siteConfig.baseUrl}/${locale}/practices`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: translationData.title,
+        item: canonicalUrl,
+      },
+    ],
+  }
+
+  // Service Schema Markup (for legal practice area)
   const serviceSchema = {
     '@context': 'https://schema.org',
     '@type': 'Service',
@@ -87,6 +122,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       name: 'Legal.ge',
     },
     url: canonicalUrl,
+    serviceType: 'Legal Service',
   };
 
   return {
@@ -119,7 +155,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: [ogImage],
     },
     other: {
-      'application/ld+json': JSON.stringify(serviceSchema),
+      'application/ld+json': JSON.stringify([breadcrumbSchema, serviceSchema]),
     },
   };
 }
@@ -144,7 +180,15 @@ export default async function PracticePage({ params }: Props) {
     notFound()
   }
 
-  // Step 2: Fetch the full practice data with the translation for the requested locale
+  // Step 2: If the slug belongs to a different language, redirect to that language's URL
+  // This ensures /ka/practices/tax-and-accounting redirects to /en/practices/tax-and-accounting
+  if (practiceBySlug.language !== locale) {
+    const { redirect } = await import('next/navigation')
+    // Encode slug to handle non-ASCII characters (Georgian, etc.)
+    redirect(`/${practiceBySlug.language}/practices/${encodeURIComponent(slug)}`)
+  }
+
+  // Step 3: Fetch the full practice data with the translation for the requested locale
   const { data: practiceData, error } = await supabase
     .from('practices')
     .select(`
@@ -181,14 +225,8 @@ export default async function PracticePage({ params }: Props) {
     notFound()
   }
 
-  // Extract translation
+  // Extract translation (slug already matches locale at this point)
   const translation = practiceData.practice_translations[0]
-
-  // If the current slug doesn't match the locale's slug, redirect to correct slug
-  if (translation.slug !== slug) {
-    const { redirect } = await import('next/navigation')
-    redirect(`/${locale}/practices/${translation.slug}`)
-  }
 
   // Prepare data for PracticeDetail component
   const practice = {

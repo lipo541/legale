@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next'
 import { createClient } from '@supabase/supabase-js'
+import { siteConfig } from '@/lib/config'
 
 // Note: Using service_role key for server-side generation to bypass RLS
 const supabase = createClient(
@@ -7,13 +8,14 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-const baseUrl = 'https://www.legal.ge'
+const baseUrl = siteConfig.baseUrl
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const sitemap: MetadataRoute.Sitemap = []
   const locales = ['ka', 'en', 'ru'] // Georgian, English, Russian
 
   // Helper function to add URLs for all locales
+  // All URLs should include locale prefix (/ka/, /en/, /ru/)
   const addMultiLocaleUrls = (
     path: string,
     lastModified: Date,
@@ -21,7 +23,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: number
   ) => {
     locales.forEach((locale) => {
-      const url = locale === 'ka' ? `${baseUrl}${path}` : `${baseUrl}/${locale}${path}`
+      // Always include locale prefix for consistency
+      const url = `${baseUrl}/${locale}${path}`
       sitemap.push({
         url,
         lastModified,
@@ -36,7 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   addMultiLocaleUrls('/specialists', new Date(), 'weekly', 0.9)
   addMultiLocaleUrls('/companies', new Date(), 'weekly', 0.9)
   addMultiLocaleUrls('/practices', new Date(), 'monthly', 0.8)
-  addMultiLocaleUrls('/services', new Date(), 'monthly', 0.8)
+  // Note: /services page does not exist - services are accessed via /practices/{practiceSlug}/{serviceSlug}
   addMultiLocaleUrls('/news', new Date(), 'daily', 0.9)
   addMultiLocaleUrls('/news/archive', new Date(), 'weekly', 0.4)
   addMultiLocaleUrls('/contact', new Date(), 'monthly', 0.7)
@@ -46,9 +49,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     // Fetch ALL specialists from specialist_translations (contains slug per language)
+    // Only include specialists that are not blocked
     const { data: specialistTranslations } = await supabase
       .from('specialist_translations')
-      .select('slug, language, updated_at')
+      .select('slug, language, updated_at, profiles!inner(is_blocked)')
+      .eq('profiles.is_blocked', false)
       .not('slug', 'is', null)
 
     if (specialistTranslations) {
@@ -57,9 +62,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         const slug = translation.slug
         
         if (slug) {
-          const url = locale === 'ka' 
-            ? `${baseUrl}/specialists/${slug}` 
-            : `${baseUrl}/${locale}/specialists/${slug}`
+          // Always include locale prefix
+          const url = `${baseUrl}/${locale}/specialists/${slug}`
           sitemap.push({
             url,
             lastModified: translation.updated_at ? new Date(translation.updated_at) : new Date(),
@@ -71,16 +75,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
 
     // Fetch companies: Georgian slug from profiles, other languages from company_translations
-    // First, get Georgian companies from profiles
+    // First, get Georgian companies from profiles (only non-blocked companies)
     const { data: companiesKa } = await supabase
       .from('profiles')
       .select('company_slug, updated_at')
       .eq('role', 'COMPANY')
+      .eq('is_blocked', false)
       .not('company_slug', 'is', null)
 
     if (companiesKa) {
       companiesKa.forEach((company) => {
-        const url = `${baseUrl}/companies/${company.company_slug}`
+        // Always include /ka/ prefix for Georgian companies
+        const url = `${baseUrl}/ka/companies/${company.company_slug}`
         sitemap.push({
           url,
           lastModified: company.updated_at ? new Date(company.updated_at) : new Date(),
@@ -91,10 +97,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
 
     // Then, get English and Russian translations from company_translations
+    // Exclude 'ka' to avoid duplicates (Georgian slugs come from profiles table)
+    // Only include non-blocked companies
     const { data: companyTranslations } = await supabase
       .from('company_translations')
-      .select('slug, language, updated_at')
+      .select('slug, language, updated_at, profiles!inner(is_blocked)')
+      .eq('profiles.is_blocked', false)
       .not('slug', 'is', null)
+      .neq('language', 'ka')
 
     if (companyTranslations) {
       companyTranslations.forEach((translation) => {
@@ -109,9 +119,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
 
     // Fetch practices from practice_translations (all languages including Georgian)
+    // Only include published practices
     const { data: practiceTranslations } = await supabase
       .from('practice_translations')
-      .select('slug, language, updated_at')
+      .select('slug, language, updated_at, practices!inner(status)')
+      .eq('practices.status', 'published')
       .not('slug', 'is', null)
 
     if (practiceTranslations) {

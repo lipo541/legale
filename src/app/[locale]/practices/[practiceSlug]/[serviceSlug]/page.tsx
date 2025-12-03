@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createClient as createBrowserClient } from '@/lib/supabase/client'
 import { Locale } from '@/lib/enums'
 import ServiceDetail from '@/components/service/ServiceDetail'
+import { siteConfig } from '@/lib/config'
 
 // Enable Incremental Static Regeneration - revalidate every 1 hour
 export const revalidate = 3600
@@ -53,6 +54,36 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
   }
 
+  // Get all language alternates for this service (for hreflang tags)
+  const { data: allServiceTranslations } = await supabase
+    .from('service_translations')
+    .select('slug, language')
+    .eq('service_id', translationData.service_id)
+
+  // Get practice ID for this service
+  const { data: serviceInfo } = await supabase
+    .from('services')
+    .select('practice_id')
+    .eq('id', translationData.service_id)
+    .single()
+
+  // Get all practice translations for hreflang
+  const { data: allPracticeTranslations } = await supabase
+    .from('practice_translations')
+    .select('slug, language')
+    .eq('practice_id', serviceInfo?.practice_id)
+
+  // Build language alternates with correct slugs for each language
+  const languageAlternates: Record<string, string> = {}
+  if (allServiceTranslations && allPracticeTranslations) {
+    for (const serviceTrans of allServiceTranslations) {
+      const practiceTrans = allPracticeTranslations.find(pt => pt.language === serviceTrans.language)
+      if (practiceTrans) {
+        languageAlternates[serviceTrans.language] = `${siteConfig.baseUrl}/${serviceTrans.language}/practices/${practiceTrans.slug}/${serviceTrans.slug}`
+      }
+    }
+  }
+
   // Get the service data
   const serviceData = Array.isArray(translationData.services) 
     ? translationData.services[0] 
@@ -64,6 +95,74 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const ogTitle = translationData.og_title || title
   const ogDescription = translationData.og_description || description
   const ogImage = serviceData?.og_image_url || serviceData?.image_url || '/default-og-image.jpg'
+  const canonicalUrl = `${siteConfig.baseUrl}/${locale}/practices/${practiceSlug}/${serviceSlug}`
+
+  // Get practice title for breadcrumb
+  const { data: practiceTranslation } = await supabase
+    .from('practice_translations')
+    .select('title')
+    .eq('practice_id', serviceInfo?.practice_id)
+    .eq('language', locale)
+    .single()
+
+  // Breadcrumb labels by locale
+  const breadcrumbLabels = {
+    ka: { home: 'მთავარი', practices: 'პრაქტიკები' },
+    en: { home: 'Home', practices: 'Practices' },
+    ru: { home: 'Главная', practices: 'Практики' },
+  }
+  const labels = breadcrumbLabels[locale as keyof typeof breadcrumbLabels] || breadcrumbLabels.ka
+
+  // BreadcrumbList Schema
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: labels.home,
+        item: `${siteConfig.baseUrl}/${locale}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: labels.practices,
+        item: `${siteConfig.baseUrl}/${locale}/practices`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: practiceTranslation?.title || 'Practice',
+        item: `${siteConfig.baseUrl}/${locale}/practices/${practiceSlug}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 4,
+        name: translationData.title,
+        item: canonicalUrl,
+      },
+    ],
+  }
+
+  // LegalService Schema
+  const legalServiceSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'LegalService',
+    name: translationData.title,
+    description: description,
+    provider: {
+      '@type': 'Organization',
+      name: 'Legal.ge',
+      url: siteConfig.baseUrl,
+    },
+    url: canonicalUrl,
+    image: ogImage,
+    areaServed: {
+      '@type': 'Country',
+      name: 'Georgia',
+    },
+  }
 
   return {
     title,
@@ -82,12 +181,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: [ogImage],
     },
     alternates: {
-      canonical: `https://www.legal.ge/${locale}/practices/${practiceSlug}/${serviceSlug}`,
-      languages: {
-        'ka': `https://www.legal.ge/ka/practices/${practiceSlug}/${serviceSlug}`,
-        'en': `https://www.legal.ge/en/practices/${practiceSlug}/${serviceSlug}`,
-        'ru': `https://www.legal.ge/ru/practices/${practiceSlug}/${serviceSlug}`,
-      },
+      canonical: canonicalUrl,
+      languages: languageAlternates,
+    },
+    other: {
+      'application/ld+json': JSON.stringify([breadcrumbSchema, legalServiceSchema]),
     },
   }
 }
@@ -113,7 +211,31 @@ export default async function ServicePage({ params }: Props) {
     notFound()
   }
 
-  // Step 2: Fetch the full service data with translation
+  // Step 2: If the slug belongs to a different language, redirect to that language's URL
+  if (serviceBySlug.language !== locale) {
+    // Get the practice slug in the service's language
+    const { data: practiceForService } = await supabase
+      .from('services')
+      .select('practice_id')
+      .eq('id', serviceBySlug.service_id)
+      .single()
+    
+    if (practiceForService) {
+      const { data: correctPracticeTranslation } = await supabase
+        .from('practice_translations')
+        .select('slug')
+        .eq('practice_id', practiceForService.practice_id)
+        .eq('language', serviceBySlug.language)
+        .single()
+      
+      const correctPracticeSlug = correctPracticeTranslation?.slug || practiceSlug
+      const { redirect } = await import('next/navigation')
+      // Encode slugs to handle non-ASCII characters (Georgian, etc.)
+      redirect(`/${serviceBySlug.language}/practices/${encodeURIComponent(correctPracticeSlug)}/${encodeURIComponent(serviceSlug)}`)
+    }
+  }
+
+  // Step 3: Fetch the full service data with translation
   const { data: serviceData, error } = await supabase
     .from('services')
     .select(`
@@ -175,7 +297,7 @@ export default async function ServicePage({ params }: Props) {
   // If practice slug doesn't match URL, redirect
   if (practiceTranslation.slug !== practiceSlug) {
     const { redirect } = await import('next/navigation')
-    redirect(`/${locale}/practices/${practiceTranslation.slug}/${translation.slug}`)
+    redirect(`/${locale}/practices/${encodeURIComponent(practiceTranslation.slug)}/${encodeURIComponent(translation.slug)}`)
   }
 
   // Prepare data for ServiceDetail component

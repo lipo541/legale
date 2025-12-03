@@ -1,7 +1,8 @@
 import { MetadataRoute } from 'next'
+import { siteConfig } from '@/lib/config'
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = 'https://www.legal.ge'
+  const baseUrl = siteConfig.baseUrl
 
   return {
     rules: [
@@ -32,6 +33,8 @@ export default function robots(): MetadataRoute.Robots {
           '/*/complete-profile',
           '/profile',
           '/*/profile',
+          '/messages',
+          '/*/messages',
           
           // API routes
           '/api/*',

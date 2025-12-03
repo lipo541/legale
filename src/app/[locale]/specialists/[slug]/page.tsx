@@ -1,16 +1,66 @@
 import SpecialistDetailPage from '@/components/specialists/specialist-detail/SpecialistDetailPage'
 import { createClient } from '@/lib/supabase/server'
 import { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { siteConfig, getAssetUrl } from '@/lib/config'
+import { redirect } from 'next/navigation'
 
 interface PageProps {
   params: Promise<{ slug: string; locale: string }>
 }
 
+// Helper function to get specialist data by slug (checks language match)
+async function getSpecialistBySlug(slug: string, locale: string) {
+  const supabase = await createClient()
+  
+  // First check if slug exists in ANY language
+  const { data: slugCheck } = await supabase
+    .from('specialist_translations')
+    .select('specialist_id, language, slug')
+    .eq('slug', slug)
+    .single()
+  
+  if (!slugCheck) {
+    return { specialist: null, shouldRedirect: false, redirectLocale: null }
+  }
+  
+  // If slug's language doesn't match current locale, we need to redirect
+  if (slugCheck.language !== locale) {
+    return { 
+      specialist: null, 
+      shouldRedirect: true, 
+      redirectLocale: slugCheck.language,
+      redirectSlug: slugCheck.slug 
+    }
+  }
+  
+  return { specialist: slugCheck, shouldRedirect: false, redirectLocale: null }
+}
+
+// Helper function to get all language alternates for a specialist
+async function getSpecialistAlternates(specialistId: string) {
+  const supabase = await createClient()
+  
+  const { data: translations } = await supabase
+    .from('specialist_translations')
+    .select('language, slug')
+    .eq('specialist_id', specialistId)
+  
+  const alternates: Record<string, string> = {}
+  const baseUrl = siteConfig.baseUrl
+  
+  if (translations) {
+    translations.forEach((t) => {
+      alternates[t.language] = `${baseUrl}/${t.language}/specialists/${t.slug}`
+    })
+  }
+  
+  return alternates
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const resolvedParams = await params
   const { slug, locale } = resolvedParams
-  const baseUrl = 'https://www.legal.ge'
+  const baseUrl = siteConfig.baseUrl
   const supabase = await createClient()
 
   // Fetch specialist data with translations and company info
@@ -39,6 +89,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .single()
 
   if (error || !specialistData) {
+    // Try to find in any language for better error handling
+    const { data: anyLangData } = await supabase
+      .from('specialist_translations')
+      .select('specialist_id, language, slug')
+      .eq('slug', slug)
+      .single()
+    
+    if (anyLangData && anyLangData.language !== locale) {
+      // Slug exists but in different language - metadata for redirect page
+      return {
+        title: 'Redirecting... | Legal',
+        robots: { index: false, follow: true },
+      }
+    }
+    
     return {
       title: 'Specialist Not Found | Legal',
       description: 'The specialist you are looking for could not be found.',
@@ -91,12 +156,49 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       ogImage = `${supabaseUrl}/storage/v1/object/public/specialist-social-images/${socialImageUrl}`
     }
   } else {
-    ogImage = `${baseUrl}/asset/images/og-image.jpg`
+    ogImage = getAssetUrl(siteConfig.defaultOgImage)
   }
 
   // Use social_title and social_description for OpenGraph (with fallbacks)
   const ogTitle = specialist.social_title || specialist.seo_title || title
   const ogDescription = specialist.social_description || specialist.seo_description || description
+
+  // Get correct alternates for each language (with their own slugs)
+  const languageAlternates = await getSpecialistAlternates(specialist.specialist_id)
+
+  // Breadcrumb labels by locale
+  const breadcrumbLabels = {
+    ka: { home: 'მთავარი', specialists: 'სპეციალისტები' },
+    en: { home: 'Home', specialists: 'Specialists' },
+    ru: { home: 'Главная', specialists: 'Специалисты' },
+  }
+  const labels = breadcrumbLabels[locale as keyof typeof breadcrumbLabels] || breadcrumbLabels.ka
+
+  // BreadcrumbList Schema
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: labels.home,
+        item: `${baseUrl}/${locale}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: labels.specialists,
+        item: `${baseUrl}/${locale}/specialists`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: specialist.full_name,
+        item: canonicalUrl,
+      },
+    ],
+  }
 
   // Person Schema for structured data
   const personSchema = {
@@ -113,6 +215,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       },
     }),
     url: canonicalUrl,
+    hasOccupation: {
+      '@type': 'Occupation',
+      name: specialist.role_title || 'Legal Specialist',
+      occupationLocation: {
+        '@type': 'Country',
+        name: 'Georgia',
+      },
+    },
   }
 
   return {
@@ -120,11 +230,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     description,
     alternates: {
       canonical: canonicalUrl,
-      languages: {
-        'ka': `${baseUrl}/ka/specialists/${slug}`,
-        'en': `${baseUrl}/en/specialists/${slug}`,
-        'ru': `${baseUrl}/ru/specialists/${slug}`,
-      },
+      languages: languageAlternates,
     },
     openGraph: {
       title: ogTitle,
@@ -149,7 +255,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       images: [ogImage],
     },
     other: {
-      'application/ld+json': JSON.stringify(personSchema),
+      'application/ld+json': JSON.stringify([breadcrumbSchema, personSchema]),
     },
   }
 }
@@ -158,6 +264,13 @@ export default async function SpecialistPage({ params }: PageProps) {
   const resolvedParams = await params
   const slug = resolvedParams.slug
   const locale = resolvedParams.locale || 'ka'
+
+  // Check if slug belongs to different language - server-side redirect
+  const { shouldRedirect, redirectLocale, redirectSlug } = await getSpecialistBySlug(slug, locale)
+  
+  if (shouldRedirect && redirectLocale && redirectSlug) {
+    redirect(`/${redirectLocale}/specialists/${encodeURIComponent(redirectSlug)}`)
+  }
 
   console.log('Page rendered with slug:', slug, 'locale:', locale)
 

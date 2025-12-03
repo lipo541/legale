@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import NewsLayout from '@/components/news/NewsLayout'
+import { siteConfig, getLanguageAlternates, getAssetUrl } from '@/lib/config'
 
 // Enable ISR (Incremental Static Regeneration)
 // Revalidate every 3600 seconds (1 hour)
@@ -14,6 +15,7 @@ type Props = {
 // Generate metadata for SEO
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
+  const baseUrl = siteConfig.baseUrl
 
   const metadata = {
     ka: {
@@ -31,8 +33,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const { title, description } = metadata[locale]
-  const canonicalUrl = `https://legal.ge/${locale}/news`
-  const ogImage = 'https://legal.ge/asset/images/og-image.jpg'
+  const canonicalUrl = `${baseUrl}/${locale}/news`
+  const ogImage = getAssetUrl(siteConfig.defaultOgImage)
 
   // WebPage Schema Markup
   const webPageSchema = {
@@ -44,8 +46,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     inLanguage: locale,
     isPartOf: {
       '@type': 'WebSite',
-      name: 'Legal.ge',
-      url: 'https://www.legal.ge',
+      name: siteConfig.name,
+      url: baseUrl,
     },
   }
 
@@ -54,11 +56,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description,
     alternates: {
       canonical: canonicalUrl,
-      languages: {
-        ka: 'https://legal.ge/ka/news',
-        en: 'https://legal.ge/en/news',
-        ru: 'https://legal.ge/ru/news',
-      },
+      languages: getLanguageAlternates('/news'),
     },
     openGraph: {
       title,

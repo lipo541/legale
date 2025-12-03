@@ -1,5 +1,6 @@
 import CompaniesPage from '@/components/companies/CompaniesPage';
 import type { Metadata } from 'next';
+import { siteConfig, getLanguageAlternates } from '@/lib/config';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -7,7 +8,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const baseUrl = 'https://www.legal.ge'
+  const baseUrl = siteConfig.baseUrl
 
   const metadata: Record<string, { title: string; description: string; ogImage: string }> = {
     ka: {
@@ -28,14 +29,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const meta = metadata[locale] || metadata.ka
-  const canonicalUrl =
-    locale === 'ka' ? `${baseUrl}/companies` : `${baseUrl}/${locale}/companies`
+  const canonicalUrl = `${baseUrl}/${locale}/companies`
 
   return {
     title: meta.title,
     description: meta.description,
     alternates: {
       canonical: canonicalUrl,
+      languages: getLanguageAlternates('/companies'),
     },
     openGraph: {
       title: meta.title,

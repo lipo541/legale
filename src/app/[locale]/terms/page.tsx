@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import type { Locale } from '@/lib/i18n/config'
 import TermsContent from '@/components/terms/TermsContent'
+import { siteConfig, getLanguageAlternates } from '@/lib/config'
 
 type Props = {
   params: Promise<{ locale: Locale }>
@@ -10,6 +11,7 @@ type Props = {
 // Generate metadata for SEO
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
+  const baseUrl = siteConfig.baseUrl
 
   const metadata = {
     ka: {
@@ -27,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const meta = metadata[locale] || metadata.ka
-  const canonicalUrl = `https://www.legal.ge/${locale}/terms`
+  const canonicalUrl = `${baseUrl}/${locale}/terms`
 
   return {
     title: meta.title,
@@ -38,11 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     alternates: {
       canonical: canonicalUrl,
-      languages: {
-        ka: 'https://www.legal.ge/ka/terms',
-        en: 'https://www.legal.ge/en/terms',
-        ru: 'https://www.legal.ge/ru/terms',
-      },
+      languages: getLanguageAlternates('/terms'),
     },
   }
 }

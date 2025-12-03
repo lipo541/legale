@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import PostPageClient from './PostPageClient'
+import { siteConfig, getAssetUrl } from '@/lib/config'
 
 interface PageProps {
   params: Promise<{
@@ -9,9 +10,44 @@ interface PageProps {
   }>
 }
 
+// Helper function to check slug ownership and get redirect info
+async function getPostBySlug(slug: string, locale: string) {
+  const supabase = await createClient()
+  
+  // Check if slug exists in ANY language
+  const { data: slugCheck } = await supabase
+    .from('post_translations')
+    .select('post_id, language, slug')
+    .eq('slug', slug)
+    .single()
+  
+  if (!slugCheck) {
+    return { shouldRedirect: false, postId: null }
+  }
+  
+  // If slug's language doesn't match current locale, we need to redirect
+  if (slugCheck.language !== locale) {
+    return { 
+      shouldRedirect: true, 
+      redirectLocale: slugCheck.language,
+      redirectSlug: slugCheck.slug,
+      postId: slugCheck.post_id
+    }
+  }
+  
+  return { shouldRedirect: false, postId: slugCheck.post_id }
+}
+
 export default async function PostPage({ params }: PageProps) {
   const { locale, slug } = await params
   const supabase = await createClient()
+
+  // Check if slug belongs to different language - server-side redirect
+  const { shouldRedirect, redirectLocale, redirectSlug } = await getPostBySlug(slug, locale)
+  
+  if (shouldRedirect && redirectLocale && redirectSlug) {
+    redirect(`/${redirectLocale}/news/${encodeURIComponent(redirectSlug)}`)
+  }
 
   // Fetch post by slug
   const { data: postData, error: postError } = await supabase
@@ -208,6 +244,20 @@ export async function generateMetadata({ params }: PageProps) {
     .single()
 
   if (!postData) {
+    // Check if slug exists in other language
+    const { data: otherLang } = await supabase
+      .from('post_translations')
+      .select('language')
+      .eq('slug', slug)
+      .single()
+    
+    if (otherLang) {
+      return {
+        title: 'Redirecting... | Legal',
+        robots: { index: false, follow: true },
+      }
+    }
+    
     return {
       title: 'სტატია ვერ მოიძებნა',
       description: 'მოთხოვნილი სტატია ვერ მოიძებნა.',
@@ -235,7 +285,7 @@ export async function generateMetadata({ params }: PageProps) {
   const languageAlternates: { [key: string]: string } = {}
   if (allTranslations) {
     allTranslations.forEach(trans => {
-      languageAlternates[trans.language] = `https://www.legal.ge/${trans.language}/news/${trans.slug}`
+      languageAlternates[trans.language] = `${siteConfig.baseUrl}/${trans.language}/news/${trans.slug}`
     })
   }
 
@@ -255,10 +305,44 @@ export async function generateMetadata({ params }: PageProps) {
 
   // Build metadata
   const featuredImage = post?.featured_image_url
-  const ogImage = postData.og_image || featuredImage || 'https://www.legal.ge/asset/images/og-image.jpg'
+  const ogImage = postData.og_image || featuredImage || getAssetUrl(siteConfig.defaultOgImage)
   const title = postData.meta_title || postData.title
   const description = postData.meta_description || postData.excerpt || postData.title
-  const canonicalUrl = `https://www.legal.ge/${locale}/news/${slug}`
+  const canonicalUrl = `${siteConfig.baseUrl}/${locale}/news/${slug}`
+
+  // Breadcrumb labels by locale
+  const breadcrumbLabels = {
+    ka: { home: 'მთავარი', news: 'სიახლეები' },
+    en: { home: 'Home', news: 'News' },
+    ru: { home: 'Главная', news: 'Новости' },
+  }
+  const labels = breadcrumbLabels[locale as keyof typeof breadcrumbLabels] || breadcrumbLabels.ka
+
+  // BreadcrumbList Schema
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: labels.home,
+        item: `${siteConfig.baseUrl}/${locale}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: labels.news,
+        item: `${siteConfig.baseUrl}/${locale}/news`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: postData.title,
+        item: canonicalUrl,
+      },
+    ],
+  }
 
   // Article Schema Markup
   const articleSchema = {
@@ -275,10 +359,10 @@ export async function generateMetadata({ params }: PageProps) {
     },
     publisher: {
       '@type': 'Organization',
-      name: 'Legal.ge',
+      name: siteConfig.name,
       logo: {
         '@type': 'ImageObject',
-        url: 'https://www.legal.ge/asset/images/logo.png',
+        url: getAssetUrl(siteConfig.logo),
       },
     },
     mainEntityOfPage: {
@@ -320,7 +404,7 @@ export async function generateMetadata({ params }: PageProps) {
       images: [ogImage],
     },
     other: {
-      'application/ld+json': JSON.stringify(articleSchema),
+      'application/ld+json': JSON.stringify([breadcrumbSchema, articleSchema]),
     },
   }
 }
