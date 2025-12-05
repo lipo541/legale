@@ -1,8 +1,57 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { usePathname } from 'next/navigation'
 import { Briefcase, Loader2, CheckCircle, Edit, Search, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useToast } from '@/contexts/ToastContext'
+
+const servicesFieldTranslations = {
+  ka: {
+    services: 'სერვისები',
+    search: 'ძებნა...',
+    selected: 'არჩეული',
+    save: 'შენახვა',
+    saving: 'შენახვა...',
+    cancel: 'გაუქმება',
+    edit: 'რედაქტირება',
+    noServicesSelected: 'სერვისები არ არის არჩეული',
+    servicesNotFound: 'სერვისები ვერ მოიძებნა',
+    servicesUpdated: 'სერვისები წარმატებით განახლდა!',
+    error: 'შეცდომა',
+    saveError: 'შეცდომა შენახვისას'
+  },
+  en: {
+    services: 'Services',
+    search: 'Search...',
+    selected: 'Selected',
+    save: 'Save',
+    saving: 'Saving...',
+    cancel: 'Cancel',
+    edit: 'Edit',
+    noServicesSelected: 'No services selected',
+    servicesNotFound: 'No services found',
+    servicesUpdated: 'Services updated successfully!',
+    error: 'Error',
+    saveError: 'Error saving'
+  },
+  ru: {
+    services: 'Услуги',
+    search: 'Поиск...',
+    selected: 'Выбрано',
+    save: 'Сохранить',
+    saving: 'Сохранение...',
+    cancel: 'Отмена',
+    edit: 'Редактировать',
+    noServicesSelected: 'Услуги не выбраны',
+    servicesNotFound: 'Услуги не найдены',
+    servicesUpdated: 'Услуги успешно обновлены!',
+    error: 'Ошибка',
+    saveError: 'Ошибка сохранения'
+  }
+}
+
+type Locale = 'ka' | 'en' | 'ru'
 
 interface Service {
   id: string
@@ -29,7 +78,11 @@ export default function ServicesField({
   onCancel,
   showActions = true 
 }: ServicesFieldProps) {
+  const pathname = usePathname()
+  const locale = (pathname?.split('/')[1] || 'ka') as Locale
+  const t = servicesFieldTranslations[locale] || servicesFieldTranslations.ka
   const supabase = createClient()
+  const { showToast } = useToast()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [services, setServices] = useState<Service[]>([])
@@ -46,7 +99,7 @@ export default function ServicesField({
     console.log('Fetching services and selected services for profile:', profileId)
     setLoading(true)
     try {
-      // Fetch all services with translations
+      // Fetch all services with translations for all languages
       const { data: servicesData, error: servicesError } = await supabase
         .from('services')
         .select(`
@@ -56,7 +109,6 @@ export default function ServicesField({
             language
           )
         `)
-        .eq('service_translations.language', 'ka')
         .eq('status', 'published')
         .order('created_at', { ascending: false })
 
@@ -93,11 +145,6 @@ export default function ServicesField({
     fetchData()
   }, [profileId, fetchData])
 
-  useEffect(() => {
-    console.log('ServicesField mounted for profile:', profileId)
-    fetchData()
-  }, [profileId, fetchData])
-
   // Reset temp selection when editing starts/stops
   useEffect(() => {
     if (isEditing) {
@@ -126,7 +173,7 @@ export default function ServicesField({
 
       if (deleteError) {
         console.error('Error deleting services:', deleteError)
-        alert('შეცდომა: ' + deleteError.message)
+        showToast(t.error + ': ' + deleteError.message, 'error')
         return
       }
 
@@ -143,18 +190,18 @@ export default function ServicesField({
 
         if (insertError) {
           console.error('Error inserting services:', insertError)
-          alert('შეცდომა: ' + insertError.message)
+          showToast(t.error + ': ' + insertError.message, 'error')
           return
         }
       }
 
       setSelectedServices([...tempSelectedServices])
-      alert('სერვისები წარმატებით განახლდა! ✅')
+      showToast(t.servicesUpdated, 'success')
       setInternalIsEditing(false)
       onSave?.()
     } catch (error) {
       console.error('Save error:', error)
-      alert('შეცდომა შენახვისას')
+      showToast(t.saveError, 'error')
     } finally {
       setSaving(false)
     }
@@ -179,8 +226,8 @@ export default function ServicesField({
   }
 
   const getServiceTitle = (service: Service) => {
-    const translation = service.service_translations.find((t: { language: string }) => t.language === 'ka')
-    return translation?.title || 'N/A'
+    const translation = service.service_translations.find((tr: { language: string }) => tr.language === locale)
+    return translation?.title || service.service_translations.find((tr: { language: string }) => tr.language === 'ka')?.title || 'N/A'
   }
 
   // Filter services based on search term
@@ -196,7 +243,7 @@ export default function ServicesField({
     <div>
       <label className={`mb-2 flex items-center gap-1.5 lg:gap-2 text-xs font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
         <Briefcase className="h-3.5 w-3.5" />
-        სერვისები
+        {t.services}
       </label>
 
       {isEditing ? (
@@ -208,7 +255,7 @@ export default function ServicesField({
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="ძებნა..."
+              placeholder={t.search}
               className={`w-full pl-8 lg:pl-9 pr-8 lg:pr-9 py-1.5 lg:py-2 rounded-lg text-xs border transition-colors ${
                 isDark
                   ? 'bg-white/5 border-white/10 text-white placeholder:text-white/40 focus:bg-white/10 focus:border-white/20'
@@ -227,7 +274,7 @@ export default function ServicesField({
 
           {/* Selected Count */}
           <div className={`mb-2 text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
-            არჩეული: {tempSelectedServices.length} / {services.length}
+            {t.selected}: {tempSelectedServices.length} / {services.length}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 lg:gap-2 mb-2 lg:mb-3 max-h-80 lg:max-h-96 overflow-y-auto pr-1">
@@ -243,8 +290,8 @@ export default function ServicesField({
                   className={`flex items-center gap-1.5 lg:gap-2 px-2.5 lg:px-3 py-1.5 lg:py-2 rounded-md text-left text-xs font-medium transition-all ${
                     isSelected
                       ? isDark
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50'
-                        : 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/50'
+                        ? 'bg-white/20 text-white border border-white/40'
+                        : 'bg-black/20 text-black border border-black/40'
                       : isDark
                       ? 'bg-white/5 text-white/80 border border-white/10 hover:bg-white/10 hover:border-white/20'
                       : 'bg-black/5 text-black/80 border border-black/10 hover:bg-black/10 hover:border-black/20'
@@ -253,8 +300,8 @@ export default function ServicesField({
                   <div className={`flex items-center justify-center w-3.5 h-3.5 lg:w-4 lg:h-4 rounded border flex-shrink-0 ${
                     isSelected
                       ? isDark
-                        ? 'bg-emerald-500/30 border-emerald-400'
-                        : 'bg-emerald-500/30 border-emerald-600'
+                        ? 'bg-white/30 border-white'
+                        : 'bg-black/30 border-black'
                       : isDark
                       ? 'border-white/30'
                       : 'border-black/30'
@@ -269,7 +316,7 @@ export default function ServicesField({
 
           {filteredServices.length === 0 && (
             <p className={`text-center py-4 text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
-              სერვისები ვერ მოიძებნა
+              {t.servicesNotFound}
             </p>
           )}
 
@@ -281,19 +328,19 @@ export default function ServicesField({
                 disabled={saving}
                 className={`flex items-center gap-1.5 rounded-lg px-3 lg:px-4 py-1.5 lg:py-2 text-xs font-semibold transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed ${
                   isDark
-                    ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30'
-                    : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border border-emerald-500/20'
+                    ? 'bg-white text-black hover:bg-white/90'
+                    : 'bg-black text-white hover:bg-black/90'
                 }`}
               >
                 {saving ? (
                   <>
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    შენახვა...
+                    {t.saving}
                   </>
                 ) : (
                   <>
                     <CheckCircle className="h-3.5 w-3.5" />
-                    შენახვა
+                    {t.save}
                   </>
                 )}
               </button>
@@ -306,7 +353,7 @@ export default function ServicesField({
                     : 'bg-black/5 text-black/80 hover:bg-black/10 border border-black/10'
                 }`}
               >
-                გაუქმება
+                {t.cancel}
               </button>
             </div>
           )}
@@ -319,12 +366,12 @@ export default function ServicesField({
                 onClick={handleStartEdit}
                 className={`flex items-center gap-1 lg:gap-1.5 rounded-lg px-2.5 lg:px-3 py-1.5 text-xs font-medium transition-colors ${
                   isDark
-                    ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30'
-                    : 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/20'
+                    ? 'bg-white/10 text-white hover:bg-white/20'
+                    : 'bg-black/10 text-black hover:bg-black/20'
                 }`}
               >
                 <Edit className="h-3 w-3" />
-                რედაქტირება
+                {t.edit}
               </button>
             </div>
           )}
@@ -340,8 +387,8 @@ export default function ServicesField({
                     key={serviceId}
                     className={`px-3 py-1.5 rounded-md text-xs font-medium ${
                       isDark
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                        : 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30'
+                        ? 'bg-white/10 text-white border border-white/20'
+                        : 'bg-black/10 text-black border border-black/20'
                     }`}
                   >
                     {title}
@@ -350,7 +397,7 @@ export default function ServicesField({
               })
             ) : (
               <p className={`text-xs ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-                სერვისები არ არის არჩეული
+                {t.noServicesSelected}
               </p>
             )}
           </div>

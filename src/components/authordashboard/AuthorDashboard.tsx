@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
+import { usePathname } from 'next/navigation'
 import { 
   LayoutDashboard,
   FileText,
@@ -11,9 +12,13 @@ import {
 } from 'lucide-react'
 import MyPostsPage from '@/components/common/MyPostsPage'
 
+type Locale = 'ka' | 'en' | 'ru'
+
 export default function AuthorDashboard() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
+  const pathname = usePathname()
+  const locale = (pathname?.split('/')[1] as Locale) || 'ka'
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [activeTab, setActiveTab] = useState('dashboard')
 
@@ -126,7 +131,7 @@ export default function AuthorDashboard() {
           </div>
         )
       case 'posts':
-        return <MyPostsPage />
+        return <MyPostsPage locale={locale} />
       default:
         return null
     }

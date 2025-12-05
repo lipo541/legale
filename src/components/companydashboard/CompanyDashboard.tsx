@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
+import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { 
   LayoutDashboard,
@@ -20,9 +21,13 @@ import ManageSpecialistsPage from './specialists/ManageSpecialistsPage'
 import SpecialistRequestsPage from './requests/SpecialistRequestsPage'
 import MyPostsPage from '@/components/common/MyPostsPage'
 
+type Locale = 'ka' | 'en' | 'ru'
+
 export default function CompanyDashboard() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
+  const pathname = usePathname()
+  const locale = (pathname?.split('/')[1] as Locale) || 'ka'
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [activeTab, setActiveTab] = useState('dashboard')
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0)
@@ -74,7 +79,7 @@ export default function CompanyDashboard() {
       case 'specialist-requests':
         return <SpecialistRequestsPage onRequestUpdate={fetchPendingRequestsCount} />
       case 'posts':
-        return <MyPostsPage />
+        return <MyPostsPage locale={locale} />
       default:
         return null
     }

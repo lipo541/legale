@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
+import { usePathname } from 'next/navigation'
 import { 
   LayoutDashboard,
   User,
@@ -14,9 +15,13 @@ import CreatePostPage from './createpost/CreatePostPage'
 import MyPostsPage from '@/components/common/MyPostsPage'
 import { createClient } from '@/lib/supabase/client'
 
+type Locale = 'ka' | 'en' | 'ru'
+
 export default function SoloSpecialistDashboard() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
+  const pathname = usePathname()
+  const locale = (pathname?.split('/')[1] as Locale) || 'ka'
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [activeTab, setActiveTab] = useState('dashboard')
   const [verificationStatus, setVerificationStatus] = useState<string | null>(null)
@@ -146,7 +151,7 @@ export default function SoloSpecialistDashboard() {
       case 'profile':
         return <ProfilePage />
       case 'posts':
-        return <MyPostsPage />
+        return <MyPostsPage locale={locale} />
       default:
         return null
     }

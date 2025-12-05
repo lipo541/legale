@@ -2,6 +2,7 @@
 
 import { ReactNode } from 'react'
 import { Edit, Save, X, Loader2 } from 'lucide-react'
+import { specialistDashboardTranslations, Locale } from '@/translations/specialist-dashboard'
 
 interface FormSectionProps {
   title: string
@@ -13,6 +14,7 @@ interface FormSectionProps {
   isDark: boolean
   children: ReactNode
   showBorder?: boolean
+  locale?: Locale
 }
 
 export default function FormSection({
@@ -24,22 +26,24 @@ export default function FormSection({
   saving = false,
   isDark,
   children,
-  showBorder = true
+  showBorder = true,
+  locale = 'ka'
 }: FormSectionProps) {
+  const t = specialistDashboardTranslations[locale]
   return (
-    <div className={`mb-8 pb-8 ${showBorder ? 'border-b border-white/10' : ''}`}>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+    <div className={`mb-3 lg:mb-4 pb-3 lg:pb-4 ${showBorder ? isDark ? 'border-b border-white/10' : 'border-b border-black/10' : ''}`}>
+      <div className="flex items-center justify-between mb-2 lg:mb-3">
+        <h2 className={`text-sm lg:text-base font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
           {title}
         </h2>
         {!isEditing && (
           <button
             onClick={onEdit}
-            className={`rounded-lg p-2 transition-all hover:scale-110 ${
-              isDark ? 'hover:bg-white/10' : 'hover:bg-black/5'
+            className={`rounded-lg p-1.5 transition-all active:scale-95 ${
+              isDark ? 'hover:bg-white/10 text-white/50' : 'hover:bg-black/5 text-black/50'
             }`}
           >
-            <Edit className={`h-4 w-4 ${isDark ? 'text-white/60' : 'text-black/60'}`} />
+            <Edit className="h-3.5 w-3.5" />
           </button>
         )}
       </div>
@@ -47,32 +51,44 @@ export default function FormSection({
       {children}
       
       {isEditing && (
-        <div className="mt-6 flex gap-3">
+        <div className="mt-3 flex gap-2">
           <button
             onClick={onSave}
             disabled={saving}
-            className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-emerald-600 disabled:opacity-50 flex items-center gap-2"
+            className={`
+              rounded-lg px-3 py-1.5 text-xs font-medium transition-all active:scale-95 
+              flex items-center gap-1.5 disabled:opacity-50
+              ${isDark 
+                ? 'bg-white text-black hover:bg-white/90' 
+                : 'bg-black text-white hover:bg-black/90'
+              }
+            `}
           >
             {saving ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                შენახვა...
+                <Loader2 className="h-3 w-3 animate-spin" />
+                {t.saving}
               </>
             ) : (
               <>
-                <Save className="h-4 w-4" />
-                შენახვა
+                <Save className="h-3 w-3" />
+                {t.save}
               </>
             )}
           </button>
           <button
             onClick={onCancel}
-            className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
-              isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-black/10 text-black hover:bg-black/20'
-            }`}
+            className={`
+              rounded-lg px-3 py-1.5 text-xs font-medium transition-all active:scale-95 
+              flex items-center gap-1.5
+              ${isDark 
+                ? 'bg-white/10 text-white hover:bg-white/20' 
+                : 'bg-black/10 text-black hover:bg-black/20'
+              }
+            `}
           >
-            <X className="h-4 w-4 inline mr-1" />
-            გაუქმება
+            <X className="h-3 w-3" />
+            {t.cancel}
           </button>
         </div>
       )}

@@ -2,18 +2,24 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useToast } from '@/contexts/ToastContext'
 import { 
   User, Mail, Phone, Loader2, Upload, X, CheckCircle, Clock, 
-  Globe, Briefcase, Lightbulb, Target, BookOpen, Award, MapPin
+  Globe, Briefcase, Lightbulb, Target, BookOpen, Award, MapPin, Lock, Eye, EyeOff
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import FormSection from '@/components/solospecialistdashboard/profile/components/FormSection'
-import FormField from '@/components/solospecialistdashboard/profile/components/FormField'
-import TextAreaField from '@/components/solospecialistdashboard/profile/components/TextAreaField'
-import ListField from '@/components/solospecialistdashboard/profile/components/ListField'
-import ObjectField from '@/components/solospecialistdashboard/profile/components/ObjectField'
+import FormSection from '@/components/specialistdashboard/profile/components/FormSection'
+import FormField from '@/components/specialistdashboard/profile/components/FormField'
+import TextAreaField from '@/components/specialistdashboard/profile/components/TextAreaField'
+import ListField from '@/components/specialistdashboard/profile/components/ListField'
+import ObjectField from '@/components/specialistdashboard/profile/components/ObjectField'
 import ServicesField from '@/components/common/ServicesField'
 import CityPicker from '@/components/companydashboard/companyprofile/CityPicker'
+import { specialistDashboardTranslations, Locale } from '@/translations/specialist-dashboard'
+
+interface ProfilePageProps {
+  locale: Locale
+}
 
 interface ProfileData {
   id: string
@@ -41,10 +47,12 @@ interface ProfileData {
 
 const AVAILABLE_LANGUAGES = ['English', 'Georgian', 'Russian', 'German']
 
-export default function ProfilePage() {
+export default function ProfilePage({ locale }: ProfilePageProps) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
+  const { showToast } = useToast()
   const supabase = createClient()
+  const t = specialistDashboardTranslations[locale] || specialistDashboardTranslations.ka
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -53,6 +61,10 @@ export default function ProfilePage() {
   const [editingSection, setEditingSection] = useState<string | null>(null)
   const [showPhotoPreview, setShowPhotoPreview] = useState(false)
   const [showCityPicker, setShowCityPicker] = useState(false)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [passwordData, setPasswordData] = useState({ current: '', new: '', confirm: '' })
+  const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false })
+  const [changingPassword, setChangingPassword] = useState(false)
   const [profile, setProfile] = useState<ProfileData | null>(null)
   const [selectedCities, setSelectedCities] = useState<Array<{ id: string; name_ka: string; name_en: string; name_ru: string }>>([])
   const [selectedCityIds, setSelectedCityIds] = useState<string[]>([])
@@ -117,7 +129,7 @@ export default function ProfilePage() {
   const handleRequestVerification = async () => {
     if (!profile) return
     if (!isProfileComplete()) {
-      alert('გთხოვთ შეავსოთ ყველა აუცილებელი ველი:\n- სრული სახელი\n- პოზიცია\n- ტელეფონი\n- ენები\n- ბიოგრაფია\n- ფოტო')
+      showToast('გთხოვთ შეავსოთ ყველა აუცილებელი ველი: სრული სახელი, პოზიცია, ტელეფონი, ენები, ბიოგრაფია, ფოტო', 'error')
       return
     }
     if (window.confirm('დარწმუნებული ხართ რომ გსურთ ვერიფიკაციის მოთხოვნა?')) {
@@ -130,14 +142,14 @@ export default function ProfilePage() {
         }).eq('id', profile.id)
 
         if (error) {
-          alert('შეცდომა: ' + error.message)
+          showToast('შეცდომა: ' + error.message, 'error')
         } else {
           await fetchProfile()
-          alert('ვერიფიკაციის მოთხოვნა გაიგზავნა! ✅\n\nადმინისტრატორი განიხილავს თქვენს პროფილს და მალე მიიღებთ პასუხს.')
+          showToast('ვერიფიკაციის მოთხოვნა გაიგზავნა! ადმინისტრატორი განიხილავს თქვენს პროფილს.', 'success')
         }
       } catch (error) {
         console.error('Request verification error:', error)
-        alert('შეცდომა მოთხოვნის გაგზავნისას')
+        showToast('შეცდომა მოთხოვნის გაგზავნისას', 'error')
       } finally {
         setRequestingVerification(false)
       }
@@ -151,12 +163,12 @@ export default function ProfilePage() {
 
     const validTypes = ['image/jpeg', 'image/png', 'image/webp']
     if (!validTypes.includes(file.type)) {
-      alert('გთხოვთ ატვირთოთ მხოლოდ სურათი (JPEG, PNG, WebP)')
+      showToast('გთხოვთ ატვირთოთ მხოლოდ სურათი (JPEG, PNG, WebP)', 'error')
       return
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('ფაილის ზომა არ უნდა აღემატებოდეს 5MB-ს')
+      showToast('ფაილის ზომა არ უნდა აღემატებოდეს 5MB-ს', 'error')
       return
     }
 
@@ -164,7 +176,7 @@ export default function ProfilePage() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        alert('გთხოვთ გაიაროთ ავტორიზაცია')
+        showToast('გთხოვთ გაიაროთ ავტორიზაცია', 'error')
         return
       }
 
@@ -183,7 +195,7 @@ export default function ProfilePage() {
 
       if (uploadError) {
         console.error('Upload error:', uploadError)
-        alert('ატვირთვისას მოხდა შეცდომა: ' + uploadError.message)
+        showToast('ატვირთვისას მოხდა შეცდომა: ' + uploadError.message, 'error')
         return
       }
 
@@ -195,15 +207,15 @@ export default function ProfilePage() {
       }).eq('id', user.id)
 
       if (updateError) {
-        alert('მონაცემთა ბაზის განახლება ვერ მოხერხდა: ' + updateError.message)
+        showToast('მონაცემთა ბაზის განახლება ვერ მოხერხდა: ' + updateError.message, 'error')
         return
       }
 
       await fetchProfile()
-      alert('ფოტო წარმატებით აიტვირთა! ✅')
+      showToast('ფოტო წარმატებით აიტვირთა!', 'success')
     } catch (error) {
       console.error('Avatar upload error:', error)
-      alert('ფოტოს ატვირთვისას მოხდა შეცდომა')
+      showToast('ფოტოს ატვირთვისას მოხდა შეცდომა', 'error')
     } finally {
       setUploadingPhoto(false)
     }
@@ -222,7 +234,7 @@ export default function ProfilePage() {
 
       if (deleteError) {
         console.error('Error deleting cities:', deleteError)
-        alert('ქალაქების წაშლისას მოხდა შეცდომა')
+        showToast('ქალაქების წაშლისას მოხდა შეცდომა', 'error')
         return
       }
 
@@ -239,7 +251,7 @@ export default function ProfilePage() {
 
         if (insertError) {
           console.error('Error inserting cities:', insertError)
-          alert('ქალაქების დამატებისას მოხდა შეცდომა')
+          showToast('ქალაქების დამატებისას მოხდა შეცდომა', 'error')
           return
         }
       }
@@ -247,10 +259,10 @@ export default function ProfilePage() {
       // 3. Reload cities
       await fetchProfile()
       setShowCityPicker(false)
-      alert('ქალაქები წარმატებით განახლდა! ✅')
+      showToast('ქალაქები წარმატებით განახლდა!', 'success')
     } catch (error) {
       console.error('Save cities error:', error)
-      alert('ქალაქების შენახვისას მოხდა შეცდომა')
+      showToast('ქალაქების შენახვისას მოხდა შეცდომა', 'error')
     }
   }
 
@@ -284,18 +296,74 @@ export default function ProfilePage() {
       const { error } = await supabase.from('profiles').update(updateData).eq('id', profile.id)
 
       if (error) {
-        alert('შეცდომა განახლებისას: ' + error.message)
+        showToast('შეცდომა განახლებისას: ' + error.message, 'error')
       } else {
         await fetchProfile()
         setEditingSection(null)
         setTempSectionData({})
-        alert('სექცია წარმატებით განახლდა!')
+        showToast('მონაცემები წარმატებით განახლდა!', 'success')
       }
     } catch (error) {
       console.error('Save section error:', error)
-      alert('შეცდომა შენახვისას')
+      showToast('შეცდომა შენახვისას', 'error')
     } finally {
       setSaving(false)
+    }
+  }
+
+  // Handle password change
+  const handleChangePassword = async () => {
+    if (!passwordData.current || !passwordData.new || !passwordData.confirm) {
+      showToast(t.fillAllFields, 'error')
+      return
+    }
+    if (passwordData.new.length < 6) {
+      showToast(t.minPasswordLength, 'error')
+      return
+    }
+    if (passwordData.new !== passwordData.confirm) {
+      showToast(t.passwordsMismatch, 'error')
+      return
+    }
+
+    setChangingPassword(true)
+    try {
+      // First verify current password by signing in
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user?.email) {
+        showToast(t.userNotFound, 'error')
+        return
+      }
+
+      // Try to sign in with current password to verify it
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: passwordData.current
+      })
+
+      if (signInError) {
+        showToast(t.wrongCurrentPassword, 'error')
+        return
+      }
+
+      // Update password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: passwordData.new
+      })
+
+      if (updateError) {
+        showToast(t.passwordChangeError + updateError.message, 'error')
+        return
+      }
+
+      showToast(t.passwordChanged, 'success')
+      setShowPasswordModal(false)
+      setPasswordData({ current: '', new: '', confirm: '' })
+    } catch (error) {
+      console.error('Password change error:', error)
+      showToast(t.passwordChangeErrorGeneric, 'error')
+    } finally {
+      setChangingPassword(false)
     }
   }
 
@@ -314,46 +382,63 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className={`h-8 w-8 animate-spin ${isDark ? 'text-white' : 'text-black'}`} />
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className={`h-5 w-5 animate-spin ${isDark ? 'text-white/50' : 'text-black/50'}`} />
       </div>
     )
   }
 
   if (!profile) {
     return (
-      <div className={`rounded-xl border p-12 text-center ${isDark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
-        <p className={`text-lg font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>პროფილი ვერ მოიძებნა</p>
+      <div className={`rounded-xl border p-6 text-center ${isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/[0.02]'}`}>
+        <p className={`text-sm ${isDark ? 'text-white/50' : 'text-black/50'}`}>{t.profileNotFound}</p>
       </div>
     )
   }
 
   const isEditing = (section: string) => editingSection === section
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const getValue = (field: string) => tempSectionData[field] !== undefined ? tempSectionData[field] as string : (profile as any)[field] || ''
+  const getValue = (field: string) => {
+    // If temp data exists, use it
+    if (tempSectionData[field] !== undefined) {
+      return tempSectionData[field] as string
+    }
+    // For _text fields, convert array to newline-separated text
+    if (field.endsWith('_text')) {
+      const dbField = field.replace('_text', '')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const arrayValue = (profile as any)[dbField]
+      if (Array.isArray(arrayValue) && arrayValue.length > 0) {
+        return arrayValue.join('\n')
+      }
+      return ''
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (profile as any)[field] || ''
+  }
   const setValue = (field: string, value: string | string[] | Record<string, string>) => setTempSectionData({ ...tempSectionData, [field]: value })
 
   return (
-    <div className="pb-10">
+    <div className="w-full max-w-[1200px] mx-auto px-3 sm:px-4 lg:px-6 py-4 lg:py-6">
       {/* Header with Verification Status */}
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-4 lg:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>Specialist Profile</h1>
-          <p className={`mt-2 text-lg ${isDark ? 'text-white/60' : 'text-black/60'}`}>პროფესიული პროფილის მართვა</p>
+          <h1 className={`text-lg lg:text-xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>{t.profileTitle}</h1>
+          <p className={`text-xs lg:text-sm ${isDark ? 'text-white/50' : 'text-black/50'}`}>{t.profileManagement}</p>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {profile.verification_status === 'verified' && (
-            <div className="flex items-center gap-2 rounded-lg bg-emerald-500/20 px-4 py-2 border border-emerald-500/30">
-              <CheckCircle className="h-5 w-5 text-emerald-500" />
-              <span className="font-semibold text-emerald-500">ვერიფიცირებული</span>
+            <div className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium border ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-black/[0.02] border-black/10 text-black'}`}>
+              <CheckCircle className="h-3.5 w-3.5" />
+              <span>{t.verified}</span>
             </div>
           )}
           
           {profile.verification_status === 'pending' && (
-            <div className="flex items-center gap-2 rounded-lg bg-amber-500/20 px-4 py-2 border border-amber-500/30">
-              <Clock className="h-5 w-5 text-amber-500" />
-              <span className="font-semibold text-amber-500">განხილვაში</span>
+            <div className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium border ${isDark ? 'bg-white/5 border-white/10 text-white/70' : 'bg-black/[0.02] border-black/10 text-black/70'}`}>
+              <Clock className="h-3.5 w-3.5" />
+              <span>{t.pending}</span>
             </div>
           )}
           
@@ -361,11 +446,11 @@ export default function ProfilePage() {
             <button
               onClick={handleRequestVerification}
               disabled={requestingVerification || !isProfileComplete()}
-              className={`flex items-center gap-2 rounded-xl px-6 py-3 font-semibold transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed ${
-                isDark ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/30' : 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border border-blue-500/20'
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
+                isDark ? 'bg-white text-black hover:bg-white/90' : 'bg-black text-white hover:bg-black/90'
               }`}
             >
-              {requestingVerification ? <><Loader2 className="h-4 w-4 animate-spin" />იგზავნება...</> : <><CheckCircle className="h-4 w-4" />ვერიფიკაციის მოთხოვნა</>}
+              {requestingVerification ? <><Loader2 className="h-3 w-3 animate-spin" />{t.sending}</> : <><CheckCircle className="h-3 w-3" />{t.verification}</>}
             </button>
           )}
         </div>
@@ -373,41 +458,42 @@ export default function ProfilePage() {
 
       {/* Verification Info Banner */}
       {profile.verification_status !== 'verified' && (
-        <div className={`mb-6 rounded-xl border p-6 ${
-          profile.verification_status === 'pending' ? isDark ? 'border-amber-500/30 bg-amber-500/10' : 'border-amber-500/30 bg-amber-500/5'
-          : profile.verification_status === 'rejected' ? isDark ? 'border-red-500/30 bg-red-500/10' : 'border-red-500/30 bg-red-500/5'
-          : isDark ? 'border-blue-500/30 bg-blue-500/10' : 'border-blue-500/30 bg-blue-500/5'
-        }`}>
-          <div className="flex items-start gap-4">
-            {profile.verification_status === 'pending' ? <Clock className="h-6 w-6 text-amber-500 flex-shrink-0 mt-1" />
-            : profile.verification_status === 'rejected' ? <X className="h-6 w-6 text-red-500 flex-shrink-0 mt-1" />
-            : <CheckCircle className="h-6 w-6 text-blue-500 flex-shrink-0 mt-1" />}
+        <div className={`mb-4 rounded-xl border p-3 lg:p-4 ${isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/[0.02]'}`}>
+          <div className="flex items-start gap-2.5">
+            {profile.verification_status === 'pending' ? <Clock className={`h-4 w-4 flex-shrink-0 mt-0.5 ${isDark ? 'text-white/50' : 'text-black/50'}`} />
+            : profile.verification_status === 'rejected' ? <X className={`h-4 w-4 flex-shrink-0 mt-0.5 ${isDark ? 'text-white/50' : 'text-black/50'}`} />
+            : <CheckCircle className={`h-4 w-4 flex-shrink-0 mt-0.5 ${isDark ? 'text-white/50' : 'text-black/50'}`} />}
             <div className="flex-1">
               {profile.verification_status === 'pending' ? (
                 <>
-                  <h3 className={`font-semibold text-lg mb-2 ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>ვერიფიკაცია განხილვაშია</h3>
-                  <p className={`text-sm ${isDark ? 'text-amber-300/80' : 'text-amber-700/80'}`}>თქვენი პროფილი განიხილება ადმინისტრატორის მიერ.</p>
+                  <h3 className={`font-medium text-xs lg:text-sm ${isDark ? 'text-white' : 'text-black'}`}>{t.verificationPending}</h3>
+                  <p className={`text-[10px] lg:text-xs mt-0.5 ${isDark ? 'text-white/50' : 'text-black/50'}`}>{t.profileReviewing}</p>
                 </>
               ) : profile.verification_status === 'rejected' ? (
                 <>
-                  <h3 className={`font-semibold text-lg mb-2 ${isDark ? 'text-red-400' : 'text-red-600'}`}>ვერიფიკაცია უარყოფილია</h3>
-                  <p className={`text-sm ${isDark ? 'text-red-300/80' : 'text-red-700/80'}`}>
-                    {profile.verification_notes || 'შეგიძლიათ განაახლოთ პროფილი და ხელახლა მოითხოვოთ ვერიფიკაცია.'}
+                  <h3 className={`font-medium text-xs lg:text-sm ${isDark ? 'text-white' : 'text-black'}`}>{t.verificationRejected}</h3>
+                  <p className={`text-[10px] lg:text-xs mt-0.5 ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+                    {profile.verification_notes || t.canUpdateAndRetry}
                   </p>
                 </>
               ) : (
                 <>
-                  <h3 className={`font-semibold text-lg mb-2 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>ვერიფიკაცია საჭიროა</h3>
-                  <div className={`mt-3 text-sm ${isDark ? 'text-blue-300/80' : 'text-blue-700/80'}`}>
-                    <p className="font-medium mb-1">აუცილებელი ველები:</p>
-                    <ul className="list-disc list-inside space-y-1">
-                      <li className={profile.full_name ? 'line-through opacity-50' : ''}>სრული სახელი</li>
-                      <li className={profile.role_title ? 'line-through opacity-50' : ''}>პოზიცია</li>
-                      <li className={profile.phone_number ? 'line-through opacity-50' : ''}>ტელეფონი</li>
-                      <li className={profile.languages && profile.languages.length > 0 ? 'line-through opacity-50' : ''}>ენები</li>
-                      <li className={profile.bio ? 'line-through opacity-50' : ''}>ბიოგრაფია</li>
-                      <li className={profile.avatar_url ? 'line-through opacity-50' : ''}>პროფილის სურათი</li>
-                    </ul>
+                  <h3 className={`font-medium text-xs lg:text-sm ${isDark ? 'text-white' : 'text-black'}`}>{t.verificationRequired}</h3>
+                  <div className={`mt-1.5 text-[10px] lg:text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+                    <p className="font-medium">{t.required}</p>
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      <span className={profile.full_name ? 'line-through opacity-40' : ''}>{t.name}</span>
+                      <span>•</span>
+                      <span className={profile.role_title ? 'line-through opacity-40' : ''}>{t.position}</span>
+                      <span>•</span>
+                      <span className={profile.phone_number ? 'line-through opacity-40' : ''}>{t.phone}</span>
+                      <span>•</span>
+                      <span className={profile.languages && profile.languages.length > 0 ? 'line-through opacity-40' : ''}>{t.languages}</span>
+                      <span>•</span>
+                      <span className={profile.bio ? 'line-through opacity-40' : ''}>{t.bio}</span>
+                      <span>•</span>
+                      <span className={profile.avatar_url ? 'line-through opacity-40' : ''}>{t.photo}</span>
+                    </div>
                   </div>
                 </>
               )}
@@ -416,119 +502,119 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <div className={`rounded-xl border p-8 ${isDark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
+      <div className={`rounded-xl border p-3 lg:p-4 ${isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/[0.02]'}`}>
         {/* Profile Image Section */}
-        <div className="mb-8 pb-8 border-b border-white/10">
-          <h2 className={`text-2xl font-bold mb-6 ${isDark ? 'text-white' : 'text-black'}`}>Profile Image</h2>
-          <div className="flex items-center gap-6">
+        <div className={`mb-3 lg:mb-4 pb-3 lg:pb-4 ${isDark ? 'border-b border-white/10' : 'border-b border-black/10'}`}>
+          <h2 className={`text-sm lg:text-base font-semibold mb-3 ${isDark ? 'text-white' : 'text-black'}`}>{t.photoSection}</h2>
+          <div className="flex items-center gap-3 lg:gap-4">
             <div 
               onClick={() => profile.avatar_url && setShowPhotoPreview(true)}
-              className={`flex h-24 w-24 items-center justify-center rounded-full ${isDark ? 'bg-white/10' : 'bg-black/10'} ${profile.avatar_url ? 'cursor-pointer hover:ring-2 hover:ring-white/20 transition-all' : ''}`}
+              className={`flex h-14 w-14 lg:h-16 lg:w-16 items-center justify-center rounded-full flex-shrink-0 ${isDark ? 'bg-white/10' : 'bg-black/10'} ${profile.avatar_url ? 'cursor-pointer hover:ring-2 hover:ring-white/10 transition-all' : ''}`}
             >
               {profile.avatar_url ? (
                 <img src={profile.avatar_url} alt={profile.full_name || 'Profile'} className="h-full w-full rounded-full object-cover" />
               ) : (
-                <User className={`h-12 w-12 ${isDark ? 'text-white/60' : 'text-black/60'}`} />
+                <User className={`h-6 w-6 lg:h-8 lg:w-8 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
               )}
             </div>
             <div className="flex-1">
-              <label htmlFor="avatar-upload" className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all cursor-pointer hover:scale-[1.02] ${uploadingPhoto ? 'opacity-50 cursor-not-allowed' : ''} ${isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-black/10 text-black hover:bg-black/20'}`}>
-                {uploadingPhoto ? <><Loader2 className="h-4 w-4 animate-spin" />ატვირთვა...</> : <><Upload className="h-4 w-4" />{profile.avatar_url ? 'ფოტოს შეცვლა' : 'ფოტოს ატვირთვა'}</>}
+              <label htmlFor="avatar-upload" className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all cursor-pointer active:scale-95 ${uploadingPhoto ? 'opacity-50 cursor-not-allowed' : ''} ${isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-black/10 text-black hover:bg-black/20'}`}>
+                {uploadingPhoto ? <><Loader2 className="h-3 w-3 animate-spin" />{t.uploading}</> : <><Upload className="h-3 w-3" />{profile.avatar_url ? t.change : t.upload}</>}
               </label>
               <input id="avatar-upload" type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarUpload} disabled={uploadingPhoto} className="hidden" />
-              <p className={`text-xs mt-2 ${isDark ? 'text-white/40' : 'text-black/40'}`}>JPEG, PNG, WebP (მაქს. 5MB)</p>
+              <p className={`text-[10px] mt-1 ${isDark ? 'text-white/30' : 'text-black/30'}`}>{t.photoRequirements}</p>
             </div>
           </div>
         </div>
 
         {/* Basic Information Section */}
         <FormSection
-          title="ძირითადი ინფორმაცია"
+          title={t.basicInfo}
           isEditing={isEditing('basic')}
           isDark={isDark}
           saving={saving}
           onEdit={() => setEditingSection('basic')}
           onSave={() => handleSaveSection('basic', ['full_name', 'role_title', 'phone_number', 'languages', 'bio', 'philosophy'])}
           onCancel={() => { setEditingSection(null); setTempSectionData({}) }}
+          locale={locale}
         >
           <div className="grid gap-6 md:grid-cols-2">
-            <FormField label="სრული სახელი" icon={User} value={getValue('full_name')} isEditing={isEditing('basic')} onChange={(v: string) => setValue('full_name', v)} placeholder="John Doe" required isDark={isDark} />
-            <FormField label="Slug (URL)" icon={Globe} value={profile.slug || (profile.full_name ? generateSlug(profile.full_name) : 'N/A')} isEditing={false} readOnly isDark={isDark} description="ავტომატურად გენერირდება" />
-            <FormField label="Role / Title" icon={Briefcase} value={getValue('role_title')} isEditing={isEditing('basic')} onChange={(v: string) => setValue('role_title', v)} placeholder="Senior Legal Counsel" required isDark={isDark} />
-            <FormField label="Email (read-only)" icon={Mail} value={profile.email || 'N/A'} isEditing={false} type="email" readOnly isDark={isDark} />
-            <FormField label="Phone Number" icon={Phone} value={getValue('phone_number')} isEditing={isEditing('basic')} onChange={(v: string) => setValue('phone_number', v)} placeholder="+995 551 911 951" type="tel" required isDark={isDark} />
+            <FormField label={t.fullName} icon={User} value={getValue('full_name')} isEditing={isEditing('basic')} onChange={(v: string) => setValue('full_name', v)} placeholder="John Doe" required isDark={isDark} />
+            <FormField label={t.slug} icon={Globe} value={profile.slug || (profile.full_name ? generateSlug(profile.full_name) : 'N/A')} isEditing={false} readOnly isDark={isDark} description={t.autoGenerated} />
+            <FormField label={t.roleTitle} icon={Briefcase} value={getValue('role_title')} isEditing={isEditing('basic')} onChange={(v: string) => setValue('role_title', v)} placeholder="Senior Legal Counsel" required isDark={isDark} />
+            <FormField label={t.email} icon={Mail} value={profile.email || 'N/A'} isEditing={false} type="email" readOnly isDark={isDark} />
+            <FormField label={t.phoneNumber} icon={Phone} value={getValue('phone_number')} isEditing={isEditing('basic')} onChange={(v: string) => setValue('phone_number', v)} placeholder="+995 551 911 951" type="tel" required isDark={isDark} />
             
             <div>
-              <label className={`mb-3 flex items-center gap-2 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-                <Globe className="h-4 w-4" />Languages *
+              <label className={`mb-2 flex items-center gap-1.5 text-xs lg:text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                <Globe className="h-3.5 w-3.5" />{t.languages} *
               </label>
               {isEditing('basic') ? (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {AVAILABLE_LANGUAGES.map((lang) => {
                     const currentLangs = tempSectionData.languages !== undefined ? tempSectionData.languages as string[] : profile.languages || []
                     const isSelected = currentLangs.includes(lang)
                     return (
-                      <button key={lang} type="button" onClick={() => toggleLanguage(lang)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${isSelected ? isDark ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30' : isDark ? 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10' : 'bg-black/5 text-black/60 border border-black/10 hover:bg-black/10'}`}>
+                      <button key={lang} type="button" onClick={() => toggleLanguage(lang)} className={`px-2 lg:px-2.5 py-1 lg:py-1.5 rounded-lg text-xs font-medium transition-all ${isSelected ? isDark ? 'bg-white/20 text-white border border-white/30' : 'bg-black/20 text-black border border-black/30' : isDark ? 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10' : 'bg-black/5 text-black/60 border border-black/10 hover:bg-black/10'}`}>
                         {lang}
                       </button>
                     )
                   })}
                 </div>
               ) : (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {profile.languages && profile.languages.length > 0 ? profile.languages.map((lang) => (
-                    <span key={lang} className={`px-3 py-1.5 rounded-lg text-sm font-medium ${isDark ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30'}`}>{lang}</span>
-                  )) : <p className={`text-base ${isDark ? 'text-white/80' : 'text-black/80'}`}>N/A</p>}
+                    <span key={lang} className={`px-2 lg:px-2.5 py-1 lg:py-1.5 rounded-lg text-xs font-medium ${isDark ? 'bg-white/10 text-white border border-white/20' : 'bg-black/10 text-black border border-black/20'}`}>{lang}</span>
+                  )) : <p className={`text-sm ${isDark ? 'text-white/50' : 'text-black/50'}`}>N/A</p>}
                 </div>
               )}
             </div>
 
             <div className="md:col-span-2">
-              <TextAreaField label="Bio" icon={User} value={getValue('bio')} isEditing={isEditing('basic')} onChange={(v: string) => setValue('bio', v)} placeholder="Share your professional background..." rows={4} required isDark={isDark} />
+              <TextAreaField label={t.bioField} icon={User} value={getValue('bio')} isEditing={isEditing('basic')} onChange={(v: string) => setValue('bio', v)} placeholder="Share your professional background..." rows={4} required isDark={isDark} />
             </div>
             <div className="md:col-span-2">
-              <TextAreaField label="Philosophy" icon={Lightbulb} value={getValue('philosophy')} isEditing={isEditing('basic')} onChange={(v: string) => setValue('philosophy', v)} placeholder="Your professional philosophy..." rows={4} isDark={isDark} />
+              <TextAreaField label={t.philosophy} icon={Lightbulb} value={getValue('philosophy')} isEditing={isEditing('basic')} onChange={(v: string) => setValue('philosophy', v)} placeholder="Your professional philosophy..." rows={4} isDark={isDark} />
             </div>
           </div>
         </FormSection>
 
         {/* Cities Section */}
-        <div className={`rounded-lg lg:rounded-xl border p-3 lg:p-6 mb-4 lg:mb-6 ${isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/5'}`}>
-          <div className="flex items-center justify-between mb-3 lg:mb-6">
-            <h2 className={`text-base lg:text-2xl font-bold flex items-center gap-1 lg:gap-2 ${isDark ? 'text-white' : 'text-black'}`}>
-              <MapPin className="h-3.5 lg:h-6 w-3.5 lg:w-6" />
-              ქალაქები
+        <div className={`rounded-lg border p-3 lg:p-4 mb-3 lg:mb-4 ${isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/[0.02]'}`}>
+          <div className="flex items-center justify-between mb-2 lg:mb-3">
+            <h2 className={`text-sm lg:text-base font-semibold flex items-center gap-1.5 ${isDark ? 'text-white' : 'text-black'}`}>
+              <MapPin className="h-3.5 lg:h-4 w-3.5 lg:w-4" />
+              {t.cities}
             </h2>
             <button
               onClick={() => setShowCityPicker(true)}
-              className={`text-xs lg:text-sm font-medium transition-colors px-3 lg:px-4 py-1.5 lg:py-2 rounded-lg ${
+              className={`text-xs font-medium transition-colors px-2.5 py-1 rounded-lg ${
                 isDark 
-                  ? 'text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20' 
-                  : 'text-emerald-600 hover:text-emerald-700 bg-emerald-500/10 hover:bg-emerald-500/20'
+                  ? 'text-white hover:text-white/80 bg-white/10 hover:bg-white/20' 
+                  : 'text-black hover:text-black/80 bg-black/10 hover:bg-black/20'
               }`}
             >
-              {selectedCities.length === 0 ? 'ქალაქების დამატება' : 'რედაქტირება'}
+              {selectedCities.length === 0 ? t.add : t.edit}
             </button>
           </div>
 
           {selectedCities.length === 0 ? (
-            <div className={`text-center py-6 lg:py-8 ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-              <MapPin className="h-8 lg:h-12 w-8 lg:w-12 mx-auto mb-2 lg:mb-3 opacity-20" />
-              <p className="text-xs lg:text-sm">არჩეული ქალაქები არ არის</p>
-              <p className="text-[10px] lg:text-xs mt-0.5 lg:mt-1">აირჩიეთ ქალაქები სადაც მუშაობთ</p>
+            <div className={`text-center py-4 ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+              <MapPin className="h-6 w-6 mx-auto mb-1.5 opacity-20" />
+              <p className="text-xs">{t.noCitiesSelected}</p>
             </div>
           ) : (
-            <div className="flex flex-wrap gap-1.5 lg:gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {selectedCities.map(city => (
                 <span
                   key={city.id}
-                  className={`px-2.5 lg:px-4 py-1 lg:py-2 rounded-md lg:rounded-lg text-xs lg:text-sm font-medium ${
+                  className={`px-2 lg:px-2.5 py-1 rounded-lg text-xs font-medium ${
                     isDark 
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                      : 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
+                      ? 'bg-white/10 text-white border border-white/20' 
+                      : 'bg-black/10 text-black border border-black/20'
                   }`}
                 >
-                  {city.name_ka}
+                  {locale === 'en' ? city.name_en : locale === 'ru' ? city.name_ru : city.name_ka}
                 </span>
               ))}
             </div>
@@ -537,42 +623,37 @@ export default function ProfilePage() {
 
         {/* Professional Experience Section */}
         <FormSection
-          title="Professional Experience"
+          title={t.professionalExperience}
           isEditing={isEditing('experience')}
           isDark={isDark}
           saving={saving}
           onEdit={() => setEditingSection('experience')}
           onSave={() => handleSaveSection('experience', ['focus_areas_text', 'representative_matters_text', 'teaching_writing_speaking'])}
           onCancel={() => { setEditingSection(null); setTempSectionData({}) }}
+          locale={locale}
         >
           <div className="space-y-6">
-            <ListField label="Focus Areas (one per line)" icon={Target} items={profile.focus_areas || []} isEditing={isEditing('experience')} value={getValue('focus_areas_text')} onChange={(v: string) => setValue('focus_areas_text', v)} placeholder="Corporate Law&#10;Contract Negotiations" isDark={isDark} />
-            <ListField label="Representative Matters (one per line)" icon={Briefcase} items={profile.representative_matters || []} isEditing={isEditing('experience')} value={getValue('representative_matters_text')} onChange={(v: string) => setValue('representative_matters_text', v)} placeholder="Represented major corporation..." isDark={isDark} />
-            <TextAreaField label="Teaching, Writing & Speaking" icon={BookOpen} value={getValue('teaching_writing_speaking')} isEditing={isEditing('experience')} onChange={(v: string) => setValue('teaching_writing_speaking', v)} placeholder="Describe your teaching activities..." rows={5} isDark={isDark} />
+            <ListField label={t.focusAreas} icon={Target} items={profile.focus_areas || []} isEditing={isEditing('experience')} value={getValue('focus_areas_text')} onChange={(v: string) => setValue('focus_areas_text', v)} placeholder="Corporate Law&#10;Contract Negotiations" isDark={isDark} />
+            <ListField label={t.representativeMatters} icon={Briefcase} items={profile.representative_matters || []} isEditing={isEditing('experience')} value={getValue('representative_matters_text')} onChange={(v: string) => setValue('representative_matters_text', v)} placeholder="Represented major corporation..." isDark={isDark} />
+            <TextAreaField label={t.teachingWritingSpeaking} icon={BookOpen} value={getValue('teaching_writing_speaking')} isEditing={isEditing('experience')} onChange={(v: string) => setValue('teaching_writing_speaking', v)} placeholder="Describe your teaching activities..." rows={5} isDark={isDark} />
           </div>
         </FormSection>
 
         {/* Services/Specializations Section */}
-        <FormSection
-          title="სერვისები და სპეციალიზაციები"
-          isEditing={isEditing('services')}
-          isDark={isDark}
-          saving={false}
-          onEdit={() => setEditingSection('services')}
-          onSave={() => setEditingSection(null)}
-          onCancel={() => setEditingSection(null)}
-        >
+        <div className={`mb-3 lg:mb-4 pb-3 lg:pb-4 ${isDark ? 'border-b border-white/10' : 'border-b border-black/10'}`}>
+          <h2 className={`text-sm lg:text-base font-semibold mb-2 lg:mb-3 ${isDark ? 'text-white' : 'text-black'}`}>
+            {t.servicesSpecializations}
+          </h2>
           <ServicesField 
             profileId={profile.id} 
             isDark={isDark} 
-            isEditing={isEditing('services')}
-            showActions={false}
+            showActions={true}
           />
-        </FormSection>
+        </div>
 
         {/* Credentials & Values Section */}
         <FormSection
-          title="Credentials & Values"
+          title={t.credentialsValues}
           isEditing={isEditing('credentials')}
           isDark={isDark}
           saving={saving}
@@ -580,22 +661,42 @@ export default function ProfilePage() {
           onSave={() => handleSaveSection('credentials', ['credentials_memberships_text', 'values_how_we_work'])}
           onCancel={() => { setEditingSection(null); setTempSectionData({}) }}
           showBorder={false}
+          locale={locale}
         >
           <div className="space-y-6">
-            <ListField label="Credentials & Memberships (one per line)" icon={Award} items={profile.credentials_memberships || []} isEditing={isEditing('credentials')} value={getValue('credentials_memberships_text')} onChange={(v: string) => setValue('credentials_memberships_text', v)} placeholder="Licensed Attorney, State Bar&#10;Member of ABA" isDark={isDark} />
-            <ObjectField label="Values & How We Work" icon={Lightbulb} value={profile.values_how_we_work || {}} isEditing={isEditing('credentials')} onChange={(v: Record<string, string>) => setValue('values_how_we_work', v)} isDark={isDark} description="Add key-value pairs for your values and work approach" />
+            <ListField label={t.credentialsMemberships} icon={Award} items={profile.credentials_memberships || []} isEditing={isEditing('credentials')} value={getValue('credentials_memberships_text')} onChange={(v: string) => setValue('credentials_memberships_text', v)} placeholder="Licensed Attorney, State Bar&#10;Member of ABA" isDark={isDark} />
+            <ObjectField label={t.valuesHowWeWork} icon={Lightbulb} value={profile.values_how_we_work || {}} isEditing={isEditing('credentials')} onChange={(v: Record<string, string>) => setValue('values_how_we_work', v)} isDark={isDark} description={t.valuesDescription} locale={locale} />
           </div>
         </FormSection>
+
+        {/* Security Section */}
+        <div className={`mt-3 lg:mt-4 pt-3 lg:pt-4 ${isDark ? 'border-t border-white/10' : 'border-t border-black/10'}`}>
+          <h2 className={`text-sm lg:text-base font-semibold mb-3 flex items-center gap-1.5 ${isDark ? 'text-white' : 'text-black'}`}>
+            <Lock className="h-3.5 lg:h-4 w-3.5 lg:w-4" />
+            {t.security}
+          </h2>
+          <button
+            onClick={() => setShowPasswordModal(true)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all active:scale-95 ${
+              isDark 
+                ? 'bg-white/10 text-white hover:bg-white/20 border border-white/10' 
+                : 'bg-black/10 text-black hover:bg-black/20 border border-black/10'
+            }`}
+          >
+            <Lock className="h-3.5 w-3.5" />
+            {t.changePassword}
+          </button>
+        </div>
       </div>
 
       {/* Photo Preview Modal */}
       {showPhotoPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" onClick={() => setShowPhotoPreview(false)}>
-          <div className="relative" onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setShowPhotoPreview(false)} className="absolute -top-4 -right-4 z-10 rounded-full bg-black/50 p-2 text-white transition-all hover:bg-black/70 hover:scale-110">
-              <X className="h-6 w-6" strokeWidth={2} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-2 lg:p-4 backdrop-blur-sm" onClick={() => setShowPhotoPreview(false)}>
+          <div className="relative max-w-[95vw] lg:max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setShowPhotoPreview(false)} className="absolute top-2 right-2 lg:-top-4 lg:-right-4 z-10 rounded-full bg-black/70 lg:bg-black/50 p-1.5 lg:p-2 text-white transition-all hover:bg-black/90 lg:hover:bg-black/70 hover:scale-110">
+              <X className="h-5 w-5 lg:h-6 lg:w-6" strokeWidth={2} />
             </button>
-            <img src={profile.avatar_url || ''} alt={profile.full_name || 'Profile'} className="max-h-[90vh] max-w-full rounded-2xl object-contain shadow-2xl" />
+            <img src={profile.avatar_url || ''} alt={profile.full_name || 'Profile'} className="max-h-[85vh] lg:max-h-[90vh] max-w-full rounded-xl lg:rounded-2xl object-contain shadow-2xl" />
           </div>
         </div>
       )}
@@ -607,6 +708,147 @@ export default function ProfilePage() {
           onSave={handleSaveCities}
           selectedCityIds={selectedCityIds}
         />
+      )}
+
+      {/* Password Change Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" onClick={() => setShowPasswordModal(false)}>
+          <div 
+            className={`w-full max-w-md rounded-xl p-4 lg:p-6 ${
+              isDark ? 'bg-zinc-900 border border-white/10' : 'bg-white border border-black/10'
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className={`text-base lg:text-lg font-semibold flex items-center gap-2 ${isDark ? 'text-white' : 'text-black'}`}>
+                <Lock className="h-4 w-4" />
+                {t.changePassword}
+              </h3>
+              <button
+                onClick={() => setShowPasswordModal(false)}
+                className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10' : 'hover:bg-black/10'}`}
+              >
+                <X className={`h-4 w-4 ${isDark ? 'text-white/60' : 'text-black/60'}`} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {/* Current Password */}
+              <div>
+                <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                  {t.currentPassword} *
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPasswords.current ? 'text' : 'password'}
+                    value={passwordData.current}
+                    onChange={(e) => setPasswordData({ ...passwordData, current: e.target.value })}
+                    className={`w-full rounded-lg border px-3 py-2 pr-10 text-sm transition-colors ${
+                      isDark 
+                        ? 'border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-white/30' 
+                        : 'border-black/10 bg-black/[0.02] text-black placeholder:text-black/30 focus:border-black/30'
+                    } focus:outline-none`}
+                    placeholder={t.enterCurrentPassword}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
+                    className={`absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded ${isDark ? 'text-white/40 hover:text-white/60' : 'text-black/40 hover:text-black/60'}`}
+                  >
+                    {showPasswords.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* New Password */}
+              <div>
+                <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                  {t.newPassword} *
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPasswords.new ? 'text' : 'password'}
+                    value={passwordData.new}
+                    onChange={(e) => setPasswordData({ ...passwordData, new: e.target.value })}
+                    className={`w-full rounded-lg border px-3 py-2 pr-10 text-sm transition-colors ${
+                      isDark 
+                        ? 'border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-white/30' 
+                        : 'border-black/10 bg-black/[0.02] text-black placeholder:text-black/30 focus:border-black/30'
+                    } focus:outline-none`}
+                    placeholder={t.minChars}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
+                    className={`absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded ${isDark ? 'text-white/40 hover:text-white/60' : 'text-black/40 hover:text-black/60'}`}
+                  >
+                    {showPasswords.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm Password */}
+              <div>
+                <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                  {t.confirmPassword} *
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPasswords.confirm ? 'text' : 'password'}
+                    value={passwordData.confirm}
+                    onChange={(e) => setPasswordData({ ...passwordData, confirm: e.target.value })}
+                    className={`w-full rounded-lg border px-3 py-2 pr-10 text-sm transition-colors ${
+                      isDark 
+                        ? 'border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-white/30' 
+                        : 'border-black/10 bg-black/[0.02] text-black placeholder:text-black/30 focus:border-black/30'
+                    } focus:outline-none`}
+                    placeholder={t.repeatNewPassword}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
+                    className={`absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded ${isDark ? 'text-white/40 hover:text-white/60' : 'text-black/40 hover:text-black/60'}`}
+                  >
+                    {showPasswords.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Password Requirements */}
+              <p className={`text-[10px] ${isDark ? 'text-white/30' : 'text-black/30'}`}>
+                {t.passwordRequirement}
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t ${isDark ? 'border-white/10' : 'border-black/10'}">
+              <button
+                onClick={() => {
+                  setShowPasswordModal(false)
+                  setPasswordData({ current: '', new: '', confirm: '' })
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  isDark ? 'text-white/60 hover:text-white hover:bg-white/10' : 'text-black/60 hover:text-black hover:bg-black/10'
+                }`}
+              >
+                {t.cancel}
+              </button>
+              <button
+                onClick={handleChangePassword}
+                disabled={changingPassword || !passwordData.current || !passwordData.new || !passwordData.confirm}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  isDark ? 'bg-white text-black hover:bg-white/90' : 'bg-black text-white hover:bg-black/90'
+                }`}
+              >
+                {changingPassword ? (
+                  <><Loader2 className="h-3 w-3 animate-spin" />{t.changing}</>
+                ) : (
+                  <><Lock className="h-3 w-3" />{t.change}</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

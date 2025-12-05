@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
-import { IoCheckmarkCircle, IoCloseCircle, IoInformationCircle, IoWarning } from 'react-icons/io5'
+import { CheckCircle, XCircle, AlertCircle, Info, X } from 'lucide-react'
 
 type ToastType = 'success' | 'error' | 'info' | 'warning'
 
@@ -9,10 +9,11 @@ interface Toast {
   id: string
   message: string
   type: ToastType
+  title?: string
 }
 
 interface ToastContextType {
-  showToast: (message: string, type: ToastType) => void
+  showToast: (message: string, type: ToastType, title?: string) => void
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined)
@@ -28,56 +29,94 @@ export function useToast() {
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
 
-  const showToast = useCallback((message: string, type: ToastType) => {
+  const showToast = useCallback((message: string, type: ToastType, title?: string) => {
     const id = Math.random().toString(36).substring(7)
-    const newToast: Toast = { id, message, type }
+    const newToast: Toast = { id, message, type, title }
     
     setToasts(prev => [...prev, newToast])
     
-    // Auto-dismiss after 5 seconds
+    // Auto-dismiss after 4 seconds
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id))
-    }, 5000)
+    }, 4000)
   }, [])
 
   const dismissToast = useCallback((id: string) => {
     setToasts(prev => prev.filter(t => t.id !== id))
   }, [])
 
+  const getIcon = (type: ToastType) => {
+    switch (type) {
+      case 'success':
+        return <CheckCircle className="h-5 w-5" />
+      case 'error':
+        return <XCircle className="h-5 w-5" />
+      case 'warning':
+        return <AlertCircle className="h-5 w-5" />
+      case 'info':
+        return <Info className="h-5 w-5" />
+    }
+  }
+
+  const getDefaultTitle = (type: ToastType) => {
+    switch (type) {
+      case 'success':
+        return 'წარმატება'
+      case 'error':
+        return 'შეცდომა'
+      case 'warning':
+        return 'გაფრთხილება'
+      case 'info':
+        return 'ინფორმაცია'
+    }
+  }
+
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
       
-      {/* Toast Container */}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm">
+      {/* Toast Container - positioned above mobile nav */}
+      <div className="fixed bottom-24 lg:bottom-6 right-3 lg:right-6 z-[100] flex flex-col gap-2 max-w-[calc(100vw-24px)] lg:max-w-sm">
         {toasts.map(toast => (
           <div
             key={toast.id}
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg backdrop-blur-sm border animate-in slide-in-from-right duration-300 ${
-              toast.type === 'success'
-                ? 'bg-green-500/90 border-green-600 text-white'
+            className={`
+              flex items-start gap-3 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md border
+              animate-in slide-in-from-right-full duration-300 ease-out
+              ${toast.type === 'success'
+                ? 'bg-black/90 border-white/20 text-white'
                 : toast.type === 'error'
-                ? 'bg-red-500/90 border-red-600 text-white'
+                ? 'bg-black/90 border-red-500/30 text-white'
                 : toast.type === 'warning'
-                ? 'bg-yellow-500/90 border-yellow-600 text-white'
-                : 'bg-blue-500/90 border-blue-600 text-white'
-            }`}
+                ? 'bg-black/90 border-yellow-500/30 text-white'
+                : 'bg-black/90 border-white/20 text-white'
+              }
+            `}
           >
-            {toast.type === 'success' && <IoCheckmarkCircle className="h-5 w-5 flex-shrink-0" />}
-            {toast.type === 'error' && <IoCloseCircle className="h-5 w-5 flex-shrink-0" />}
-            {toast.type === 'warning' && <IoWarning className="h-5 w-5 flex-shrink-0" />}
-            {toast.type === 'info' && <IoInformationCircle className="h-5 w-5 flex-shrink-0" />}
+            <div className={`flex-shrink-0 mt-0.5 ${
+              toast.type === 'success' ? 'text-green-400' :
+              toast.type === 'error' ? 'text-red-400' :
+              toast.type === 'warning' ? 'text-yellow-400' :
+              'text-blue-400'
+            }`}>
+              {getIcon(toast.type)}
+            </div>
             
-            <p className="text-sm font-medium flex-1">{toast.message}</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold">
+                {toast.title || getDefaultTitle(toast.type)}
+              </p>
+              <p className="text-xs text-white/70 mt-0.5 break-words">
+                {toast.message}
+              </p>
+            </div>
             
             <button
               onClick={() => dismissToast(toast.id)}
-              className="flex-shrink-0 hover:opacity-80 transition-opacity"
-              aria-label="Close notification"
+              className="flex-shrink-0 text-white/50 hover:text-white transition-colors p-0.5 -m-0.5 rounded"
+              aria-label="დახურვა"
             >
-              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
+              <X className="h-4 w-4" />
             </button>
           </div>
         ))}

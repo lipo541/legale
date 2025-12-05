@@ -2,9 +2,11 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useToast } from '@/contexts/ToastContext'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowLeft, Image as ImageIcon, Loader2, FileText, X, Eye, EyeOff, Edit2 } from 'lucide-react'
+import { ArrowLeft, Image as ImageIcon, Loader2, X, Eye, Edit2, Share2, ChevronDown } from 'lucide-react'
 import dynamic from 'next/dynamic'
+import { specialistDashboardTranslations, Locale } from '@/translations/specialist-dashboard'
 
 // Dynamically import TipTap editor (client-side only)
 const RichTextEditor = dynamic(
@@ -31,16 +33,22 @@ interface SimplePostEditorProps {
       social_hashtags?: string
     }>
   }
+  locale: Locale
 }
 
-export default function SimplePostEditor({ onCancel, onSuccess, editMode, postData }: SimplePostEditorProps) {
+type Language = 'georgian' | 'english' | 'russian'
+
+export default function SimplePostEditor({ onCancel, onSuccess, editMode, postData, locale }: SimplePostEditorProps) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
+  const { showToast } = useToast()
   const supabase = createClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const ogImageInputRef = useRef<HTMLInputElement>(null)
+  const t = specialistDashboardTranslations[locale] || specialistDashboardTranslations.ka
 
   // Active language state
-  const [activeLanguage, setActiveLanguage] = useState<'georgian' | 'english' | 'russian'>('georgian')
+  const [activeLanguage, setActiveLanguage] = useState<Language>('georgian')
 
   // Form state - Multi-language fields
   const [translations, setTranslations] = useState({
@@ -81,14 +89,10 @@ export default function SimplePostEditor({ onCancel, onSuccess, editMode, postDa
   // Load existing post data if in edit mode
   useEffect(() => {
     if (editMode && postData) {
-      console.log('📝 Loading post data:', postData)
-      console.log('📝 Post translations:', postData.post_translations)
-      
       const georgianTranslation = postData.post_translations?.find(t => t.language === 'ka')
       const englishTranslation = postData.post_translations?.find(t => t.language === 'en')
       const russianTranslation = postData.post_translations?.find(t => t.language === 'ru')
       
-      // Load Georgian data
       if (georgianTranslation) {
         setTranslations(prev => ({
           ...prev,
@@ -107,14 +111,12 @@ export default function SimplePostEditor({ onCancel, onSuccess, editMode, postDa
           setOgImagePreview(georgianTranslation.og_image)
         }
         
-        // Auto-expand social media section if any field is filled
         if (georgianTranslation.og_title || georgianTranslation.og_description || 
             georgianTranslation.og_image || georgianTranslation.social_hashtags) {
           setShowSocialMedia(true)
         }
       }
 
-      // Load English data
       if (englishTranslation) {
         setTranslations(prev => ({
           ...prev,
@@ -129,7 +131,6 @@ export default function SimplePostEditor({ onCancel, onSuccess, editMode, postDa
         }))
       }
 
-      // Load Russian data
       if (russianTranslation) {
         setTranslations(prev => ({
           ...prev,
@@ -151,50 +152,22 @@ export default function SimplePostEditor({ onCancel, onSuccess, editMode, postDa
     }
   }, [editMode, postData])
 
-  // Load categories on mount
-  useEffect(() => {
-    loadCategories()
-  }, [])
-
-  const loadCategories = async () => {
-    // Categories will be assigned by SuperAdmin, so we don't need to load them
-    return
-  }
-
   // Handle image selection
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      // Validate file type
       if (!file.type.startsWith('image/')) {
-        alert('გთხოვთ აირჩიოთ სურათის ფაილი')
+        showToast(t.selectImageFile, 'error')
         return
       }
-
-      // Validate file size (5MB max)
       if (file.size > 5 * 1024 * 1024) {
-        alert('სურათის ზომა არ უნდა აღემატებოდეს 5MB-ს')
+        showToast(t.imageTooLarge, 'error')
         return
       }
-
       setFeaturedImage(file)
-      
-      // Create preview
       const reader = new FileReader()
-      reader.onloadend = () => {
-        setFeaturedImagePreview(reader.result as string)
-      }
+      reader.onloadend = () => setFeaturedImagePreview(reader.result as string)
       reader.readAsDataURL(file)
-    }
-  }
-
-  // Remove image
-  const handleRemoveImage = () => {
-    setFeaturedImage(null)
-    setFeaturedImagePreview(null)
-    setExistingImageUrl(null)
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
     }
   }
 
@@ -202,30 +175,29 @@ export default function SimplePostEditor({ onCancel, onSuccess, editMode, postDa
   const handleOgImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      // Validate file type
       if (!file.type.startsWith('image/')) {
-        alert('გთხოვთ აირჩიოთ სურათის ფაილი')
+        showToast(t.selectImageFile, 'error')
         return
       }
-
-      // Validate file size (5MB max)
       if (file.size > 5 * 1024 * 1024) {
-        alert('სურათის ზომა არ უნდა აღემატებოდეს 5MB-ს')
+        showToast(t.imageTooLarge, 'error')
         return
       }
-
       setOgImage(file)
-      
-      // Create preview
       const reader = new FileReader()
-      reader.onloadend = () => {
-        setOgImagePreview(reader.result as string)
-      }
+      reader.onloadend = () => setOgImagePreview(reader.result as string)
       reader.readAsDataURL(file)
     }
   }
 
-  // Remove OG image
+  // Remove images
+  const handleRemoveImage = () => {
+    setFeaturedImage(null)
+    setFeaturedImagePreview(null)
+    setExistingImageUrl(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   const handleRemoveOgImage = () => {
     setOgImage(null)
     setOgImagePreview(null)
@@ -238,26 +210,21 @@ export default function SimplePostEditor({ onCancel, onSuccess, editMode, postDa
     try {
       const fileExt = file.name.split('.').pop()
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
-      const filePath = fileName
 
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('post-images')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        })
+        .upload(fileName, file, { cacheControl: '3600', upsert: false })
 
       if (error) throw error
 
-      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('post-images')
-        .getPublicUrl(filePath)
+        .getPublicUrl(fileName)
 
       return publicUrl
     } catch (error) {
       console.error('Error uploading image:', error)
-      throw new Error('სურათის ატვირთვა ვერ მოხერხდა')
+      throw new Error(t.imageUploadError)
     } finally {
       setUploading(false)
     }
@@ -265,36 +232,26 @@ export default function SimplePostEditor({ onCancel, onSuccess, editMode, postDa
 
   // Save post
   const handleSave = async () => {
-    // Validation - At least Georgian title and content required
     if (!translations.georgian.title.trim()) {
-      alert('გთხოვთ შეიყვანოთ ქართული სათაური')
+      showToast(t.enterGeorgianTitle, 'error')
       return
     }
-
     if (!translations.georgian.content.trim()) {
-      alert('გთხოვთ შეიყვანოთ ქართული შინაარსი')
+      showToast(t.enterGeorgianContent, 'error')
       return
     }
 
     setSaving(true)
 
     try {
-      // Get current user
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('მომხმარებელი არ არის ავტორიზებული')
+      if (!user) throw new Error(t.userNotAuthorized)
 
       let featuredImageUrl = existingImageUrl
       let ogImageUrl = existingOgImageUrl
 
-      // Upload new featured image if selected
-      if (featuredImage) {
-        featuredImageUrl = await uploadImage(featuredImage)
-      }
-
-      // Upload new OG image if selected
-      if (ogImage) {
-        ogImageUrl = await uploadImage(ogImage)
-      }
+      if (featuredImage) featuredImageUrl = await uploadImage(featuredImage)
+      if (ogImage) ogImageUrl = await uploadImage(ogImage)
 
       if (editMode && postData?.id) {
         // UPDATE existing post
@@ -308,7 +265,6 @@ export default function SimplePostEditor({ onCancel, onSuccess, editMode, postDa
 
         if (postError) throw postError
 
-        // Update all translations
         const updatePromises = []
 
         // Georgian
@@ -377,7 +333,7 @@ export default function SimplePostEditor({ onCancel, onSuccess, editMode, postDa
         const errors = results.filter(r => r.error)
         if (errors.length > 0) throw errors[0].error
 
-        alert('პოსტი წარმატებით განახლდა!')
+        showToast(t.postUpdated, 'success')
       } else {
         // CREATE new post
         const { data: newPost, error: postError } = await supabase
@@ -394,7 +350,6 @@ export default function SimplePostEditor({ onCancel, onSuccess, editMode, postDa
 
         if (postError) throw postError
 
-        // Create translations
         const translationsToInsert = []
 
         // Georgian (required)
@@ -455,487 +410,361 @@ export default function SimplePostEditor({ onCancel, onSuccess, editMode, postDa
 
         if (translationError) throw translationError
 
-        alert('პოსტი წარმატებით გაიგზავნა! სუპერადმინი გადახედავს და დაამატებს დამატებით ინფორმაციას.')
+        showToast(t.postCreated, 'success')
       }
 
-      // Call success callback
-      if (onSuccess) {
-        onSuccess()
-      } else if (onCancel) {
-        onCancel()
-      }
+      if (onSuccess) onSuccess()
+      else if (onCancel) onCancel()
     } catch (error) {
       console.error('Error saving post:', error)
-      alert('შეცდომა: ' + (error as Error).message)
+      showToast(t.error + (error as Error).message, 'error')
     } finally {
       setSaving(false)
     }
   }
 
+  // Language tab indicator
+  const hasContent = (lang: Language) => {
+    return translations[lang].title.trim() || translations[lang].content.trim()
+  }
+
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-black' : 'bg-gray-50'}`}>
-      <div className="mx-auto max-w-3xl px-4 py-8">
-        {/* Minimal Header */}
-        <div className="mb-8 flex items-center justify-between">
+    <div className="w-full max-w-[900px] mx-auto px-3 sm:px-4 lg:px-6 py-4 lg:py-6">
+      {/* Header */}
+      <div className="mb-4 lg:mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-3">
           {onCancel && (
             <button
               onClick={onCancel}
               disabled={saving}
-              className={`flex items-center gap-1.5 text-sm font-medium transition-opacity hover:opacity-60 disabled:opacity-40 ${
-                isDark ? 'text-white/70' : 'text-gray-600'
+              className={`p-1.5 rounded-lg transition-colors disabled:opacity-50 ${
+                isDark ? 'hover:bg-white/10 text-white/60' : 'hover:bg-black/10 text-black/60'
               }`}
             >
               <ArrowLeft className="h-4 w-4" />
-              უკან
             </button>
           )}
-          
-          <button
-            onClick={() => setShowPreview(!showPreview)}
-            className={`ml-auto flex items-center gap-1.5 text-sm font-medium transition-opacity hover:opacity-60 ${
-              isDark ? 'text-white/70' : 'text-gray-600'
-            }`}
-          >
-            {showPreview ? (
-              <>
-                <Edit2 className="h-4 w-4" />
-                რედაქტირება
-              </>
-            ) : (
-              <>
-                <Eye className="h-4 w-4" />
-                გადახედვა
-              </>
-            )}
-          </button>
+          <div>
+            <h1 className={`text-lg lg:text-xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+              {editMode ? t.editPostTitle : t.newPostTitle}
+            </h1>
+            <p className={`text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+              {editMode ? t.editExisting : t.createNewArticle}
+            </p>
+          </div>
         </div>
+        
+        <button
+          onClick={() => setShowPreview(!showPreview)}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-black/10 text-black hover:bg-black/20'
+          }`}
+        >
+          {showPreview ? <Edit2 className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+          {showPreview ? t.editing : t.preview}
+        </button>
+      </div>
 
-        {/* Main Content */}
-        <div className="space-y-6">
-          {!showPreview && (
-            /* Language Tabs */
-            <div className="flex gap-2">
+      {/* Main Card */}
+      <div className={`rounded-xl border ${isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/[0.02]'}`}>
+        {/* Language Tabs */}
+        {!showPreview && (
+          <div className={`flex gap-1 p-2 border-b ${isDark ? 'border-white/10' : 'border-black/10'}`}>
+            {(['georgian', 'english', 'russian'] as Language[]).map((lang) => (
               <button
-                onClick={() => setActiveLanguage('georgian')}
+                key={lang}
+                onClick={() => setActiveLanguage(lang)}
                 disabled={saving}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
-                  activeLanguage === 'georgian'
-                    ? isDark
-                      ? 'bg-white text-black'
-                      : 'bg-black text-white'
-                    : isDark
-                    ? 'bg-white/10 text-white/60 hover:bg-white/20'
-                    : 'bg-black/10 text-black/60 hover:bg-black/20'
+                className={`relative px-3 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-50 ${
+                  activeLanguage === lang
+                    ? isDark ? 'bg-white text-black' : 'bg-black text-white'
+                    : isDark ? 'text-white/60 hover:bg-white/10' : 'text-black/60 hover:bg-black/10'
                 }`}
               >
-                ქართული
-              </button>
-              <button
-                onClick={() => setActiveLanguage('english')}
-                disabled={saving}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
-                  activeLanguage === 'english'
-                    ? isDark
-                      ? 'bg-white text-black'
-                      : 'bg-black text-white'
-                    : isDark
-                    ? 'bg-white/10 text-white/60 hover:bg-white/20'
-                    : 'bg-black/10 text-black/60 hover:bg-black/20'
-                }`}
-              >
-                English
-              </button>
-              <button
-                onClick={() => setActiveLanguage('russian')}
-                disabled={saving}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
-                  activeLanguage === 'russian'
-                    ? isDark
-                      ? 'bg-white text-black'
-                      : 'bg-black text-white'
-                    : isDark
-                    ? 'bg-white/10 text-white/60 hover:bg-white/20'
-                    : 'bg-black/10 text-black/60 hover:bg-black/20'
-                }`}
-              >
-                Русский
-              </button>
-            </div>
-          )}
-
-          {showPreview ? (
-            /* Preview Mode */
-            <div className="space-y-6">
-              {featuredImagePreview && (
-                <div className="relative aspect-[2/1] overflow-hidden rounded-lg">
-                  <img
-                    src={featuredImagePreview}
-                    alt="Preview"
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-              )}
-              <div className="space-y-3">
-                <h1 className={`text-4xl font-bold leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  {currentData.title || 'სათაური'}
-                </h1>
-                {currentData.excerpt && (
-                  <p className={`text-lg leading-relaxed ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
-                    {currentData.excerpt}
-                  </p>
+                {lang === 'georgian' ? t.georgian : lang === 'english' ? t.english : t.russian}
+                {lang !== 'georgian' && hasContent(lang) && (
+                  <span className={`absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full ${
+                    isDark ? 'bg-white' : 'bg-black'
+                  }`} />
                 )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {showPreview ? (
+          /* Preview Mode */
+          <div className="p-4 lg:p-6 space-y-4">
+            {featuredImagePreview && (
+              <div className="relative aspect-[2/1] overflow-hidden rounded-lg">
+                <img src={featuredImagePreview} alt="Preview" className="h-full w-full object-cover" />
               </div>
-              <div
-                className={`prose prose-lg max-w-none ${isDark ? 'prose-invert' : 'prose-gray'}`}
-                dangerouslySetInnerHTML={{ __html: currentData.content || '<p className="text-gray-400">შინაარსი არ არის</p>' }}
-              />
+            )}
+            <div className="space-y-2">
+              <h1 className={`text-2xl lg:text-3xl font-bold leading-tight ${isDark ? 'text-white' : 'text-black'}`}>
+                {currentData.title || t.title}
+              </h1>
+              {currentData.excerpt && (
+                <p className={`text-sm lg:text-base leading-relaxed ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                  {currentData.excerpt}
+                </p>
+              )}
             </div>
-          ) : (
-            /* Edit Mode */
-            <div className="space-y-8">
-              {/* Featured Image */}
-              <div className="group">
-                <div className="space-y-3">
-                  {featuredImagePreview ? (
-                    <div className="relative aspect-[2/1] overflow-hidden rounded-lg">
-                      <img
-                        src={featuredImagePreview}
-                        alt="Preview"
-                        className="h-full w-full object-cover"
-                      />
-                      <button
-                        onClick={handleRemoveImage}
-                        disabled={saving || uploading}
-                        className={`absolute right-3 top-3 rounded-full p-2 backdrop-blur-sm transition-all hover:scale-110 disabled:opacity-50 ${
-                          isDark ? 'bg-black/60 text-white' : 'bg-white/90 text-gray-900'
-                        }`}
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={saving || uploading}
-                      className={`flex h-40 w-full items-center justify-center rounded-lg border-2 border-dashed transition-all hover:border-solid disabled:opacity-50 ${
-                        isDark
-                          ? 'border-white/10 hover:border-white/30 hover:bg-white/5'
-                          : 'border-gray-200 hover:border-gray-400 hover:bg-gray-50'
-                      }`}
-                    >
-                      <div className="text-center">
-                        <ImageIcon className={`mx-auto h-10 w-10 ${isDark ? 'text-white/30' : 'text-gray-300'}`} />
-                        <p className={`mt-3 text-sm font-medium ${isDark ? 'text-white/50' : 'text-gray-500'}`}>
-                          სურათის ატვირთვა
-                        </p>
-                      </div>
-                    </button>
-                  )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageSelect}
-                    className="hidden"
-                  />
+            <div
+              className={`prose prose-sm lg:prose-base max-w-none ${isDark ? 'prose-invert' : ''}`}
+              dangerouslySetInnerHTML={{ __html: currentData.content || `<p>${t.noContent}</p>` }}
+            />
+          </div>
+        ) : (
+          /* Edit Mode */
+          <div className="p-3 lg:p-4 space-y-4">
+            {/* Featured Image */}
+            <div>
+              <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                {t.featuredImage}
+              </label>
+              {featuredImagePreview ? (
+                <div className="relative aspect-[2/1] overflow-hidden rounded-lg">
+                  <img src={featuredImagePreview} alt="Preview" className="h-full w-full object-cover" />
+                  <button
+                    onClick={handleRemoveImage}
+                    disabled={saving || uploading}
+                    className={`absolute top-2 right-2 p-1.5 rounded-full backdrop-blur-sm transition-all hover:scale-110 disabled:opacity-50 ${
+                      isDark ? 'bg-black/60 text-white' : 'bg-white/90 text-black'
+                    }`}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
                 </div>
-              </div>
-
-              {/* Title */}
-              <div>
-                <input
-                  type="text"
-                  value={currentData.title}
-                  onChange={(e) => updateField('title', e.target.value)}
-                  placeholder="სათაური"
-                  disabled={saving}
-                  className={`w-full border-0 border-b-2 bg-transparent px-0 py-3 text-4xl font-bold placeholder:font-normal focus:outline-none focus:ring-0 disabled:opacity-50 ${
-                    isDark
-                      ? 'border-white/10 text-white placeholder:text-white/20 focus:border-white/30'
-                      : 'border-gray-200 text-gray-900 placeholder:text-gray-300 focus:border-gray-400'
-                  }`}
-                />
-              </div>
-
-              {/* Excerpt */}
-              <div>
-                <label className={`mb-2 block text-xs font-medium uppercase tracking-wide ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
-                  ამონარიდი
-                </label>
-                <textarea
-                  value={currentData.excerpt}
-                  onChange={(e) => updateField('excerpt', e.target.value)}
-                  placeholder="მოკლე აღწერა..."
-                  rows={3}
-                  disabled={saving}
-                  className={`w-full resize-none rounded-lg border px-4 py-3 text-sm leading-relaxed transition-all focus:outline-none focus:ring-2 disabled:opacity-50 ${
-                    isDark
-                      ? 'border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-white/20 focus:ring-white/10'
-                      : 'border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:ring-gray-100'
-                  }`}
-                />
-              </div>
-
-              {/* Content (Rich Text Editor) */}
-              <div>
-                <label className={`mb-2 block text-xs font-medium uppercase tracking-wide ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
-                  შინაარსი
-                </label>
-                <div className={`overflow-hidden rounded-lg border ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
-                  <RichTextEditor
-                    content={currentData.content}
-                    onChange={(value) => updateField('content', value)}
-                  />
-                </div>
-              </div>
-
-              {/* Social Media Section - Collapsible */}
-              <div className={`rounded-lg border ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
+              ) : (
                 <button
-                  onClick={() => setShowSocialMedia(!showSocialMedia)}
-                  disabled={saving}
-                  className={`flex w-full items-center justify-between px-4 py-3 text-left transition-all disabled:opacity-50 ${
-                    isDark ? 'hover:bg-white/5' : 'hover:bg-gray-50'
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={saving || uploading}
+                  className={`flex h-32 w-full items-center justify-center rounded-lg border-2 border-dashed transition-all hover:border-solid disabled:opacity-50 ${
+                    isDark ? 'border-white/10 hover:border-white/30 hover:bg-white/5' : 'border-black/10 hover:border-black/30 hover:bg-black/[0.02]'
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <svg className={`h-4 w-4 ${isDark ? 'text-white/60' : 'text-gray-600'}`} fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 22C6.486 22 2 17.514 2 12S6.486 2 12 2s10 4.486 10 10-4.486 10-10 10zm1-11h3v8h-3v-8zm-3 0H7v8h3v-8zm6-4h-3v3h3V7z"/>
-                    </svg>
-                    <span className={`text-sm font-medium ${isDark ? 'text-white/80' : 'text-gray-900'}`}>
-                      Social Media
-                    </span>
-                    {(currentData.ogTitle || currentData.ogDescription || ogImagePreview || currentData.socialHashtags) && (
-                      <span className={`text-xs ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
-                        ✓
-                      </span>
-                    )}
-                  </div>
-                  <svg
-                    className={`h-4 w-4 transition-transform ${showSocialMedia ? 'rotate-180' : ''} ${
-                      isDark ? 'text-white/60' : 'text-gray-600'
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-
-                {showSocialMedia && (
-                  <div className={`space-y-4 border-t px-4 py-4 ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
-                    {/* OG Title */}
-                    <div>
-                      <label className={`mb-1.5 block text-xs font-medium ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
-                        OG სათაური
-                      </label>
-                      <input
-                        type="text"
-                        value={currentData.ogTitle}
-                        onChange={(e) => updateField('ogTitle', e.target.value)}
-                        placeholder="სოციალურ მედიაში გამოსაჩენი სათაური"
-                        disabled={saving}
-                        className={`w-full rounded-lg border px-3 py-2 text-sm transition-all focus:outline-none focus:ring-1 disabled:opacity-50 ${
-                          isDark
-                            ? 'border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-white/20 focus:ring-white/10'
-                            : 'border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:ring-gray-100'
-                        }`}
-                      />
-                    </div>
-
-                    {/* OG Description */}
-                    <div>
-                      <label className={`mb-1.5 block text-xs font-medium ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
-                        OG აღწერა
-                      </label>
-                      <textarea
-                        value={currentData.ogDescription}
-                        onChange={(e) => updateField('ogDescription', e.target.value)}
-                        placeholder="სოციალურ მედიაში გამოსაჩენი აღწერა"
-                        rows={2}
-                        disabled={saving}
-                        className={`w-full resize-none rounded-lg border px-3 py-2 text-sm leading-relaxed transition-all focus:outline-none focus:ring-1 disabled:opacity-50 ${
-                          isDark
-                            ? 'border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-white/20 focus:ring-white/10'
-                            : 'border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:ring-gray-100'
-                        }`}
-                      />
-                    </div>
-
-                    {/* Hashtags */}
-                    <div>
-                      <label className={`mb-1.5 block text-xs font-medium ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
-                        Hashtags
-                      </label>
-                      <input
-                        type="text"
-                        value={currentData.socialHashtags}
-                        onChange={(e) => updateField('socialHashtags', e.target.value)}
-                        placeholder="#სამართალი #იურიდიული #კონსულტაცია"
-                        disabled={saving}
-                        className={`w-full rounded-lg border px-3 py-2 text-sm transition-all focus:outline-none focus:ring-1 disabled:opacity-50 ${
-                          isDark
-                            ? 'border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-white/20 focus:ring-white/10'
-                            : 'border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:ring-gray-100'
-                        }`}
-                      />
-                    </div>
-
-                    {/* OG Image */}
-                    <div>
-                      <label className={`mb-1.5 block text-xs font-medium ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
-                        OG სურათი
-                      </label>
-                      {ogImagePreview ? (
-                        <div className="relative aspect-[2/1] overflow-hidden rounded-lg">
-                          <img
-                            src={ogImagePreview}
-                            alt="OG Preview"
-                            className="h-full w-full object-cover"
-                          />
-                          <button
-                            onClick={handleRemoveOgImage}
-                            disabled={saving || uploading}
-                            className={`absolute right-2 top-2 rounded-full p-1.5 backdrop-blur-sm transition-all hover:scale-110 disabled:opacity-50 ${
-                              isDark ? 'bg-black/60 text-white' : 'bg-white/90 text-gray-900'
-                            }`}
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      ) : (
-                        <label
-                          className={`flex h-24 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed transition-all hover:border-solid disabled:opacity-50 ${
-                            isDark
-                              ? 'border-white/10 hover:border-white/20 hover:bg-white/5'
-                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                          }`}
-                        >
-                          <div className="text-center">
-                            <ImageIcon className={`mx-auto h-6 w-6 ${isDark ? 'text-white/30' : 'text-gray-300'}`} />
-                            <p className={`mt-1 text-xs ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
-                              1200x630px
-                            </p>
-                          </div>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleOgImageSelect}
-                            className="hidden"
-                            disabled={saving || uploading}
-                          />
-                        </label>
-                      )}
-                    </div>
-
-                    {/* Info */}
-                    <p className={`text-xs leading-relaxed ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
-                      Open Graph თეგები გამოჩნდება Facebook, Twitter, LinkedIn და სხვა პლატფორმებზე გაზიარებისას.
+                  <div className="text-center">
+                    <ImageIcon className={`mx-auto h-8 w-8 ${isDark ? 'text-white/30' : 'text-black/30'}`} />
+                    <p className={`mt-2 text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                      {t.uploadImage}
                     </p>
-
-                    {/* Social Media Preview */}
-                    {(currentData.ogTitle || currentData.ogDescription || ogImagePreview) && (
-                      <div className="space-y-3">
-                        <div className={`flex items-center gap-2 pt-2 border-t ${isDark ? 'border-white/10 text-white/60' : 'border-gray-200 text-gray-600'}`}>
-                          <Eye className="h-3.5 w-3.5" />
-                          <span className="text-xs font-medium">Preview - როგორ გამოჩნდება</span>
-                        </div>
-                        
-                        {/* Facebook/LinkedIn Preview */}
-                        <div>
-                          <div className={`mb-1.5 flex items-center gap-1.5 text-[10px] font-medium ${isDark ? 'text-white/50' : 'text-gray-500'}`}>
-                            <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                            </svg>
-                            Facebook / LinkedIn / Twitter
-                          </div>
-                          <div className={`overflow-hidden rounded-lg border ${isDark ? 'border-white/10 bg-black' : 'border-gray-200 bg-white'}`}>
-                            {ogImagePreview && (
-                              <div className="relative aspect-[1.91/1] overflow-hidden">
-                                <img 
-                                  src={ogImagePreview} 
-                                  alt="Social Preview" 
-                                  className="h-full w-full object-cover"
-                                />
-                              </div>
-                            )}
-                            <div className="p-3">
-                              <div className={`mb-1 text-[10px] uppercase ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
-                                yoursite.com
-                              </div>
-                              <div className={`mb-1 line-clamp-2 text-sm font-semibold leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                {currentData.ogTitle || currentData.title || 'სათაური'}
-                              </div>
-                              <div className={`line-clamp-2 text-xs leading-relaxed ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
-                                {currentData.ogDescription || currentData.excerpt || 'აღწერა გამოჩნდება აქ...'}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Hashtags Preview */}
-                        {currentData.socialHashtags && (
-                          <div className={`rounded-lg border p-2 ${isDark ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-50'}`}>
-                            <div className={`mb-1 text-[10px] font-medium ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
-                              Hashtags:
-                            </div>
-                            <div className={`text-xs ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
-                              {currentData.socialHashtags}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
-                )}
+                </button>
+              )}
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
+            </div>
+
+            {/* Title */}
+            <div>
+              <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                {t.title} *
+              </label>
+              <input
+                type="text"
+                value={currentData.title}
+                onChange={(e) => updateField('title', e.target.value)}
+                placeholder={activeLanguage === 'georgian' ? t.enterTitle : activeLanguage === 'english' ? t.enterTitleEn : t.enterTitleRu}
+                disabled={saving}
+                className={`w-full rounded-lg border px-3 py-2 text-sm transition-colors disabled:opacity-50 ${
+                  isDark
+                    ? 'border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-white/30'
+                    : 'border-black/10 bg-black/[0.02] text-black placeholder:text-black/30 focus:border-black/30'
+                } focus:outline-none`}
+              />
+            </div>
+
+            {/* Excerpt */}
+            <div>
+              <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                {t.excerpt}
+              </label>
+              <textarea
+                value={currentData.excerpt}
+                onChange={(e) => updateField('excerpt', e.target.value)}
+                placeholder={t.shortDescription}
+                rows={2}
+                disabled={saving}
+                className={`w-full resize-none rounded-lg border px-3 py-2 text-sm transition-colors disabled:opacity-50 ${
+                  isDark
+                    ? 'border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-white/30'
+                    : 'border-black/10 bg-black/[0.02] text-black placeholder:text-black/30 focus:border-black/30'
+                } focus:outline-none`}
+              />
+            </div>
+
+            {/* Content */}
+            <div>
+              <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                {t.content} *
+              </label>
+              <div className={`overflow-hidden rounded-lg border ${isDark ? 'border-white/10' : 'border-black/10'}`}>
+                <RichTextEditor
+                  content={currentData.content}
+                  onChange={(value) => updateField('content', value)}
+                />
               </div>
             </div>
-          )}
-        </div>
 
-        {/* Action Buttons */}
-        <div className="mt-8 flex items-center gap-3">
-          <button
-            onClick={handleSave}
-            disabled={saving || uploading || !translations.georgian.title.trim() || !translations.georgian.content.trim()}
-            className={`flex-1 rounded-lg px-6 py-3 font-medium transition-all disabled:cursor-not-allowed disabled:opacity-40 ${
-              isDark
-                ? 'bg-white text-black hover:bg-white/90'
-                : 'bg-black text-white hover:bg-gray-900'
-            }`}
-          >
-            {saving ? (
-              <span className="flex items-center justify-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                შენახვა...
-              </span>
-            ) : (
-              editMode ? 'განახლება' : 'გამოქვეყნება'
-            )}
-          </button>
+            {/* Social Media Section - Collapsible */}
+            <div className={`rounded-lg border ${isDark ? 'border-white/10' : 'border-black/10'}`}>
+              <button
+                onClick={() => setShowSocialMedia(!showSocialMedia)}
+                disabled={saving}
+                className={`flex w-full items-center justify-between px-3 py-2.5 text-left transition-all disabled:opacity-50 ${
+                  isDark ? 'hover:bg-white/5' : 'hover:bg-black/[0.02]'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Share2 className={`h-3.5 w-3.5 ${isDark ? 'text-white/60' : 'text-black/60'}`} />
+                  <span className={`text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+                    {t.socialMedia}
+                  </span>
+                  {(currentData.ogTitle || currentData.ogDescription || ogImagePreview) && (
+                    <span className={`text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>✓</span>
+                  )}
+                </div>
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showSocialMedia ? 'rotate-180' : ''} ${isDark ? 'text-white/60' : 'text-black/60'}`} />
+              </button>
+
+              {showSocialMedia && (
+                <div className={`space-y-3 border-t px-3 py-3 ${isDark ? 'border-white/10' : 'border-black/10'}`}>
+                  {/* OG Title */}
+                  <div>
+                    <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+                      {t.ogTitle}
+                    </label>
+                    <input
+                      type="text"
+                      value={currentData.ogTitle}
+                      onChange={(e) => updateField('ogTitle', e.target.value)}
+                      placeholder={t.ogTitlePlaceholder}
+                      disabled={saving}
+                      className={`w-full rounded-lg border px-2.5 py-1.5 text-xs transition-colors disabled:opacity-50 ${
+                        isDark
+                          ? 'border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-white/20'
+                          : 'border-black/10 bg-black/[0.02] text-black placeholder:text-black/30 focus:border-black/20'
+                      } focus:outline-none`}
+                    />
+                  </div>
+
+                  {/* OG Description */}
+                  <div>
+                    <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+                      {t.ogDescription}
+                    </label>
+                    <textarea
+                      value={currentData.ogDescription}
+                      onChange={(e) => updateField('ogDescription', e.target.value)}
+                      placeholder={t.ogDescriptionPlaceholder}
+                      rows={2}
+                      disabled={saving}
+                      className={`w-full resize-none rounded-lg border px-2.5 py-1.5 text-xs leading-relaxed transition-colors disabled:opacity-50 ${
+                        isDark
+                          ? 'border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-white/20'
+                          : 'border-black/10 bg-black/[0.02] text-black placeholder:text-black/30 focus:border-black/20'
+                      } focus:outline-none`}
+                    />
+                  </div>
+
+                  {/* Hashtags */}
+                  <div>
+                    <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+                      {t.hashtags}
+                    </label>
+                    <input
+                      type="text"
+                      value={currentData.socialHashtags}
+                      onChange={(e) => updateField('socialHashtags', e.target.value)}
+                      placeholder={t.hashtagsPlaceholder}
+                      disabled={saving}
+                      className={`w-full rounded-lg border px-2.5 py-1.5 text-xs transition-colors disabled:opacity-50 ${
+                        isDark
+                          ? 'border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-white/20'
+                          : 'border-black/10 bg-black/[0.02] text-black placeholder:text-black/30 focus:border-black/20'
+                      } focus:outline-none`}
+                    />
+                  </div>
+
+                  {/* OG Image */}
+                  <div>
+                    <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+                      {t.ogImage}
+                    </label>
+                    {ogImagePreview ? (
+                      <div className="relative aspect-[1.91/1] overflow-hidden rounded-lg max-w-xs">
+                        <img src={ogImagePreview} alt="OG Preview" className="h-full w-full object-cover" />
+                        <button
+                          onClick={handleRemoveOgImage}
+                          disabled={saving || uploading}
+                          className={`absolute top-1.5 right-1.5 p-1 rounded-full backdrop-blur-sm transition-all hover:scale-110 disabled:opacity-50 ${
+                            isDark ? 'bg-black/60 text-white' : 'bg-white/90 text-black'
+                          }`}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => ogImageInputRef.current?.click()}
+                        disabled={saving || uploading}
+                        className={`flex h-20 w-40 items-center justify-center rounded-lg border-2 border-dashed transition-all hover:border-solid disabled:opacity-50 ${
+                          isDark ? 'border-white/10 hover:border-white/20' : 'border-black/10 hover:border-black/20'
+                        }`}
+                      >
+                        <div className="text-center">
+                          <ImageIcon className={`mx-auto h-5 w-5 ${isDark ? 'text-white/30' : 'text-black/30'}`} />
+                          <p className={`mt-1 text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>1200x630px</p>
+                        </div>
+                      </button>
+                    )}
+                    <input ref={ogImageInputRef} type="file" accept="image/*" onChange={handleOgImageSelect} className="hidden" />
+                  </div>
+
+                  <p className={`text-[10px] leading-relaxed ${isDark ? 'text-white/30' : 'text-black/30'}`}>
+                    {t.ogInfo}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className={`flex items-center justify-end gap-2 p-3 lg:p-4 border-t ${isDark ? 'border-white/10' : 'border-black/10'}`}>
           {onCancel && (
             <button
               onClick={onCancel}
               disabled={saving || uploading}
-              className={`rounded-lg px-6 py-3 font-medium transition-opacity hover:opacity-60 disabled:opacity-40 ${
-                isDark
-                  ? 'text-white/70'
-                  : 'text-gray-600'
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-50 ${
+                isDark ? 'text-white/60 hover:text-white hover:bg-white/10' : 'text-black/60 hover:text-black hover:bg-black/10'
               }`}
             >
-              გაუქმება
+              {t.cancel}
             </button>
           )}
+          <button
+            onClick={handleSave}
+            disabled={saving || uploading || !translations.georgian.title.trim() || !translations.georgian.content.trim()}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
+              isDark ? 'bg-white text-black hover:bg-white/90' : 'bg-black text-white hover:bg-black/90'
+            }`}
+          >
+            {saving ? (
+              <><Loader2 className="h-3 w-3 animate-spin" />{t.saving}</>
+            ) : (
+              editMode ? t.update : t.create
+            )}
+          </button>
         </div>
-
-        {/* Minimal Info Notice */}
-        {!editMode && (
-          <p className={`mt-6 text-center text-xs ${isDark ? 'text-white/30' : 'text-gray-400'}`}>
-            ქართული ენა სავალდებულოა. ინგლისური და რუსული - არჩევითი.
-          </p>
-        )}
       </div>
+
+      {/* Info Notice */}
+      {!editMode && !showPreview && (
+        <p className={`mt-3 text-center text-[10px] ${isDark ? 'text-white/30' : 'text-black/30'}`}>
+          {t.postInfoNotice}
+        </p>
+      )}
     </div>
   )
 }
