@@ -24,9 +24,25 @@ export async function middleware(request: NextRequest) {
 
   // Run Supabase session middleware
   return await updateSession(request)
-}export const config = {
+}
+
+export const config = {
   matcher: [
-    // Match all paths except static files, api, and files with extensions
-    '/((?!api|_next|favicon.ico|.*\\..*).*)',
+    /*
+     * Match all paths except:
+     * - api routes
+     * - _next (Next.js internals)
+     * - static files with extensions
+     * - Public pages that should use ISR caching:
+     *   - /[locale]/news/[slug] (news articles)
+     *   - /[locale]/specialists/[slug] (specialist profiles)
+     *   - /[locale]/companies/[slug] (company profiles)
+     *   - /[locale]/practices/[practiceSlug] (practice areas)
+     *   - /[locale]/practices/[practiceSlug]/[serviceSlug] (services)
+     *   - /[locale]/teams/[slug] (team pages)
+     *   - /[locale]/news/category/[slug] (news categories)
+     *   - /[locale]/news/author/[authorId] (author pages)
+     */
+    '/((?!api|_next|favicon.ico|.*\\..*|ka/news/[^/]+$|en/news/[^/]+$|ka/specialists/[^/]+$|en/specialists/[^/]+$|ka/companies/[^/]+$|en/companies/[^/]+$|ka/practices/[^/]+$|en/practices/[^/]+$|ka/practices/[^/]+/[^/]+$|en/practices/[^/]+/[^/]+$|ka/teams/[^/]+$|en/teams/[^/]+$|ka/news/category/[^/]+$|en/news/category/[^/]+$|ka/news/author/[^/]+$|en/news/author/[^/]+$).*)',
   ],
 }
