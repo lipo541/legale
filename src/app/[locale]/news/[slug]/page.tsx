@@ -1,5 +1,5 @@
 import { createStaticClient } from '@/lib/supabase/static'
-import { notFound, redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import PostPageClient from './PostPageClient'
 import { siteConfig, getAssetUrl } from '@/lib/config'
 
@@ -46,6 +46,7 @@ export default async function PostPage({ params }: PageProps) {
   const { shouldRedirect, redirectLocale, redirectSlug } = await getPostBySlug(slug, locale)
   
   if (shouldRedirect && redirectLocale && redirectSlug) {
+    const { redirect } = await import('next/navigation')
     redirect(`/${redirectLocale}/news/${encodeURIComponent(redirectSlug)}`)
   }
 

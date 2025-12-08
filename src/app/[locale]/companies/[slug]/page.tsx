@@ -1,7 +1,7 @@
 import CompanyDetailPage from '@/components/companies/company-detail/CompanyDetailPage'
 import { createStaticClient } from '@/lib/supabase/static'
 import { Metadata } from 'next'
-import { notFound, redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { siteConfig } from '@/lib/config'
 
 interface PageProps {
@@ -265,6 +265,7 @@ export default async function CompanyPage({ params }: PageProps) {
   const { shouldRedirect, redirectLocale, redirectSlug } = await getCompanyBySlug(slug, locale)
   
   if (shouldRedirect && redirectLocale && redirectSlug) {
+    const { redirect } = await import('next/navigation')
     redirect(`/${redirectLocale}/companies/${encodeURIComponent(redirectSlug)}`)
   }
   

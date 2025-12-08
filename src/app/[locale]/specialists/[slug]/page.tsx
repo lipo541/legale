@@ -2,7 +2,6 @@ import SpecialistDetailPage from '@/components/specialists/specialist-detail/Spe
 import { createStaticClient } from '@/lib/supabase/static'
 import { Metadata } from 'next'
 import { siteConfig, getAssetUrl } from '@/lib/config'
-import { redirect } from 'next/navigation'
 
 interface PageProps {
   params: Promise<{ slug: string; locale: string }>
@@ -269,6 +268,7 @@ export default async function SpecialistPage({ params }: PageProps) {
   const { shouldRedirect, redirectLocale, redirectSlug } = await getSpecialistBySlug(slug, locale)
   
   if (shouldRedirect && redirectLocale && redirectSlug) {
+    const { redirect } = await import('next/navigation')
     redirect(`/${redirectLocale}/specialists/${encodeURIComponent(redirectSlug)}`)
   }
 
