@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createStaticClient } from '@/lib/supabase/static'
 import { notFound, redirect } from 'next/navigation'
 import PostPageClient from './PostPageClient'
 import { siteConfig, getAssetUrl } from '@/lib/config'
@@ -12,7 +12,7 @@ interface PageProps {
 
 // Helper function to check slug ownership and get redirect info
 async function getPostBySlug(slug: string, locale: string) {
-  const supabase = await createClient()
+  const supabase = createStaticClient()
   
   // Check if slug exists in ANY language
   const { data: slugCheck } = await supabase
@@ -40,7 +40,7 @@ async function getPostBySlug(slug: string, locale: string) {
 
 export default async function PostPage({ params }: PageProps) {
   const { locale, slug } = await params
-  const supabase = await createClient()
+  const supabase = createStaticClient()
 
   // Check if slug belongs to different language - server-side redirect
   const { shouldRedirect, redirectLocale, redirectSlug } = await getPostBySlug(slug, locale)
@@ -216,7 +216,7 @@ export default async function PostPage({ params }: PageProps) {
 // Generate metadata
 export async function generateMetadata({ params }: PageProps) {
   const { locale, slug } = await params
-  const supabase = await createClient()
+  const supabase = createStaticClient()
 
   // Step 1: Find the post translation by slug and locale to get the post_id
   const { data: postData } = await supabase

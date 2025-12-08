@@ -1,7 +1,6 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import { createClient as createBrowserClient } from '@/lib/supabase/client'
+import { createStaticClient } from '@/lib/supabase/static'
 import { Locale } from '@/lib/enums'
 import PracticeDetail from '@/components/practice/PracticeDetail'
 import { siteConfig, getAssetUrl } from '@/lib/config'
@@ -19,7 +18,7 @@ type Props = {
 // Generate metadata for SEO
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, practiceSlug: encodedSlug } = await params;
-  const supabase = await createClient(); // Use server client
+  const supabase = createStaticClient(); // Use static client for ISR
 
   // Decode URL-encoded slug
   const slug = decodeURIComponent(encodedSlug);
@@ -163,7 +162,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 // Main page component
 export default async function PracticePage({ params }: Props) {
   const { locale, practiceSlug: encodedSlug } = await params
-  const supabase = await createClient()
+  const supabase = createStaticClient()
 
   // Decode URL-encoded slug (for Georgian/Cyrillic characters)
   const slug = decodeURIComponent(encodedSlug)
@@ -265,8 +264,8 @@ export default async function PracticePage({ params }: Props) {
 
 // Generate static params for all practices (optional - for static generation)
 export async function generateStaticParams() {
-  // Use browser client for build-time data fetching (no cookies needed)
-  const supabase = createBrowserClient()
+  // Use static client for build-time data fetching (no cookies needed)
+  const supabase = createStaticClient()
 
   // Fetch all published practice slugs for all languages
   const { data: practices } = await supabase

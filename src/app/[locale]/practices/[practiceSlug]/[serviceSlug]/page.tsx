@@ -1,7 +1,6 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import { createClient as createBrowserClient } from '@/lib/supabase/client'
+import { createStaticClient } from '@/lib/supabase/static'
 import { Locale } from '@/lib/enums'
 import ServiceDetail from '@/components/service/ServiceDetail'
 import { siteConfig } from '@/lib/config'
@@ -21,7 +20,7 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params
   const { locale, serviceSlug: encodedServiceSlug, practiceSlug: encodedPracticeSlug } = resolvedParams
-  const supabase = await createClient()
+  const supabase = createStaticClient()
 
   // Decode URL-encoded slugs
   const serviceSlug = decodeURIComponent(encodedServiceSlug)
@@ -193,7 +192,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 // Main page component
 export default async function ServicePage({ params }: Props) {
   const { locale, practiceSlug: encodedPracticeSlug, serviceSlug: encodedServiceSlug } = await params
-  const supabase = await createClient()
+  const supabase = createStaticClient()
 
   // Decode URL-encoded slugs
   const practiceSlug = decodeURIComponent(encodedPracticeSlug)
@@ -342,7 +341,7 @@ export default async function ServicePage({ params }: Props) {
 
 // Generate static params for all services
 export async function generateStaticParams() {
-  const supabase = createBrowserClient()
+  const supabase = createStaticClient()
 
   // Fetch all published services with their practice slugs
   const { data: services } = await supabase

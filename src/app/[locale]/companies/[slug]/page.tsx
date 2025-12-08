@@ -1,5 +1,5 @@
 import CompanyDetailPage from '@/components/companies/company-detail/CompanyDetailPage'
-import { createClient } from '@/lib/supabase/server'
+import { createStaticClient } from '@/lib/supabase/static'
 import { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { siteConfig } from '@/lib/config'
@@ -10,7 +10,7 @@ interface PageProps {
 
 // Helper function to check slug ownership and get redirect info
 async function getCompanyBySlug(slug: string, locale: string) {
-  const supabase = await createClient()
+  const supabase = createStaticClient()
   
   // Check if slug exists in profiles (Georgian slug)
   const { data: kaCompany } = await supabase
@@ -53,7 +53,7 @@ async function getCompanyBySlug(slug: string, locale: string) {
 
 // Helper function to get all language alternates for a company
 async function getCompanyAlternates(companyId: string) {
-  const supabase = await createClient()
+  const supabase = createStaticClient()
   const baseUrl = siteConfig.baseUrl
   const alternates: Record<string, string> = {}
   
@@ -86,7 +86,7 @@ async function getCompanyAlternates(companyId: string) {
 // Function to generate metadata
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug, locale } = await params
-  const supabase = await createClient()
+  const supabase = createStaticClient()
 
   let companyData: Record<string, unknown> | null = null
   let companyTranslation: Record<string, unknown> | null = null

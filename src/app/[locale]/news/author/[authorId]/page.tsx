@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createStaticClient } from '@/lib/supabase/static'
 import { notFound } from 'next/navigation'
 import AuthorPageClient from './AuthorPageClient'
 
@@ -11,7 +11,7 @@ interface PageProps {
 
 export default async function AuthorPage({ params }: PageProps) {
   const { locale, authorId } = await params
-  const supabase = await createClient()
+  const supabase = createStaticClient()
 
   // Fetch author info - get all fields like company detail page
   const { data: author, error: authorError } = await supabase
@@ -167,7 +167,7 @@ export default async function AuthorPage({ params }: PageProps) {
 // Generate metadata
 export async function generateMetadata({ params }: PageProps) {
   const { authorId } = await params
-  const supabase = await createClient()
+  const supabase = createStaticClient()
 
   const { data: author } = await supabase
     .from('profiles')

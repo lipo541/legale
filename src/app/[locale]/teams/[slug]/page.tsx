@@ -1,10 +1,10 @@
 import TeamPage from '@/components/teampage/TeamPage'
-import { createClient } from '@/lib/supabase/server'
+import { createStaticClient } from '@/lib/supabase/static'
 import { notFound } from 'next/navigation'
 import { Metadata } from 'next'
 
-// Force dynamic rendering
-export const dynamic = 'force-dynamic'
+// Enable Incremental Static Regeneration - revalidate every 1 hour
+export const revalidate = 3600
 
 interface TeamPageProps {
   params: Promise<{
@@ -16,7 +16,7 @@ interface TeamPageProps {
 // Generate metadata for SEO
 export async function generateMetadata({ params }: TeamPageProps): Promise<Metadata> {
   const { slug, locale } = await params
-  const supabase = await createClient()
+  const supabase = createStaticClient()
 
   const { data: teamTranslation } = await supabase
     .from('team_translations')
@@ -62,7 +62,7 @@ export async function generateStaticParams() {
 
 export default async function TeamSlugPage({ params }: TeamPageProps) {
   const { slug, locale } = await params
-  const supabase = await createClient()
+  const supabase = createStaticClient()
 
   // Check if team exists
   const { data: teamExists } = await supabase

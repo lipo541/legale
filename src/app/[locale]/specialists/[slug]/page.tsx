@@ -1,5 +1,5 @@
 import SpecialistDetailPage from '@/components/specialists/specialist-detail/SpecialistDetailPage'
-import { createClient } from '@/lib/supabase/server'
+import { createStaticClient } from '@/lib/supabase/static'
 import { Metadata } from 'next'
 import { siteConfig, getAssetUrl } from '@/lib/config'
 import { redirect } from 'next/navigation'
@@ -10,7 +10,7 @@ interface PageProps {
 
 // Helper function to get specialist data by slug (checks language match)
 async function getSpecialistBySlug(slug: string, locale: string) {
-  const supabase = await createClient()
+  const supabase = createStaticClient()
   
   // First check if slug exists in ANY language
   const { data: slugCheck } = await supabase
@@ -38,7 +38,7 @@ async function getSpecialistBySlug(slug: string, locale: string) {
 
 // Helper function to get all language alternates for a specialist
 async function getSpecialistAlternates(specialistId: string) {
-  const supabase = await createClient()
+  const supabase = createStaticClient()
   
   const { data: translations } = await supabase
     .from('specialist_translations')
@@ -61,7 +61,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const resolvedParams = await params
   const { slug, locale } = resolvedParams
   const baseUrl = siteConfig.baseUrl
-  const supabase = await createClient()
+  const supabase = createStaticClient()
 
   // Fetch specialist data with translations and company info
   const { data: specialistData, error } = await supabase
