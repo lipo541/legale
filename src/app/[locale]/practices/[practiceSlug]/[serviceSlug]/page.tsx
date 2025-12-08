@@ -339,54 +339,9 @@ export default async function ServicePage({ params }: Props) {
   )
 }
 
-// Generate static params for all services
+// Generate static params - return empty for faster builds
+// ISR will cache pages after first visit (revalidate = 3600)
+// This is SEO-safe: meta tags, OG tags, schema.org all render correctly on first request
 export async function generateStaticParams() {
-  const supabase = createStaticClient()
-
-  // Fetch all published services with their practice slugs
-  const { data: services } = await supabase
-    .from('services')
-    .select(`
-      practice_id,
-      service_translations (
-        slug,
-        language
-      )
-    `)
-    .eq('status', 'published')
-
-  if (!services) return []
-
-  // For each service, get its practice slug
-  const params: Array<{ locale: string; practiceSlug: string; serviceSlug: string }> = []
-
-  for (const service of services) {
-    if (!service.service_translations) continue
-
-    // Fetch practice slugs
-    const { data: practice } = await supabase
-      .from('practices')
-      .select('practice_translations (slug, language)')
-      .eq('id', service.practice_id)
-      .single()
-
-    if (!practice?.practice_translations) continue
-
-    // Combine practice and service slugs
-    service.service_translations.forEach((serviceTranslation: { slug: string; language: string }) => {
-      const practiceTranslation = practice.practice_translations.find(
-        (pt: { slug: string; language: string }) => pt.language === serviceTranslation.language
-      )
-
-      if (practiceTranslation) {
-        params.push({
-          locale: serviceTranslation.language,
-          practiceSlug: practiceTranslation.slug,
-          serviceSlug: serviceTranslation.slug,
-        })
-      }
-    })
-  }
-
-  return params
+  return []
 }
