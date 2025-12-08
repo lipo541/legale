@@ -281,3 +281,8 @@ export default async function SpecialistPage({ params }: PageProps) {
 // Revalidate every 3600 seconds (1 hour)
 export const revalidate = 3600
 
+// Generate static params - return empty for faster builds
+// ISR will cache pages after first visit
+export async function generateStaticParams() {
+  return []
+}
