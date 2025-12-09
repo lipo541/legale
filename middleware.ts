@@ -67,8 +67,9 @@ export const config = {
      * Match all paths except:
      * - api routes
      * - _next (Next.js internals)
+     * - auth/callback (OAuth callback - should not be locale-redirected)
      * - static files with extensions
      */
-    '/((?!api|_next|favicon.ico|.*\\..*).*)',
+    '/((?!api|_next|favicon.ico|auth/callback|.*\\..*).*)',
   ],
 }
