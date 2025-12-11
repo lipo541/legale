@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Building2, Users, Briefcase, Search, SlidersHorizontal, ChevronDown, UserCircle, MapPin, X } from 'lucide-react';
+import { Building2, Users, Briefcase, Search, SlidersHorizontal, ChevronDown, UserCircle, MapPin, X, Globe } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { usePathname } from 'next/navigation';
 import ViewModeToggle from '@/components/common/ViewModeToggle';
@@ -17,6 +17,7 @@ interface SpecialistsStatisticsProps {
   onCityChange?: (city: string | null) => void;
   onSpecialistTypeChange?: (type: string | null) => void;
   onServicesChange?: (services: string[]) => void;
+  onLanguagesChange?: (languages: string[]) => void;
   viewMode?: 'grid' | 'list';
   onViewModeChange?: (mode: 'grid' | 'list') => void;
   sortBy?: string;
@@ -31,6 +32,7 @@ export default function SpecialistsStatistics({
   onCityChange,
   onSpecialistTypeChange,
   onServicesChange,
+  onLanguagesChange,
   viewMode = 'grid',
   onViewModeChange,
   sortBy = 'newest',
@@ -51,7 +53,11 @@ export default function SpecialistsStatistics({
   const [selectedSpecialistType, setSelectedSpecialistType] = useState<string | null>(null);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [servicesSearchTerm, setServicesSearchTerm] = useState('');
+
+  // Available languages
+  const AVAILABLE_LANGUAGES = ['English', 'Georgian', 'Russian', 'German', 'Spanish'];
 
   // Cities data
   const [cities, setCities] = useState<Array<{ id: string; name: string; count: number }>>([])
@@ -167,6 +173,12 @@ export default function SpecialistsStatistics({
     }
   }, [selectedServices, onServicesChange])
 
+  useEffect(() => {
+    if (onLanguagesChange) {
+      onLanguagesChange(selectedLanguages)
+    }
+  }, [selectedLanguages, onLanguagesChange])
+
   // Static data
   const specialistTypes = [
     { id: 'company', name: t.companySpecialist },
@@ -184,6 +196,7 @@ export default function SpecialistsStatistics({
     setSelectedSpecialistType(null);
     setSelectedCity(null);
     setSelectedServices([]);
+    setSelectedLanguages([]);
     setSearchTerm('');
     setServicesSearchTerm('');
   };
@@ -200,11 +213,37 @@ export default function SpecialistsStatistics({
     );
   };
 
+  const toggleLanguage = (language: string) => {
+    setSelectedLanguages(prev =>
+      prev.includes(language)
+        ? prev.filter(lang => lang !== language)
+        : [...prev, language]
+    );
+  };
+
   const filteredServices = services.filter(service =>
     service.title.toLowerCase().includes(servicesSearchTerm.toLowerCase())
   );
 
-  const hasActiveFilters = selectedSpecialistType || selectedServices.length > 0 || selectedCity;
+  // Get selected city name from cities array
+  const getSelectedCityName = () => {
+    if (!selectedCity) return null;
+    const city = cities.find(c => c.id === selectedCity);
+    return city?.name || null;
+  };
+
+  const selectedCityName = getSelectedCityName();
+
+  // Get selected specialist type name
+  const getSelectedTypeName = () => {
+    if (!selectedSpecialistType) return null;
+    const type = specialistTypes.find(t => t.id === selectedSpecialistType);
+    return type?.name || null;
+  };
+
+  const selectedTypeName = getSelectedTypeName();
+
+  const hasActiveFilters = selectedSpecialistType || selectedServices.length > 0 || selectedCity || selectedLanguages.length > 0;
 
   const cards = [
     {
@@ -473,7 +512,9 @@ export default function SpecialistsStatistics({
               >
                 <div className="flex items-center gap-2">
                   <UserCircle size={14} strokeWidth={1.5} />
-                  <span className="text-sm font-medium">{t.companyFilter}</span>
+                  <span className="text-sm font-medium">
+                    {selectedTypeName || t.companyFilter}
+                  </span>
                 </div>
                 <ChevronDown
                   size={14}
@@ -588,7 +629,7 @@ export default function SpecialistsStatistics({
                             type="checkbox"
                             checked={selectedServices.includes(service.id)}
                             onChange={() => toggleService(service.id)}
-                            className="h-4 w-4 rounded text-emerald-500 focus:ring-emerald-500"
+                            className="h-5 w-5 rounded text-emerald-500 focus:ring-emerald-500"
                           />
                           <span className={`text-sm ${
                             isDark ? 'text-white/70' : 'text-black/70'
@@ -619,7 +660,9 @@ export default function SpecialistsStatistics({
               >
                 <div className="flex items-center gap-2">
                   <MapPin size={14} strokeWidth={1.5} />
-                  <span className="text-sm font-medium">{t.cityFilter}</span>
+                  <span className="text-sm font-medium">
+                    {selectedCityName || t.cityFilter}
+                  </span>
                 </div>
                 <ChevronDown
                   size={14}
@@ -669,10 +712,73 @@ export default function SpecialistsStatistics({
                 </div>
               )}
             </div>
+
+            {/* Languages Filter - Mobile */}
+            <div className="relative">
+              <button
+                onClick={() => toggleDropdown('language')}
+                className={`flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left transition-all ${
+                  selectedLanguages.length > 0
+                    ? isDark
+                      ? 'border-white bg-white text-black'
+                      : 'border-black bg-black text-white'
+                    : isDark
+                    ? 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
+                    : 'border-black/10 bg-gray-50 hover:border-black/20 hover:bg-gray-100'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Globe size={14} strokeWidth={1.5} />
+                  <span className="text-sm font-medium">
+                    {t.languageFilter} {selectedLanguages.length > 0 && `(${selectedLanguages.length})`}
+                  </span>
+                </div>
+                <ChevronDown
+                  size={14}
+                  className={`transition-transform ${
+                    openDropdown === 'language' ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+
+              {openDropdown === 'language' && (
+                <div
+                  className={`absolute left-0 right-0 top-full z-10 mt-1 max-h-64 overflow-y-auto rounded-lg border ${
+                    isDark
+                      ? 'border-white/10 bg-black'
+                      : 'border-black/10 bg-white shadow-md'
+                  }`}
+                >
+                  {AVAILABLE_LANGUAGES.map((lang) => (
+                    <label
+                      key={lang}
+                      className={`flex items-center gap-2.5 px-3 py-2.5 cursor-pointer transition-colors ${
+                        isDark
+                          ? 'hover:bg-white/10'
+                          : 'hover:bg-gray-100'
+                      }`}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedLanguages.includes(lang)}
+                        onChange={() => toggleLanguage(lang)}
+                        className="h-5 w-5 rounded text-emerald-500 focus:ring-emerald-500"
+                      />
+                      <span className={`text-sm ${
+                        isDark ? 'text-white/70' : 'text-black/70'
+                      }`}>
+                        {(t.languages as Record<string, string>)?.[lang] || lang}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Desktop: Grid layout (existing code) */}
-          <div className="hidden sm:grid gap-2 sm:grid-cols-3 md:gap-3">
+          <div className="hidden sm:grid gap-2 sm:grid-cols-4 md:gap-3">
             {/* Specialist Type Filter */}
             <div className="relative">
               <button
@@ -687,13 +793,15 @@ export default function SpecialistsStatistics({
                     : 'border-black/10 bg-gray-50 hover:border-black/20 hover:bg-gray-100'
                 }`}
               >
-                <div className="flex items-center gap-1">
-                  <UserCircle size={12} strokeWidth={1.5} />
-                  <span className="text-xs font-medium">{t.companyFilter}</span>
+                <div className="flex items-center gap-1 min-w-0 flex-1">
+                  <UserCircle size={12} strokeWidth={1.5} className="flex-shrink-0" />
+                  <span className="text-xs font-medium truncate">
+                    {selectedTypeName || t.companyFilter}
+                  </span>
                 </div>
                 <ChevronDown
                   size={12}
-                  className={`transition-transform ${
+                  className={`flex-shrink-0 ml-1 transition-transform ${
                     openDropdown === 'type' ? 'rotate-180' : ''
                   }`}
                 />
@@ -745,15 +853,15 @@ export default function SpecialistsStatistics({
                     : 'border-black/10 bg-gray-50 hover:border-black/20 hover:bg-gray-100'
                 }`}
               >
-                <div className="flex items-center gap-1">
-                  <Briefcase size={12} strokeWidth={1.5} />
-                  <span className="text-xs font-medium">
+                <div className="flex items-center gap-1 min-w-0 flex-1">
+                  <Briefcase size={12} strokeWidth={1.5} className="flex-shrink-0" />
+                  <span className="text-xs font-medium truncate">
                     {t.specializationFilter} {selectedServices.length > 0 && `(${selectedServices.length})`}
                   </span>
                 </div>
                 <ChevronDown
                   size={12}
-                  className={`transition-transform ${
+                  className={`flex-shrink-0 ml-1 transition-transform ${
                     openDropdown === 'specialization' ? 'rotate-180' : ''
                   }`}
                 />
@@ -833,13 +941,15 @@ export default function SpecialistsStatistics({
                     : 'border-black/10 bg-gray-50 hover:border-black/20 hover:bg-gray-100'
                 }`}
               >
-                <div className="flex items-center gap-1">
-                  <MapPin size={12} strokeWidth={1.5} />
-                  <span className="text-xs font-medium">{t.cityFilter}</span>
+                <div className="flex items-center gap-1 min-w-0 flex-1">
+                  <MapPin size={12} strokeWidth={1.5} className="flex-shrink-0" />
+                  <span className="text-xs font-medium truncate">
+                    {selectedCityName || t.cityFilter}
+                  </span>
                 </div>
                 <ChevronDown
                   size={12}
-                  className={`transition-transform ${
+                  className={`flex-shrink-0 ml-1 transition-transform ${
                     openDropdown === 'city' ? 'rotate-180' : ''
                   }`}
                 />
@@ -886,6 +996,69 @@ export default function SpecialistsStatistics({
                       </button>
                     ))
                   )}
+                </div>
+              )}
+            </div>
+
+            {/* Languages Filter - Desktop */}
+            <div className="relative">
+              <button
+                onClick={() => toggleDropdown('language')}
+                className={`flex w-full items-center justify-between rounded border px-2 py-1.5 text-left transition-all ${
+                  selectedLanguages.length > 0
+                    ? isDark
+                      ? 'border-white bg-white text-black'
+                      : 'border-black bg-black text-white'
+                    : isDark
+                    ? 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
+                    : 'border-black/10 bg-gray-50 hover:border-black/20 hover:bg-gray-100'
+                }`}
+              >
+                <div className="flex items-center gap-1 min-w-0 flex-1">
+                  <Globe size={12} strokeWidth={1.5} className="flex-shrink-0" />
+                  <span className="text-xs font-medium truncate">
+                    {t.languageFilter} {selectedLanguages.length > 0 && `(${selectedLanguages.length})`}
+                  </span>
+                </div>
+                <ChevronDown
+                  size={12}
+                  className={`flex-shrink-0 ml-1 transition-transform ${
+                    openDropdown === 'language' ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+
+              {openDropdown === 'language' && (
+                <div
+                  className={`absolute left-0 right-0 top-full z-10 mt-1 max-h-40 overflow-y-auto rounded border ${
+                    isDark
+                      ? 'border-white/10 bg-black'
+                      : 'border-black/10 bg-white shadow-md'
+                  }`}
+                >
+                  {AVAILABLE_LANGUAGES.map((lang) => (
+                    <label
+                      key={lang}
+                      className={`flex items-center gap-2 px-2 py-1.5 cursor-pointer transition-colors ${
+                        isDark
+                          ? 'hover:bg-white/10'
+                          : 'hover:bg-gray-100'
+                      }`}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedLanguages.includes(lang)}
+                        onChange={() => toggleLanguage(lang)}
+                        className="rounded text-emerald-500 focus:ring-emerald-500"
+                      />
+                      <span className={`text-xs ${
+                        isDark ? 'text-white/70' : 'text-black/70'
+                      }`}>
+                        {(t.languages as Record<string, string>)?.[lang] || lang}
+                      </span>
+                    </label>
+                  ))}
                 </div>
               )}
             </div>

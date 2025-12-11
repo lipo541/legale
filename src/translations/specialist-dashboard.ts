@@ -6,6 +6,7 @@ export const specialistDashboardTranslations = {
     myPosts: 'ჩემი პოსტები',
     logout: 'გასვლა',
     specialist: 'სპეციალისტი',
+    viewProfile: 'პროფილის ნახვა',
 
     // Dashboard Page
     hello: 'გამარჯობა',
@@ -212,6 +213,7 @@ export const specialistDashboardTranslations = {
     myPosts: 'My Posts',
     logout: 'Logout',
     specialist: 'Specialist',
+    viewProfile: 'View Profile',
 
     // Dashboard Page
     hello: 'Hello',
@@ -418,6 +420,7 @@ export const specialistDashboardTranslations = {
     myPosts: 'Мои посты',
     logout: 'Выйти',
     specialist: 'Специалист',
+    viewProfile: 'Просмотр профиля',
 
     // Dashboard Page
     hello: 'Привет',

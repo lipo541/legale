@@ -37,6 +37,13 @@ interface CompanyTranslation {
   how_we_work: string
 }
 
+interface SpecialistTranslation {
+  language: string
+  full_name: string | null
+  role_title: string | null
+  slug: string | null
+}
+
 interface Company {
   id: string
   email: string
@@ -58,6 +65,7 @@ interface Company {
     role_title: string
     avatar_url: string
     slug: string
+    specialist_translations?: SpecialistTranslation[]
   }>
 }
 
@@ -203,10 +211,22 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
 
         setSlugsByLocale(slugsMap)
 
-        // Fetch company specialists
+        // Fetch company specialists with translations
         const { data: specialistsData } = await supabase
           .from('profiles')
-          .select('id, full_name, role_title, avatar_url, slug')
+          .select(`
+            id, 
+            full_name, 
+            role_title, 
+            avatar_url, 
+            slug,
+            specialist_translations (
+              language,
+              full_name,
+              role_title,
+              slug
+            )
+          `)
           .eq('company_id', profileData.id)
           .eq('role', 'SPECIALIST')
           .eq('verification_status', 'verified')
@@ -488,20 +508,20 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
       <div className="mx-auto max-w-[1200px] px-6 sm:px-8 lg:px-10 py-12 sm:py-16 space-y-12">
         {/* Company Overview */}
         {translation?.company_overview && (
-          <section className={`p-8 sm:p-10 rounded-2xl ring-1 ${
+          <section className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl ring-1 ${
             isDark ? 'bg-white/[0.02] ring-white/[0.08]' : 'bg-black/[0.02] ring-black/[0.08]'
           }`}>
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-6">
               <div className={`p-2 rounded-xl ${
                 isDark ? 'bg-white/5' : 'bg-black/5'
               }`}>
-                <Building2 className="h-5 w-5 opacity-50" />
+                <Building2 className="h-4 w-4 sm:h-5 sm:w-5 opacity-50" />
               </div>
-              <h2 className="text-2xl font-extralight tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-extralight tracking-tight">
                 {locale === 'ka' ? 'კომპანიის შესახებ' : locale === 'en' ? 'About Company' : 'О компании'}
               </h2>
             </div>
-            <p className={`text-[15px] leading-relaxed font-light whitespace-pre-wrap ${
+            <p className={`text-sm sm:text-[15px] leading-[1.8] sm:leading-relaxed font-light whitespace-pre-wrap ${
               isDark ? 'text-white/70' : 'text-black/70'
             }`}>
               {translation.company_overview}
@@ -511,20 +531,20 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
 
         {/* Mission Statement */}
         {translation?.mission_statement && (
-          <section className={`p-8 sm:p-10 rounded-2xl ring-1 ${
+          <section className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl ring-1 ${
             isDark ? 'bg-white/[0.02] ring-white/[0.08]' : 'bg-black/[0.02] ring-black/[0.08]'
           }`}>
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-6">
               <div className={`p-2 rounded-xl ${
                 isDark ? 'bg-white/5' : 'bg-black/5'
               }`}>
-                <Target className="h-5 w-5 opacity-50" />
+                <Target className="h-4 w-4 sm:h-5 sm:w-5 opacity-50" />
               </div>
-              <h2 className="text-2xl font-extralight tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-extralight tracking-tight">
                 {locale === 'ka' ? 'მისია' : locale === 'en' ? 'Mission' : 'Миссия'}
               </h2>
             </div>
-            <p className={`text-[15px] leading-relaxed font-light whitespace-pre-wrap ${
+            <p className={`text-sm sm:text-[15px] leading-[1.8] sm:leading-relaxed font-light whitespace-pre-wrap ${
               isDark ? 'text-white/70' : 'text-black/70'
             }`}>
               {translation.mission_statement}
@@ -534,20 +554,20 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
 
         {/* Vision & Values */}
         {translation?.vision_values && (
-          <section className={`p-8 sm:p-10 rounded-2xl ring-1 ${
+          <section className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl ring-1 ${
             isDark ? 'bg-white/[0.02] ring-white/[0.08]' : 'bg-black/[0.02] ring-black/[0.08]'
           }`}>
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-6">
               <div className={`p-2 rounded-xl ${
                 isDark ? 'bg-white/5' : 'bg-black/5'
               }`}>
-                <Lightbulb className="h-5 w-5 opacity-50" />
+                <Lightbulb className="h-4 w-4 sm:h-5 sm:w-5 opacity-50" />
               </div>
-              <h2 className="text-2xl font-extralight tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-extralight tracking-tight">
                 {locale === 'ka' ? 'ხედვა და ღირებულებები' : locale === 'en' ? 'Vision & Values' : 'Видение и ценности'}
               </h2>
             </div>
-            <p className={`text-[15px] leading-relaxed font-light whitespace-pre-wrap ${
+            <p className={`text-sm sm:text-[15px] leading-[1.8] sm:leading-relaxed font-light whitespace-pre-wrap ${
               isDark ? 'text-white/70' : 'text-black/70'
             }`}>
               {translation.vision_values}
@@ -557,20 +577,20 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
 
         {/* History */}
         {translation?.history && (
-          <section className={`p-8 sm:p-10 rounded-2xl ring-1 ${
+          <section className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl ring-1 ${
             isDark ? 'bg-white/[0.02] ring-white/[0.08]' : 'bg-black/[0.02] ring-black/[0.08]'
           }`}>
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-6">
               <div className={`p-2 rounded-xl ${
                 isDark ? 'bg-white/5' : 'bg-black/5'
               }`}>
-                <History className="h-5 w-5 opacity-50" />
+                <History className="h-4 w-4 sm:h-5 sm:w-5 opacity-50" />
               </div>
-              <h2 className="text-2xl font-extralight tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-extralight tracking-tight">
                 {locale === 'ka' ? 'ისტორია' : locale === 'en' ? 'History' : 'История'}
               </h2>
             </div>
-            <p className={`text-[15px] leading-relaxed font-light whitespace-pre-wrap ${
+            <p className={`text-sm sm:text-[15px] leading-[1.8] sm:leading-relaxed font-light whitespace-pre-wrap ${
               isDark ? 'text-white/70' : 'text-black/70'
             }`}>
               {translation.history}
@@ -580,20 +600,20 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
 
         {/* How We Work */}
         {translation?.how_we_work && (
-          <section className={`p-8 sm:p-10 rounded-2xl ring-1 ${
+          <section className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl ring-1 ${
             isDark ? 'bg-white/[0.02] ring-white/[0.08]' : 'bg-black/[0.02] ring-black/[0.08]'
           }`}>
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-6">
               <div className={`p-2 rounded-xl ${
                 isDark ? 'bg-white/5' : 'bg-black/5'
               }`}>
-                <FileText className="h-5 w-5 opacity-50" />
+                <FileText className="h-4 w-4 sm:h-5 sm:w-5 opacity-50" />
               </div>
-              <h2 className="text-2xl font-extralight tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-extralight tracking-tight">
                 {locale === 'ka' ? 'როგორ ვმუშაობთ' : locale === 'en' ? 'How We Work' : 'Как мы работаем'}
               </h2>
             </div>
-            <p className={`text-[15px] leading-relaxed font-light whitespace-pre-wrap ${
+            <p className={`text-sm sm:text-[15px] leading-[1.8] sm:leading-relaxed font-light whitespace-pre-wrap ${
               isDark ? 'text-white/70' : 'text-black/70'
             }`}>
               {translation.how_we_work}
@@ -603,58 +623,66 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
 
         {/* Company Specialists */}
         {company.specialists && company.specialists.length > 0 && (
-          <section className={`p-8 sm:p-10 rounded-2xl ring-1 ${
+          <section className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl ring-1 ${
             isDark ? 'bg-white/[0.02] ring-white/[0.08]' : 'bg-black/[0.02] ring-black/[0.08]'
           }`}>
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-6">
               <div className={`p-2 rounded-xl ${
                 isDark ? 'bg-white/5' : 'bg-black/5'
               }`}>
-                <Users className="h-5 w-5 opacity-50" />
+                <Users className="h-4 w-4 sm:h-5 sm:w-5 opacity-50" />
               </div>
-              <h2 className="text-2xl font-extralight tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-extralight tracking-tight">
                 {locale === 'ka' ? 'ჩვენი სპეციალისტები' : locale === 'en' ? 'Our Specialists' : 'Наши специалисты'}
               </h2>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {company.specialists.map((specialist) => (
-                <button
-                  key={specialist.id}
-                  onClick={() => router.push(`/${locale}/specialists/${specialist.slug}`)}
-                  className={`group flex items-center gap-4 p-4 rounded-xl transition-all text-left ring-1 ${
-                    isDark 
-                      ? 'bg-white/[0.02] hover:bg-white/[0.05] ring-white/[0.08]' 
-                      : 'bg-black/[0.02] hover:bg-black/[0.05] ring-black/[0.08]'
-                  }`}
-                >
-                  {specialist.avatar_url ? (
-                    <img
-                      src={getOptimizedImageUrl(specialist.avatar_url, imagePresets.avatarMedium)}
-                      alt={specialist.full_name}
-                      className="h-14 w-14 rounded-full object-cover ring-1 ring-black/5"
-                    />
-                  ) : (
-                    <div className={`h-14 w-14 rounded-full flex items-center justify-center ${
-                      isDark ? 'bg-white/5' : 'bg-black/5'
-                    }`}>
-                      <Users className="h-6 w-6 opacity-20" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-light text-base truncate mb-0.5">
-                      {specialist.full_name}
-                    </h3>
-                    {specialist.role_title && (
-                      <p className={`text-sm font-light truncate ${
-                        isDark ? 'text-white/50' : 'text-black/50'
+            <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+              {company.specialists.map((specialist) => {
+                // Get translation for current locale
+                const translation = specialist.specialist_translations?.find(t => t.language === locale)
+                const displayName = (locale !== 'ka' && translation?.full_name) || specialist.full_name
+                const displayRoleTitle = (locale !== 'ka' && translation?.role_title) || specialist.role_title
+                const displaySlug = (locale !== 'ka' && translation?.slug) || specialist.slug
+                
+                return (
+                  <button
+                    key={specialist.id}
+                    onClick={() => router.push(`/${locale}/specialists/${displaySlug}`)}
+                    className={`group flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl transition-all text-left ring-1 ${
+                      isDark 
+                        ? 'bg-white/[0.02] hover:bg-white/[0.05] ring-white/[0.08]' 
+                        : 'bg-black/[0.02] hover:bg-black/[0.05] ring-black/[0.08]'
+                    }`}
+                  >
+                    {specialist.avatar_url ? (
+                      <img
+                        src={getOptimizedImageUrl(specialist.avatar_url, imagePresets.avatarMedium)}
+                        alt={displayName}
+                        className="h-12 w-12 sm:h-14 sm:w-14 rounded-full object-cover ring-1 ring-black/5"
+                      />
+                    ) : (
+                      <div className={`h-12 w-12 sm:h-14 sm:w-14 rounded-full flex items-center justify-center ${
+                        isDark ? 'bg-white/5' : 'bg-black/5'
                       }`}>
-                        {specialist.role_title}
-                      </p>
+                        <Users className="h-5 w-5 sm:h-6 sm:w-6 opacity-20" />
+                      </div>
                     )}
-                  </div>
-                  <Briefcase className={`h-4 w-4 flex-shrink-0 opacity-30 group-hover:opacity-50 transition-opacity`} />
-                </button>
-              ))}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-light text-sm sm:text-base truncate mb-0.5">
+                        {displayName}
+                      </h3>
+                      {displayRoleTitle && (
+                        <p className={`text-xs sm:text-sm font-light truncate ${
+                          isDark ? 'text-white/50' : 'text-black/50'
+                        }`}>
+                          {displayRoleTitle}
+                        </p>
+                      )}
+                    </div>
+                    <Briefcase className={`h-4 w-4 flex-shrink-0 opacity-30 group-hover:opacity-50 transition-opacity`} />
+                  </button>
+                )
+              })}
             </div>
           </section>
         )}

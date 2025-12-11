@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useTheme } from '@/contexts/ThemeContext'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -23,6 +24,13 @@ import MyPostsPage from '@/components/common/MyPostsPage'
 
 type Locale = 'ka' | 'en' | 'ru'
 
+interface CompanyProfile {
+  full_name?: string
+  email?: string
+  logo_url?: string
+  slug?: string
+}
+
 export default function CompanyDashboard() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
@@ -31,10 +39,39 @@ export default function CompanyDashboard() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [activeTab, setActiveTab] = useState('dashboard')
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0)
+  const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(null)
 
   useEffect(() => {
     fetchPendingRequestsCount()
-  }, [])
+    fetchCompanyProfile()
+  }, [locale])
+
+  const fetchCompanyProfile = async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, logo_url')
+      .eq('id', user.id)
+      .single()
+
+    // Fetch slug from company_translations for current locale
+    const { data: translationData } = await supabase
+      .from('company_translations')
+      .select('slug')
+      .eq('company_id', user.id)
+      .eq('language', locale)
+      .single()
+
+    setCompanyProfile({
+      full_name: profile?.full_name,
+      email: user.email || undefined,
+      logo_url: profile?.logo_url,
+      slug: translationData?.slug || undefined
+    })
+  }
 
   const fetchPendingRequestsCount = async () => {
     const supabase = createClient()
@@ -113,6 +150,47 @@ export default function CompanyDashboard() {
             )}
           </button>
         </div>
+
+        {/* Company Profile Section - Clickable */}
+        <Link 
+          href={companyProfile?.slug ? `/${locale}/companies/${companyProfile.slug}` : '#'}
+          className={`
+            flex items-center gap-3 p-4 border-b cursor-pointer
+            transition-all duration-200 hover:bg-white/5
+            ${isDark ? 'border-white/10' : 'border-black/10'}
+            ${!companyProfile?.slug ? 'pointer-events-none' : ''}
+          `}
+        >
+          {/* Logo */}
+          <div className={`
+            relative w-10 h-10 rounded-xl overflow-hidden flex-shrink-0
+            bg-gradient-to-br from-emerald-500 to-green-600
+            flex items-center justify-center
+            shadow-lg shadow-emerald-500/30
+          `}>
+            {companyProfile?.logo_url ? (
+              <img 
+                src={companyProfile.logo_url} 
+                alt="Logo" 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Building2 className="w-5 h-5 text-white" />
+            )}
+          </div>
+          
+          {/* Name & Email */}
+          {!isCollapsed && (
+            <div className="flex-1 min-w-0 overflow-hidden">
+              <p className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-black'}`}>
+                {companyProfile?.full_name || 'კომპანია'}
+              </p>
+              <p className={`text-xs truncate ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+                {companyProfile?.email || ''}
+              </p>
+            </div>
+          )}
+        </Link>
 
         {/* Menu Items */}
         <nav className="flex-1 space-y-1 p-4">

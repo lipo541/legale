@@ -14,6 +14,7 @@ export const specialistsTranslations = {
     // Sections
     companySpecialists: 'კომპანიის სპეციალისტები',
     soloSpecialists: 'დამოუკიდებელი სპეციალისტები',
+    filteredResults: 'ფილტრირებული შედეგები',
 
     // Search & Filters
     searchPlaceholder: 'ძებნა სახელით, პოზიციით ან სპეციალიზაციით...',
@@ -42,6 +43,17 @@ export const specialistsTranslations = {
     sortOldest: 'უძველესი',
     sortAZ: 'ა-ჰ',
     sortZA: 'ჰ-ა',
+
+    // Language Filter
+    languageFilter: 'ენა',
+    noLanguagesFound: 'ენები არ მოიძებნა',
+    languages: {
+      English: 'ინგლისური',
+      Georgian: 'ქართული',
+      Russian: 'რუსული',
+      German: 'გერმანული',
+      Spanish: 'ესპანური',
+    },
 
     // Empty States
     noResultsTitle: 'სპეციალისტები არ მოიძებნა',
@@ -82,6 +94,7 @@ export const specialistsTranslations = {
     // Sections
     companySpecialists: 'Company Specialists',
     soloSpecialists: 'Independent Specialists',
+    filteredResults: 'Filtered Results',
 
     // Search & Filters
     searchPlaceholder: 'Search by name, position, or specialization...',
@@ -110,6 +123,17 @@ export const specialistsTranslations = {
     sortOldest: 'Oldest',
     sortAZ: 'A-Z',
     sortZA: 'Z-A',
+
+    // Language Filter
+    languageFilter: 'Language',
+    noLanguagesFound: 'No languages found',
+    languages: {
+      English: 'English',
+      Georgian: 'Georgian',
+      Russian: 'Russian',
+      German: 'German',
+      Spanish: 'Spanish',
+    },
 
     // Empty States
     noResultsTitle: 'No specialists found',
@@ -150,6 +174,7 @@ export const specialistsTranslations = {
     // Sections
     companySpecialists: 'Специалисты компаний',
     soloSpecialists: 'Независимые специалисты',
+    filteredResults: 'Отфильтрованные результаты',
 
     // Search & Filters
     searchPlaceholder: 'Поиск по имени, должности или специализации...',
@@ -178,6 +203,17 @@ export const specialistsTranslations = {
     sortOldest: 'Старые',
     sortAZ: 'А-Я',
     sortZA: 'Я-А',
+
+    // Language Filter
+    languageFilter: 'Язык',
+    noLanguagesFound: 'Языки не найдены',
+    languages: {
+      English: 'Английский',
+      Georgian: 'Грузинский',
+      Russian: 'Русский',
+      German: 'Немецкий',
+      Spanish: 'Испанский',
+    },
 
     // Empty States
     noResultsTitle: 'Специалисты не найдены',

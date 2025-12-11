@@ -57,7 +57,8 @@ async function getCategoryBySlug(slug: string, locale: string) {
 }
 
 export default async function CategoryPage({ params }: PageProps) {
-  const { locale, slug } = await params
+  const { locale, slug: encodedSlug } = await params
+  const slug = decodeURIComponent(encodedSlug)
   const supabase = createStaticClient()
 
   // Check if slug belongs to different language - server-side redirect
@@ -206,7 +207,8 @@ export default async function CategoryPage({ params }: PageProps) {
 
 // Generate metadata
 export async function generateMetadata({ params }: PageProps) {
-  const { locale, slug } = await params
+  const { locale, slug: encodedSlug } = await params
+  const slug = decodeURIComponent(encodedSlug)
   const supabase = createStaticClient()
 
   // Step 1: Find the category translation by slug and locale to get the category_id

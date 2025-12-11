@@ -50,6 +50,7 @@ interface Specialist {
   company_id: string | null
   verification_status: string
   info_activate?: boolean
+  languages?: string[] | null
   facebook_link?: string | null
   linkedin_link?: string | null
   twitter_link?: string | null
@@ -367,11 +368,11 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
     }`}>
       {/* Header Section - Clean & Minimal */}
       <div className={`border-b ${isDark ? 'border-white/[0.08]' : 'border-black/[0.08]'}`}>
-        <div className="mx-auto max-w-[1200px] px-6 sm:px-8 lg:px-10 py-8 sm:py-12">
+        <div className="mx-auto max-w-[1200px] px-4 sm:px-8 lg:px-10 py-6 sm:py-12">
           {/* Back Button */}
           <button
             onClick={() => router.push(`/${locale}/specialists`)}
-            className={`group flex items-center gap-2 mb-8 text-sm font-light transition-colors ${
+            className={`group flex items-center gap-2 mb-6 sm:mb-8 text-sm font-light transition-colors ${
               isDark ? 'text-white/50 hover:text-white/80' : 'text-black/50 hover:text-black/80'
             }`}
           >
@@ -381,32 +382,32 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
 
           <div className="flex flex-col items-center text-center">
             {/* Avatar - Large, Centered */}
-            <div className="mb-6">
+            <div className="mb-4 sm:mb-6">
               {specialist.avatar_url ? (
                 <img
                   src={getOptimizedImageUrl(specialist.avatar_url, imagePresets.avatarLarge)}
                   alt={displayTranslation.full_name}
-                  className={`w-32 h-32 sm:w-40 sm:h-40 rounded-full object-cover ring-1 ${
+                  className={`w-24 h-24 sm:w-40 sm:h-40 rounded-full object-cover ring-1 ${
                     isDark ? 'ring-white/10' : 'ring-black/10'
                   }`}
                 />
               ) : (
-                <div className={`w-32 h-32 sm:w-40 sm:h-40 rounded-full flex items-center justify-center ring-1 ${
+                <div className={`w-24 h-24 sm:w-40 sm:h-40 rounded-full flex items-center justify-center ring-1 ${
                   isDark ? 'bg-white/5 ring-white/10' : 'bg-black/5 ring-black/10'
                 }`}>
-                  <Users className="h-16 w-16 sm:h-20 sm:w-20 opacity-20" />
+                  <Users className="h-12 w-12 sm:h-20 sm:w-20 opacity-20" />
                 </div>
               )}
             </div>
 
             {/* Name - Large, Light Font */}
-            <h1 className="text-4xl sm:text-5xl font-extralight tracking-tight mb-3">
+            <h1 className="text-2xl sm:text-5xl font-extralight tracking-tight mb-2 sm:mb-3 px-2">
               {displayTranslation.full_name}
             </h1>
             
             {/* Role Title */}
             {displayTranslation.role_title && (
-              <p className={`text-lg sm:text-xl font-light mb-6 ${
+              <p className={`text-base sm:text-xl font-light mb-4 sm:mb-6 px-2 ${
                 isDark ? 'text-white/60' : 'text-black/60'
               }`}>
                 {displayTranslation.role_title}
@@ -437,15 +438,15 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
               const displayPhone = specialist.info_activate ? specialist.phone_number : STATIC_PHONE;
               
               return (
-                <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 mt-8">
+                <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-5 sm:mt-8 px-2">
                   {displayEmail && (
                     <a
                       href={`mailto:${displayEmail}`}
-                      className={`flex items-center gap-2 text-sm font-light transition-colors ${
+                      className={`flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-light transition-colors ${
                         isDark ? 'text-white/50 hover:text-white' : 'text-black/50 hover:text-black'
                       }`}
                     >
-                      <Mail className="h-4 w-4" />
+                      <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       <span className="hidden sm:inline">{displayEmail}</span>
                       <span className="sm:hidden">Email</span>
                     </a>
@@ -453,23 +454,36 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
                   {displayPhone && (
                     <a
                       href={`tel:${displayPhone.replace(/\s/g, '')}`}
-                      className={`flex items-center gap-2 text-sm font-light transition-colors ${
+                      className={`flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-light transition-colors ${
                         isDark ? 'text-white/50 hover:text-white' : 'text-black/50 hover:text-black'
                       }`}
                     >
-                      <Phone className="h-4 w-4" />
+                      <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       {displayPhone}
                     </a>
                   )}
                   {cities.length > 0 && (
-                    <div className={`flex items-center gap-2 text-sm font-light ${
+                    <div className={`flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-light ${
                       isDark ? 'text-white/50' : 'text-black/50'
                     }`}>
-                      <MapPin className="h-4 w-4" />
+                      <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       {cities.map((city, index) => (
                         <span key={city.id}>
                           {locale === 'ka' ? city.name_ka : locale === 'en' ? city.name_en : city.name_ru}
                           {index < cities.length - 1 && ', '}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {specialist.languages && specialist.languages.length > 0 && (
+                    <div className={`flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-light ${
+                      isDark ? 'text-white/50' : 'text-black/50'
+                    }`}>
+                      <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      {specialist.languages.map((lang, index) => (
+                        <span key={lang}>
+                          {lang}
+                          {index < (specialist.languages?.length || 0) - 1 && ', '}
                         </span>
                       ))}
                     </div>
@@ -480,7 +494,7 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
 
             {/* Social Links - Only show when info_activate is true */}
             {specialist.info_activate && (specialist.facebook_link || specialist.linkedin_link || specialist.twitter_link || specialist.instagram_link) && (
-              <div className="flex flex-wrap items-center justify-center gap-3 mt-4">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mt-3 sm:mt-4">
                 {specialist.facebook_link && (
                   <a
                     href={specialist.facebook_link}
@@ -527,15 +541,15 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
       </div>
 
       {/* Main Content - Apple Style */}
-      <div className="mx-auto max-w-[1200px] px-6 sm:px-8 lg:px-10 py-12 sm:py-16">
-        <div className="space-y-6">
+      <div className="mx-auto max-w-[1200px] px-4 sm:px-8 lg:px-10 py-8 sm:py-16">
+        <div className="space-y-4 sm:space-y-6">
           {/* Bio */}
           {displayTranslation.bio && (
-            <div className={`p-8 rounded-2xl border ${
+            <div className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border ${
               isDark ? 'border-white/[0.08] bg-white/[0.02]' : 'border-black/[0.08] bg-black/[0.01]'
             }`}>
-              <h2 className="text-2xl font-extralight tracking-tight mb-4">{t.biography}</h2>
-              <p className={`text-[15px] leading-relaxed font-light whitespace-pre-line ${
+              <h2 className="text-xl sm:text-2xl font-extralight tracking-tight mb-3 sm:mb-4">{t.biography}</h2>
+              <p className={`text-sm sm:text-[15px] leading-[1.8] sm:leading-relaxed font-light whitespace-pre-line ${
                 isDark ? 'text-white/70' : 'text-black/70'
               }`}>
                 {displayTranslation.bio}
@@ -545,14 +559,14 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
 
           {/* Philosophy */}
           {displayTranslation.philosophy && (
-            <div className={`p-8 rounded-2xl border ${
+            <div className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border ${
               isDark ? 'border-white/[0.08] bg-white/[0.02]' : 'border-black/[0.08] bg-black/[0.01]'
             }`}>
-              <div className="flex items-center gap-3 mb-4">
-                <Target className="h-5 w-5 opacity-40" />
-                <h2 className="text-2xl font-extralight tracking-tight">{t.philosophy}</h2>
+              <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                <Target className="h-4 w-4 sm:h-5 sm:w-5 opacity-40" aria-hidden="true" />
+                <h2 className="text-xl sm:text-2xl font-extralight tracking-tight">{t.philosophy}</h2>
               </div>
-              <p className={`text-[15px] leading-relaxed font-light ${
+              <p className={`text-sm sm:text-[15px] leading-[1.8] sm:leading-relaxed font-light ${
                 isDark ? 'text-white/70' : 'text-black/70'
               }`}>
                 {displayTranslation.philosophy}
@@ -562,18 +576,18 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
 
           {/* Focus Areas */}
           {displayTranslation.focus_areas && displayTranslation.focus_areas.length > 0 && (
-            <div className={`p-8 rounded-2xl border ${
+            <div className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border ${
               isDark ? 'border-white/[0.08] bg-white/[0.02]' : 'border-black/[0.08] bg-black/[0.01]'
             }`}>
-              <h2 className="text-2xl font-extralight tracking-tight mb-6">{t.focusAreas}</h2>
-              <ul className="space-y-3">
+              <h2 className="text-xl sm:text-2xl font-extralight tracking-tight mb-4 sm:mb-6">{t.focusAreas}</h2>
+              <ul className="space-y-4 sm:space-y-3">
                 {displayTranslation.focus_areas.map((area, index) => (
-                  <li key={index} className={`flex items-start gap-3 text-[15px] font-light ${
+                  <li key={index} className={`flex items-start gap-3 text-sm sm:text-[15px] leading-[1.7] font-light ${
                     isDark ? 'text-white/70' : 'text-black/70'
                   }`}>
-                    <span className={`mt-1.5 h-1 w-1 rounded-full flex-shrink-0 ${
+                    <span className={`mt-2 sm:mt-1.5 h-1.5 w-1.5 sm:h-1 sm:w-1 rounded-full flex-shrink-0 ${
                       isDark ? 'bg-white/40' : 'bg-black/40'
-                    }`} />
+                    }`} aria-hidden="true" />
                     <span>{area}</span>
                   </li>
                 ))}
@@ -583,21 +597,21 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
 
           {/* Representative Matters */}
           {displayTranslation.representative_matters && displayTranslation.representative_matters.length > 0 && (
-            <div className={`p-8 rounded-2xl border ${
+            <div className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border ${
               isDark ? 'border-white/[0.08] bg-white/[0.02]' : 'border-black/[0.08] bg-black/[0.01]'
             }`}>
-              <div className="flex items-center gap-3 mb-6">
-                <Briefcase className="h-5 w-5 opacity-40" />
-                <h2 className="text-2xl font-extralight tracking-tight">{t.representativeMatters}</h2>
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <Briefcase className="h-4 w-4 sm:h-5 sm:w-5 opacity-40" aria-hidden="true" />
+                <h2 className="text-xl sm:text-2xl font-extralight tracking-tight">{t.representativeMatters}</h2>
               </div>
-              <ul className="space-y-3">
+              <ul className="space-y-4 sm:space-y-3">
                 {displayTranslation.representative_matters.map((matter, index) => (
-                  <li key={index} className={`flex items-start gap-3 text-[15px] font-light ${
+                  <li key={index} className={`flex items-start gap-3 text-sm sm:text-[15px] leading-[1.7] font-light ${
                     isDark ? 'text-white/70' : 'text-black/70'
                   }`}>
-                    <span className={`mt-1.5 h-1 w-1 rounded-full flex-shrink-0 ${
+                    <span className={`mt-2 sm:mt-1.5 h-1.5 w-1.5 sm:h-1 sm:w-1 rounded-full flex-shrink-0 ${
                       isDark ? 'bg-white/40' : 'bg-black/40'
-                    }`} />
+                    }`} aria-hidden="true" />
                     <span>{matter}</span>
                   </li>
                 ))}
@@ -607,14 +621,14 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
 
           {/* Teaching/Writing/Speaking */}
           {displayTranslation.teaching_writing_speaking && (
-            <div className={`p-8 rounded-2xl border ${
+            <div className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border ${
               isDark ? 'border-white/[0.08] bg-white/[0.02]' : 'border-black/[0.08] bg-black/[0.01]'
             }`}>
-              <div className="flex items-center gap-3 mb-4">
-                <GraduationCap className="h-5 w-5 opacity-40" />
-                <h2 className="text-2xl font-extralight tracking-tight">{t.teachingWritingSpeaking}</h2>
+              <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5 opacity-40" aria-hidden="true" />
+                <h2 className="text-xl sm:text-2xl font-extralight tracking-tight">{t.teachingWritingSpeaking}</h2>
               </div>
-              <p className={`text-[15px] leading-relaxed font-light ${
+              <p className={`text-sm sm:text-[15px] leading-[1.8] sm:leading-relaxed font-light ${
                 isDark ? 'text-white/70' : 'text-black/70'
               }`}>
                 {displayTranslation.teaching_writing_speaking}
@@ -624,15 +638,15 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
 
           {/* Values / How We Work */}
           {displayTranslation.values_how_we_work && Object.keys(displayTranslation.values_how_we_work).length > 0 && (
-            <div className={`p-8 rounded-2xl border ${
+            <div className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border ${
               isDark ? 'border-white/[0.08] bg-white/[0.02]' : 'border-black/[0.08] bg-black/[0.01]'
             }`}>
-              <h2 className="text-2xl font-extralight tracking-tight mb-6">{t.valuesHowWeWork}</h2>
-              <div className="space-y-6">
+              <h2 className="text-xl sm:text-2xl font-extralight tracking-tight mb-4 sm:mb-6">{t.valuesHowWeWork}</h2>
+              <div className="space-y-5 sm:space-y-6">
                 {Object.entries(displayTranslation.values_how_we_work).map(([key, value], index) => (
                   <div key={index}>
-                    <h3 className="text-base font-light mb-2">{key}</h3>
-                    <p className={`text-[15px] font-light leading-relaxed ${
+                    <h3 className="text-sm sm:text-base font-medium sm:font-light mb-2">{key}</h3>
+                    <p className={`text-sm sm:text-[15px] font-light leading-[1.8] sm:leading-relaxed ${
                       isDark ? 'text-white/60' : 'text-black/60'
                     }`}>{value}</p>
                   </div>
@@ -643,14 +657,14 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
 
           {/* Services */}
           {specialist.services && specialist.services.length > 0 && (
-            <div className={`p-8 rounded-2xl border ${
+            <div className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border ${
               isDark ? 'border-white/[0.08] bg-white/[0.02]' : 'border-black/[0.08] bg-black/[0.01]'
             }`}>
-              <div className="flex items-center gap-3 mb-6">
-                <Briefcase className="h-5 w-5 opacity-40" />
-                <h2 className="text-2xl font-extralight tracking-tight">{t.services}</h2>
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <Briefcase className="h-4 w-4 sm:h-5 sm:w-5 opacity-40" aria-hidden="true" />
+                <h2 className="text-xl sm:text-2xl font-extralight tracking-tight">{t.services}</h2>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 sm:gap-2">
                 {specialist.services.map((service) => {
                   const serviceTranslation = service.services?.service_translations?.find(t => t.language === locale) ||
                                             service.services?.service_translations?.[0]
@@ -665,7 +679,7 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
                     <Link
                       key={service.service_id}
                       href={serviceUrl}
-                      className={`px-4 py-2 rounded-full text-sm font-light border transition-colors ${
+                      className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-light border transition-colors ${
                         isDark 
                           ? 'border-white/10 bg-white/5 hover:bg-white/10' 
                           : 'border-black/10 bg-black/5 hover:bg-black/10'
@@ -681,21 +695,21 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
 
           {/* Credentials & Memberships */}
           {displayTranslation.credentials_memberships && displayTranslation.credentials_memberships.length > 0 && (
-            <div className={`p-8 rounded-2xl border ${
+            <div className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border ${
               isDark ? 'border-white/[0.08] bg-white/[0.02]' : 'border-black/[0.08] bg-black/[0.01]'
             }`}>
-              <div className="flex items-center gap-3 mb-6">
-                <Award className="h-5 w-5 opacity-40" />
-                <h2 className="text-2xl font-extralight tracking-tight">{t.credentialsMemberships}</h2>
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <Award className="h-4 w-4 sm:h-5 sm:w-5 opacity-40" aria-hidden="true" />
+                <h2 className="text-xl sm:text-2xl font-extralight tracking-tight">{t.credentialsMemberships}</h2>
               </div>
-              <ul className="space-y-3">
+              <ul className="space-y-4 sm:space-y-3">
                 {displayTranslation.credentials_memberships.map((item, index) => (
-                  <li key={index} className={`flex items-start gap-3 text-[15px] font-light ${
+                  <li key={index} className={`flex items-start gap-3 text-sm sm:text-[15px] leading-[1.7] font-light ${
                     isDark ? 'text-white/70' : 'text-black/70'
                   }`}>
-                    <span className={`mt-1.5 h-1 w-1 rounded-full flex-shrink-0 ${
+                    <span className={`mt-2 sm:mt-1.5 h-1.5 w-1.5 sm:h-1 sm:w-1 rounded-full flex-shrink-0 ${
                       isDark ? 'bg-white/40' : 'bg-black/40'
-                    }`} />
+                    }`} aria-hidden="true" />
                     {item}
                   </li>
                 ))}

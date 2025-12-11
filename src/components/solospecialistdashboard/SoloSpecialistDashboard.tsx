@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useTheme } from '@/contexts/ThemeContext'
 import { usePathname } from 'next/navigation'
 import { 
@@ -17,6 +18,13 @@ import { createClient } from '@/lib/supabase/client'
 
 type Locale = 'ka' | 'en' | 'ru'
 
+interface UserProfile {
+  full_name?: string
+  email?: string
+  avatar_url?: string
+  slug?: string
+}
+
 export default function SoloSpecialistDashboard() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
@@ -25,25 +33,40 @@ export default function SoloSpecialistDashboard() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [activeTab, setActiveTab] = useState('dashboard')
   const [verificationStatus, setVerificationStatus] = useState<string | null>(null)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
 
   useEffect(() => {
-    const fetchVerificationStatus = async () => {
+    const fetchUserData = async () => {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       
       if (user) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('verification_status')
+          .select('full_name, avatar_url, verification_status')
           .eq('id', user.id)
           .single()
         
+        // Fetch slug from specialist_translations for current locale
+        const { data: translationData } = await supabase
+          .from('specialist_translations')
+          .select('slug')
+          .eq('specialist_id', user.id)
+          .eq('language', locale)
+          .single()
+
         setVerificationStatus(profile?.verification_status || null)
+        setUserProfile({
+          full_name: profile?.full_name,
+          email: user.email || undefined,
+          avatar_url: profile?.avatar_url,
+          slug: translationData?.slug || undefined
+        })
       }
     }
     
-    fetchVerificationStatus()
-  }, [])
+    fetchUserData()
+  }, [locale])
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -185,6 +208,47 @@ export default function SoloSpecialistDashboard() {
             )}
           </button>
         </div>
+
+        {/* Profile Section - Clickable */}
+        <Link 
+          href={userProfile?.slug ? `/${locale}/specialists/${userProfile.slug}` : '#'}
+          className={`
+            flex items-center gap-3 p-4 border-b cursor-pointer
+            transition-all duration-200 hover:bg-white/5
+            ${isDark ? 'border-white/10' : 'border-black/10'}
+            ${!userProfile?.slug ? 'pointer-events-none' : ''}
+          `}
+        >
+          {/* Avatar */}
+          <div className={`
+            relative w-10 h-10 rounded-xl overflow-hidden flex-shrink-0
+            bg-gradient-to-br from-emerald-500 to-teal-600
+            flex items-center justify-center
+            shadow-lg shadow-emerald-500/30
+          `}>
+            {userProfile?.avatar_url ? (
+              <img 
+                src={userProfile.avatar_url} 
+                alt="Avatar" 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <User className="w-5 h-5 text-white" />
+            )}
+          </div>
+          
+          {/* Name & Email */}
+          {!isCollapsed && (
+            <div className="flex-1 min-w-0 overflow-hidden">
+              <p className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-black'}`}>
+                {userProfile?.full_name || 'სპეციალისტი'}
+              </p>
+              <p className={`text-xs truncate ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+                {userProfile?.email || ''}
+              </p>
+            </div>
+          )}
+        </Link>
 
         {/* Menu Items */}
         <nav className="flex-1 space-y-1 p-4">

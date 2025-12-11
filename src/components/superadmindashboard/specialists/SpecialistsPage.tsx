@@ -30,7 +30,7 @@ import ServicesField from '@/components/common/ServicesField'
 import SpecialistTranslations from './translations/SpecialistTranslations'
 import CityPicker from '@/components/companydashboard/companyprofile/CityPicker'
 
-const AVAILABLE_LANGUAGES = ['English', 'Georgian', 'Russian', 'German']
+const AVAILABLE_LANGUAGES = ['English', 'Georgian', 'Russian', 'German', 'Spanish']
 
 interface SpecialistProfile {
   id: string

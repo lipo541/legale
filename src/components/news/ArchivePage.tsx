@@ -615,7 +615,7 @@ export default function ArchivePage({ locale }: ArchivePageProps) {
                                 : 'bg-blue-500/10 text-blue-600'
                             }`}>
                               <Tag className="h-3 w-3" />
-                              <span className="hidden sm:inline">{categoryName}</span>
+                              <span className="truncate max-w-[120px] sm:max-w-none">{categoryName}</span>
                             </div>
                           )}
 
@@ -639,7 +639,7 @@ export default function ArchivePage({ locale }: ArchivePageProps) {
                               <span className="text-[10px] sm:text-xs">{formatDate(post.published_at)}</span>
                             </div>
                             {translation.reading_time && (
-                              <span className="hidden sm:inline text-xs">
+                              <span className="text-[10px] sm:text-xs">
                                 {translation.reading_time} {t?.readingTimeMinutes || 'წუთი'}
                               </span>
                             )}
@@ -682,7 +682,7 @@ export default function ArchivePage({ locale }: ArchivePageProps) {
                                   : 'bg-blue-500/10 text-blue-600'
                               }`}>
                                 <Tag className="h-3 w-3" />
-                                <span className="hidden sm:inline">{categoryName}</span>
+                                <span className="truncate max-w-[100px] sm:max-w-none">{categoryName}</span>
                               </div>
                             </div>
                           )}
@@ -693,7 +693,7 @@ export default function ArchivePage({ locale }: ArchivePageProps) {
                             {translation.title}
                           </h3>
                           
-                          <p className={`text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-2 hidden sm:block ${
+                          <p className={`text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-1 sm:line-clamp-2 ${
                             isDark ? 'text-white/60' : 'text-black/60'
                           }`}>
                             {translation.excerpt}
@@ -707,7 +707,7 @@ export default function ArchivePage({ locale }: ArchivePageProps) {
                               <span className="text-[10px] sm:text-xs">{formatDate(post.published_at)}</span>
                             </div>
                             {translation.reading_time && (
-                              <span className="hidden sm:inline text-xs">
+                              <span className="text-[10px] sm:text-xs">
                                 {translation.reading_time} {t?.readingTimeMinutes || 'წუთი'}
                               </span>
                             )}

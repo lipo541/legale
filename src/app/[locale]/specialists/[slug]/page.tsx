@@ -58,7 +58,8 @@ async function getSpecialistAlternates(specialistId: string) {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const resolvedParams = await params
-  const { slug, locale } = resolvedParams
+  const { slug: encodedSlug, locale } = resolvedParams
+  const slug = decodeURIComponent(encodedSlug)
   const baseUrl = siteConfig.baseUrl
   const supabase = createStaticClient()
 
@@ -261,7 +262,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function SpecialistPage({ params }: PageProps) {
   const resolvedParams = await params
-  const slug = resolvedParams.slug
+  const slug = decodeURIComponent(resolvedParams.slug)
   const locale = resolvedParams.locale || 'ka'
 
   // Check if slug belongs to different language - server-side redirect

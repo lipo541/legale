@@ -135,7 +135,7 @@ export default function PostPageClient({ post, author, category, relatedPosts, l
         </Link>
 
         {/* Main Article Card */}
-        <article className={`p-8 sm:p-10 rounded-2xl ring-1 mb-12 ${
+        <article className={`p-4 sm:p-6 md:p-8 lg:p-10 rounded-2xl ring-1 mb-12 ${
           isDark ? 'bg-white/[0.02] ring-white/[0.08]' : 'bg-black/[0.02] ring-black/[0.08]'
         }`}>
           {/* Category Badge */}
@@ -154,13 +154,13 @@ export default function PostPageClient({ post, author, category, relatedPosts, l
           )}
 
           {/* Title */}
-          <h1 className="text-3xl sm:text-4xl font-extralight tracking-tight mb-4 leading-tight">
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extralight tracking-tight mb-4 leading-tight">
             {post.title}
           </h1>
 
           {/* Excerpt */}
           {post.excerpt && (
-            <p className={`text-lg font-light mb-6 leading-relaxed ${
+            <p className={`text-sm sm:text-base md:text-lg font-light mb-6 leading-relaxed ${
               isDark ? 'text-white/60' : 'text-black/60'
             }`}>
               {post.excerpt}
@@ -279,7 +279,7 @@ export default function PostPageClient({ post, author, category, relatedPosts, l
 
           {/* Content */}
           <div 
-            className={`prose prose-lg max-w-none ${
+            className={`prose prose-sm md:prose-base max-w-none [&>p]:text-[14px] [&>p]:leading-relaxed sm:[&>p]:text-[15px] md:[&>p]:text-base ${
               isDark 
                 ? 'prose-invert prose-headings:font-extralight prose-headings:tracking-tight prose-p:font-light prose-p:text-white/70' 
                 : 'prose-headings:font-extralight prose-headings:tracking-tight prose-p:font-light prose-p:text-black/70'
@@ -290,10 +290,10 @@ export default function PostPageClient({ post, author, category, relatedPosts, l
 
         {/* Related Posts */}
         {relatedPosts.length > 0 && (
-          <section className={`p-8 sm:p-10 rounded-2xl ring-1 ${
+          <section className={`p-4 sm:p-6 md:p-8 lg:p-10 rounded-2xl ring-1 ${
             isDark ? 'bg-white/[0.02] ring-white/[0.08]' : 'bg-black/[0.02] ring-black/[0.08]'
           }`}>
-            <h2 className="text-2xl font-extralight tracking-tight mb-6">
+            <h2 className="text-xl sm:text-2xl font-extralight tracking-tight mb-6">
               მსგავსი სტატიები
             </h2>
             

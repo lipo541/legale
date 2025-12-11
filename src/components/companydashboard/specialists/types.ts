@@ -28,4 +28,4 @@ export interface Specialist {
   updated_at: string
 }
 
-export const AVAILABLE_LANGUAGES = ['English', 'Georgian', 'Russian', 'German']
+export const AVAILABLE_LANGUAGES = ['English', 'Georgian', 'Russian', 'German', 'Spanish']

@@ -41,9 +41,10 @@ export function LanguageSwitcher() {
     // Get the translated URL
     const newPathname = await getTranslatedUrl(pathname, newLocale, currentLang)
     
-    router.push(newPathname)
-    router.refresh()
     setIsOpen(false)
+    
+    // Use window.location for full page reload to ensure proper language change
+    window.location.href = newPathname
   }
 
   return (

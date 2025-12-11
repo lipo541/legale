@@ -62,9 +62,9 @@ export default function Position10({ posts }: Position10Props) {
   }
 
   return (
-    <Link href={`/${locale}/news/${translation.slug}`} className="block h-full">
+    <Link href={`/${locale}/news/${translation.slug}`} className="block h-full overflow-hidden">
       {/* Mobile: Horizontal compact card */}
-      <div className={`md:hidden group flex items-center gap-3 p-2 rounded-xl transition-all duration-300 active:scale-[0.98] ${
+      <div className={`md:hidden group flex h-full items-center gap-3 p-2 rounded-xl overflow-hidden transition-all duration-300 active:scale-[0.98] ${
         isDark 
           ? 'bg-white/5 border border-white/10' 
           : 'bg-black/5 border border-black/10'
@@ -85,7 +85,7 @@ export default function Position10({ posts }: Position10Props) {
         
         {/* Right: Content */}
         <div className="flex-1 min-w-0">
-          <span className={`inline-block mb-0.5 rounded px-1 py-0.5 text-[8px] font-medium ${
+          <span className={`inline-block mb-0.5 rounded px-1 py-0.5 text-[10px] font-medium ${
             isDark ? 'bg-white/10 text-white/70' : 'bg-black/10 text-black/70'
           }`}>
             {translation.category}
@@ -98,8 +98,48 @@ export default function Position10({ posts }: Position10Props) {
         </div>
       </div>
 
+      {/* Tablet: Horizontal card with image left, content right */}
+      <div className={`hidden md:flex lg:hidden group h-full items-center gap-3 p-3 rounded-xl overflow-hidden transition-all duration-300 hover:scale-[0.99] ${
+        isDark 
+          ? 'bg-white/5 border border-white/10 hover:border-white/20' 
+          : 'bg-black/5 border border-black/10 hover:border-black/20'
+      }`}>
+        {/* Left: Image */}
+        <div className="relative h-full w-[40%] flex-shrink-0 overflow-hidden rounded-lg">
+          {post.featured_image_url ? (
+            <img
+              src={getOptimizedImageUrl(post.featured_image_url, imagePresets.cardLarge)}
+              alt={translation.title}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              loading="lazy"
+            />
+          ) : (
+            <div className={`h-full w-full ${isDark ? 'bg-white/10' : 'bg-black/10'}`} />
+          )}
+        </div>
+        
+        {/* Right: Content */}
+        <div className="flex-1 min-w-0 flex flex-col justify-center">
+          <span className={`inline-block self-start mb-1.5 rounded px-1.5 py-0.5 text-[10px] font-medium bg-red-600 text-white`}>
+            {translation.category}
+          </span>
+          <h3 className={`text-sm font-semibold leading-snug line-clamp-3 ${
+            isDark ? 'text-white' : 'text-black'
+          }`}>
+            {translation.title}
+          </h3>
+          {translation.excerpt && (
+            <p className={`mt-1.5 text-[11px] leading-relaxed line-clamp-2 ${
+              isDark ? 'text-white/60' : 'text-black/60'
+            }`}>
+              {translation.excerpt}
+            </p>
+          )}
+        </div>
+      </div>
+
       {/* Desktop: Original vertical card */}
-      <div className={`hidden md:block group relative h-full overflow-hidden rounded-xl transition-all duration-300 hover:shadow-lg ${
+      <div className={`hidden lg:block group relative h-full overflow-hidden rounded-xl transition-all duration-300 hover:shadow-lg ${
         isDark 
           ? 'bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/10 hover:border-white/20' 
           : 'bg-black border border-gray-800 hover:border-gray-700'
@@ -130,7 +170,7 @@ export default function Position10({ posts }: Position10Props) {
 
         {/* Content Section (Bottom 30%) */}
         <div className="relative flex h-[30%] flex-col justify-center p-2">
-          <h3 className={`text-[11px] md:text-xs font-semibold leading-snug line-clamp-2 ${
+          <h3 className={`text-xs font-semibold leading-snug line-clamp-2 ${
             isDark ? 'text-white' : 'text-white'
           }`}>
             {translation.title}

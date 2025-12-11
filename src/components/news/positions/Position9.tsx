@@ -55,7 +55,7 @@ export default function Position9({ posts }: Position9Props) {
           isDark ? 'border-white/10' : 'border-black/10'
         }`}>
           <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
-          <span className={`text-[9px] font-medium uppercase tracking-wider ${
+          <span className={`text-[10px] font-medium uppercase tracking-wider ${
             isDark ? 'text-white/60' : 'text-black/60'
           }`}>
             {t.newsTitle}
@@ -85,10 +85,10 @@ export default function Position9({ posts }: Position9Props) {
                     {translation.title}
                   </p>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className={`text-[9px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                    <span className={`text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
                       {publishedTime}
                     </span>
-                    <span className="rounded px-1 py-0.5 text-[8px] bg-red-600 text-white">
+                    <span className="rounded px-1 py-0.5 text-[10px] bg-red-600 text-white">
                       {translation.category}
                     </span>
                   </div>
@@ -107,10 +107,10 @@ export default function Position9({ posts }: Position9Props) {
         isDark ? 'bg-white/5' : 'bg-black/5'
       }`}>
         {/* Header */}
-        <div className="border-b p-3" style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
+        <div className="border-b p-2 md:p-2 lg:p-3" style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
           <div className="flex items-center gap-2">
             <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
-            <span className={`text-[10px] font-medium uppercase tracking-wider ${
+            <span className={`text-[10px] md:text-[10px] lg:text-[10px] font-medium uppercase tracking-wider ${
               isDark ? 'text-white/60' : 'text-black/60'
             }`}>
               {t.newsTitle}
@@ -119,12 +119,12 @@ export default function Position9({ posts }: Position9Props) {
         </div>
 
         {/* Vertical slider */}
-        <div className="h-[calc(100%-3.5rem)] p-3">
+        <div className="h-[calc(100%-2.5rem)] md:h-[calc(100%-2.5rem)] lg:h-[calc(100%-3.5rem)] p-2 md:p-2 lg:p-3">
           <Swiper
             modules={[Autoplay]}
             direction="vertical"
             slidesPerView={3}
-            spaceBetween={10}
+            spaceBetween={6}
             autoplay={{ delay: 3000, disableOnInteraction: false }}
             loop={posts.length > 3}
             className="h-full"
@@ -140,19 +140,19 @@ export default function Position9({ posts }: Position9Props) {
                 <SwiperSlide key={post.id}>
                   <Link
                     href={`/${locale}/news/${translation.slug}`}
-                    className={`block cursor-pointer rounded-lg p-2.5 transition-colors hover:${
+                    className={`block cursor-pointer rounded-lg p-1.5 md:p-1.5 lg:p-2.5 transition-colors hover:${
                       isDark ? 'bg-white/10' : 'bg-black/10'
                     }`}
                   >
-                    <div className="mb-1.5 flex items-center justify-between">
+                    <div className="mb-1 flex items-center justify-between">
                       <span className={`text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
                         {publishedTime}
                       </span>
-                      <span className="rounded-full px-1.5 py-0.5 text-[9px] bg-red-600 text-white">
+                      <span className="rounded-full px-1 py-0.5 text-[10px] bg-red-600 text-white">
                         {translation.category}
                       </span>
                     </div>
-                    <p className={`text-xs leading-snug line-clamp-2 ${
+                    <p className={`text-[10px] md:text-[10px] lg:text-xs leading-snug line-clamp-2 ${
                       isDark ? 'text-white/80' : 'text-black/80'
                     }`}>
                       {translation.title}

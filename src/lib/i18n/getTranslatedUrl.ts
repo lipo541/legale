@@ -10,7 +10,14 @@ export async function getTranslatedUrl(
   currentLocale: string,
 ): Promise<string> {
   // Remove leading slash and split path into segments
-  const segments = currentPath.replace(/^\//, '').split('/')
+  // Decode URI components to handle encoded slugs (e.g., Georgian characters)
+  const segments = currentPath.replace(/^\//, '').split('/').map(seg => {
+    try {
+      return decodeURIComponent(seg)
+    } catch {
+      return seg
+    }
+  })
 
   // Remove current locale from segments
   const pathWithoutLocale = segments.filter(seg => seg !== currentLocale)

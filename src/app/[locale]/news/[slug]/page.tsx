@@ -39,7 +39,8 @@ async function getPostBySlug(slug: string, locale: string) {
 }
 
 export default async function PostPage({ params }: PageProps) {
-  const { locale, slug } = await params
+  const { locale, slug: encodedSlug } = await params
+  const slug = decodeURIComponent(encodedSlug)
   const supabase = createStaticClient()
 
   // Check if slug belongs to different language - server-side redirect
@@ -216,7 +217,8 @@ export default async function PostPage({ params }: PageProps) {
 
 // Generate metadata
 export async function generateMetadata({ params }: PageProps) {
-  const { locale, slug } = await params
+  const { locale, slug: encodedSlug } = await params
+  const slug = decodeURIComponent(encodedSlug)
   const supabase = createStaticClient()
 
   // Step 1: Find the post translation by slug and locale to get the post_id

@@ -62,14 +62,14 @@ export default function Position4() {
   }
 
   return (
-    <Link href={`/${locale}/news/archive`} className="block h-full">
+    <Link href={`/${locale}/news/archive`} className="block h-full overflow-hidden">
       {/* Mobile: Clean, minimal stats bar */}
-      <div className={`md:hidden group rounded-xl transition-all duration-200 active:scale-[0.98] ${
+      <div className={`md:hidden group h-full rounded-xl overflow-hidden transition-all duration-200 active:scale-[0.98] ${
         isDark 
           ? 'bg-white/5 border border-white/10' 
           : 'bg-black/5 border border-black/10'
       }`}>
-        <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex h-full items-center justify-between px-4 py-3">
           {/* Left: Icon + Number */}
           <div className="flex items-center gap-3">
             <div className={`rounded-lg p-2 ${
@@ -88,7 +88,7 @@ export default function Position4() {
                   isDark ? 'text-white/30' : 'text-black/30'
                 }`}>+</span>
               </div>
-              <p className={`text-[9px] ${
+              <p className={`text-[11px] ${
                 isDark ? 'text-white/50' : 'text-black/50'
               }`}>
                 {t.legalArticles}
@@ -114,17 +114,17 @@ export default function Position4() {
           isDark ? 'bg-gradient-to-r from-blue-500/50 to-purple-500/50' : 'bg-gradient-to-r from-blue-500 to-purple-500'
         }`} />
 
-        <div className="relative flex h-full flex-col justify-between p-3 sm:p-4 md:p-5">
+        <div className="relative flex h-full flex-col justify-between p-2 sm:p-3 md:p-3 lg:p-4 overflow-hidden">
           {/* Header with Icon */}
           <div className="flex items-start justify-between">
-            <div className={`rounded-lg p-1.5 sm:p-2 ${
+            <div className={`rounded-lg p-1.5 ${
               isDark ? 'bg-white/5' : 'bg-black/5'
             }`}>
-              <Archive className={`h-4 w-4 sm:h-5 sm:w-5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} strokeWidth={2} />
+              <Archive className={`h-4 w-4 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} strokeWidth={2} />
             </div>
             
             {/* Small badge */}
-            <span className={`text-[10px] sm:text-xs font-medium px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full ${
+            <span className={`text-[9px] md:text-[10px] lg:text-xs font-medium px-1.5 py-0.5 rounded-full ${
               isDark ? 'bg-white/10 text-white/70' : 'bg-black/5 text-black/60'
             }`}>
               {t.total}
@@ -132,15 +132,15 @@ export default function Position4() {
           </div>
 
           {/* Main Content */}
-          <div className="space-y-1 sm:space-y-2">
+          <div className="space-y-0.5 md:space-y-1">
             {/* Dynamic Number */}
             <div className="flex items-baseline gap-1">
-              <span className={`text-xl sm:text-2xl md:text-3xl font-bold tabular-nums ${
+              <span className={`text-lg md:text-xl lg:text-2xl font-bold tabular-nums ${
                 isDark ? 'text-white' : 'text-black'
               }`}>
                 {formatNumber(totalPosts)}
               </span>
-              <span className={`text-base sm:text-lg md:text-xl font-semibold ${
+              <span className={`text-sm md:text-base lg:text-lg font-semibold ${
                 isDark ? 'text-white/50' : 'text-black/40'
               }`}>
                 +
@@ -148,20 +148,20 @@ export default function Position4() {
             </div>
 
             {/* Description */}
-            <p className={`text-[11px] sm:text-xs font-medium leading-snug ${
+            <p className={`text-[10px] md:text-[11px] lg:text-xs font-medium leading-tight line-clamp-1 ${
               isDark ? 'text-white/80' : 'text-black/80'
             }`}>
               {t.legalArticles}
             </p>
 
             {/* CTA Link */}
-            <div className={`group/link inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-medium transition-colors ${
+            <div className={`group/link inline-flex items-center gap-1 text-[9px] md:text-[10px] font-medium transition-colors ${
               isDark 
                 ? 'text-blue-400 hover:text-blue-300' 
                 : 'text-blue-600 hover:text-blue-700'
             }`}>
-              <span>{t.viewAllInArchive}</span>
-              <ArrowRight className="h-2.5 w-2.5 sm:h-3 sm:w-3 transition-transform group-hover/link:translate-x-0.5" />
+              <span className="line-clamp-1">{t.viewAllInArchive}</span>
+              <ArrowRight className="h-2.5 w-2.5 flex-shrink-0 transition-transform group-hover/link:translate-x-0.5" />
             </div>
           </div>
         </div>

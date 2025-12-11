@@ -103,13 +103,13 @@ export default function Position1({ posts }: Position1Props) {
                     <div className="max-w-2xl space-y-2 sm:space-y-3">
                       {/* Category Badge */}
                       {translation.category && (
-                        <span className="inline-block rounded-lg px-2.5 py-1 text-[9px] sm:text-[8px] md:text-[9px] font-bold uppercase bg-red-600 text-white backdrop-blur-sm">
+                        <span className="inline-block rounded-lg px-2.5 py-1 text-[10px] sm:text-[10px] md:text-[10px] font-bold uppercase bg-red-600 text-white backdrop-blur-sm">
                           {translation.category}
                         </span>
                       )}
                       
                       {/* Title */}
-                      <h2 className="text-sm sm:text-xs md:text-sm lg:text-base font-bold leading-tight text-white line-clamp-4 sm:line-clamp-5">
+                      <h2 className="text-xs sm:text-sm md:text-sm lg:text-base font-bold leading-tight text-white line-clamp-4 sm:line-clamp-5">
                         {translation.title}
                       </h2>
                     </div>

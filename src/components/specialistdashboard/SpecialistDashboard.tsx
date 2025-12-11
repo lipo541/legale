@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, memo, useRef } from 'react'
+import Link from 'next/link'
 import { useTheme } from '@/contexts/ThemeContext'
 import { 
   LayoutDashboard,
@@ -33,6 +34,7 @@ interface UserProfile {
   email?: string
   avatar_url?: string
   verification_status?: string
+  slug?: string
 }
 
 // ============================================================================
@@ -299,13 +301,22 @@ export default function SpecialistDashboard() {
           .select('full_name, avatar_url, verification_status')
           .eq('id', user.id)
           .single()
+
+        // Fetch slug from specialist_translations for current locale
+        const { data: translationData } = await supabase
+          .from('specialist_translations')
+          .select('slug')
+          .eq('specialist_id', user.id)
+          .eq('language', currentLocale)
+          .single()
         
         setVerificationStatus(profile?.verification_status || null)
         setUserProfile({
           full_name: profile?.full_name,
           email: user.email,
           avatar_url: profile?.avatar_url,
-          verification_status: profile?.verification_status
+          verification_status: profile?.verification_status,
+          slug: translationData?.slug || undefined
         })
 
         // Fetch posts count
@@ -319,7 +330,7 @@ export default function SpecialistDashboard() {
     }
     
     fetchUserData()
-  }, [supabase])
+  }, [supabase, currentLocale])
 
   // ============================================================================
   // Handlers
@@ -411,11 +422,17 @@ export default function SpecialistDashboard() {
             backdrop-blur-2xl
           `}
         >
-          {/* Profile Section */}
-          <div className={`
-            flex items-center gap-3 p-4 border-b
-            ${isDark ? 'border-white/10' : 'border-black/10'}
-          `}>
+          {/* Profile Section - Clickable to navigate to public profile */}
+          <Link 
+            href={userProfile?.slug ? `/${currentLocale}/specialists/${userProfile.slug}` : '#'}
+            className={`
+              flex items-center gap-3 p-4 border-b cursor-pointer
+              transition-all duration-200 hover:bg-white/5
+              ${isDark ? 'border-white/10' : 'border-black/10'}
+              ${!userProfile?.slug ? 'pointer-events-none' : ''}
+            `}
+            title={userProfile?.slug ? t.viewProfile : ''}
+          >
             {/* Avatar */}
             <div className={`
               relative w-10 h-10 rounded-xl overflow-hidden flex-shrink-0
@@ -447,7 +464,7 @@ export default function SpecialistDashboard() {
                 {userProfile?.email || ''}
               </p>
             </div>
-          </div>
+          </Link>
 
           {/* Navigation Items */}
           <nav className="flex-1 p-3 space-y-1 overflow-y-auto">

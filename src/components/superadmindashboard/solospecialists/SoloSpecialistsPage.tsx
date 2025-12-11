@@ -32,7 +32,7 @@ import ServicesField from '@/components/common/ServicesField'
 import SpecialistTranslations from '@/components/superadmindashboard/specialists/translations/SpecialistTranslations'
 import CityPicker from '@/components/companydashboard/companyprofile/CityPicker'
 
-const AVAILABLE_LANGUAGES = ['English', 'Georgian', 'Russian', 'German']
+const AVAILABLE_LANGUAGES = ['English', 'Georgian', 'Russian', 'German', 'Spanish']
 
 interface SoloSpecialistProfile {
   id: string

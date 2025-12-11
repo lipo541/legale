@@ -45,7 +45,7 @@ interface ProfileData {
   updated_at: string
 }
 
-const AVAILABLE_LANGUAGES = ['English', 'Georgian', 'Russian', 'German']
+const AVAILABLE_LANGUAGES = ['English', 'Georgian', 'Russian', 'German', 'Spanish']
 
 export default function ProfilePage({ locale }: ProfilePageProps) {
   const { theme } = useTheme()

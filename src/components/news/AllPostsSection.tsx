@@ -463,7 +463,7 @@ export default function AllPostsSection() {
                   <h3 className={`text-sm md:text-lg font-bold ${isDark ? 'text-white' : 'text-black'}`}>
                     {name}
                   </h3>
-                  <span className={`rounded-full px-1.5 md:px-2 py-0.5 text-[9px] md:text-[10px] font-medium ${
+                  <span className={`rounded-full px-1.5 md:px-2 py-0.5 text-[10px] md:text-[10px] font-medium ${
                     isDark ? 'bg-white/10 text-white/70' : 'bg-black/10 text-black/70'
                   }`}>
                     {posts.length}
@@ -531,7 +531,7 @@ export default function AllPostsSection() {
                         {/* Meta info */}
                         <div className="mb-1.5 md:mb-2 flex items-center justify-between gap-2">
                           <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
-                            <span className={`text-[9px] md:text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                            <span className={`text-[10px] md:text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
                               {formatDate(post.published_at)}
                             </span>
                             {post.author?.full_name && post.author.id && (
@@ -542,13 +542,13 @@ export default function AllPostsSection() {
                                     e.stopPropagation()
                                     window.location.href = `/${locale}/news/author/${post.author!.id}`
                                   }}
-                                  className={`text-[9px] md:text-[10px] transition-colors hover:underline ${isDark ? 'text-white/40 hover:text-white/60' : 'text-black/40 hover:text-black/60'}`}
+                                  className={`text-[10px] md:text-[10px] transition-colors hover:underline ${isDark ? 'text-white/40 hover:text-white/60' : 'text-black/40 hover:text-black/60'}`}
                                 >
                                   {post.author.full_name}
                                 </button>
                                 {post.author.role === 'SPECIALIST' && post.author.company?.full_name && post.author.company_id && (
                                   <>
-                                    <span className={`text-[9px] md:text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                                    <span className={`text-[10px] md:text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
                                       •
                                     </span>
                                     <button
@@ -557,7 +557,7 @@ export default function AllPostsSection() {
                                         e.stopPropagation()
                                         window.location.href = `/${locale}/news/author/${post.author!.company_id}`
                                       }}
-                                      className={`text-[9px] md:text-[10px] transition-colors hover:underline ${isDark ? 'text-emerald-400/60 hover:text-emerald-400' : 'text-emerald-600/60 hover:text-emerald-600'}`}
+                                      className={`text-[10px] md:text-[10px] transition-colors hover:underline ${isDark ? 'text-emerald-400/60 hover:text-emerald-400' : 'text-emerald-600/60 hover:text-emerald-600'}`}
                                     >
                                       {post.author.company.full_name}
                                     </button>
@@ -566,7 +566,7 @@ export default function AllPostsSection() {
                               </div>
                             )}
                           </div>
-                          <span className={`text-[9px] md:text-[10px] flex-shrink-0 ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                          <span className={`text-[10px] md:text-[10px] flex-shrink-0 ${isDark ? 'text-white/40' : 'text-black/40'}`}>
                             {translation?.reading_time ?? '-'} {t.readingTimeMinutes}
                           </span>
                         </div>
@@ -593,7 +593,7 @@ export default function AllPostsSection() {
 
                         {/* Action */}
                         <div className="flex justify-end pt-2 md:pt-2.5 mt-auto border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}>
-                          <button className={`flex items-center gap-0.5 text-[9px] md:text-[10px] font-medium transition-all group-hover:translate-x-1 ${
+                          <button className={`flex items-center gap-0.5 text-[10px] md:text-[10px] font-medium transition-all group-hover:translate-x-1 ${
                             isDark ? 'text-white/60 hover:text-white' : 'text-black/60 hover:text-black'
                           }`}>
                             <span>{t.readMore}</span>

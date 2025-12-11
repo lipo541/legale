@@ -59,6 +59,7 @@ export default function SpecialistsPage() {
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [selectedSpecialistType, setSelectedSpecialistType] = useState<string | null>(null);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
 
   // View mode state - start with 'grid' to avoid hydration mismatch
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -200,8 +201,38 @@ export default function SpecialistsPage() {
           allSpecialistIds = searchFilteredIds;
         }
       }
+
+      // 4. Filter by languages if selected
+      // Languages is stored as JSONB array, so we need to check if ALL selected languages exist
+      // Using AND logic - specialist must have ALL selected languages
+      if (selectedLanguages.length > 0) {
+        const { data: languageFilteredData } = await supabase
+          .from('profiles')
+          .select('id, languages')
+          .in('role', ['SPECIALIST', 'SOLO_SPECIALIST']);
+
+        // Filter in JavaScript to check if ALL selected languages are present
+        const languageFilteredIds = languageFilteredData
+          ?.filter(profile => {
+            const profileLanguages = profile.languages as string[] || [];
+            // Check if ALL selected languages exist in profile's languages
+            return selectedLanguages.every(lang => profileLanguages.includes(lang));
+          })
+          .map(p => p.id) || [];
+        
+        if (allSpecialistIds.length > 0) {
+          // Intersect with existing IDs
+          allSpecialistIds = allSpecialistIds.filter(id => languageFilteredIds.includes(id));
+        } else if (selectedCity || selectedServices.length > 0 || debouncedSearchTerm) {
+          // If other filters were applied but no results, keep empty
+          allSpecialistIds = [];
+        } else {
+          // Only language filter applied
+          allSpecialistIds = languageFilteredIds;
+        }
+      }
       
-      const hasFilters = selectedCity || selectedServices.length > 0 || debouncedSearchTerm;
+      const hasFilters = selectedCity || selectedServices.length > 0 || debouncedSearchTerm || selectedLanguages.length > 0;
       
       // 4. Fetch solo specialists based on type filter
       if (!selectedSpecialistType || selectedSpecialistType === 'solo') {
@@ -378,7 +409,7 @@ export default function SpecialistsPage() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearchTerm, selectedCity, selectedSpecialistType, selectedServices, sortSpecialists, locale]);
+  }, [debouncedSearchTerm, selectedCity, selectedSpecialistType, selectedServices, selectedLanguages, sortSpecialists, locale]);
 
   useEffect(() => {
     fetchSpecialists();
@@ -406,6 +437,7 @@ export default function SpecialistsPage() {
             onCityChange={setSelectedCity}
             onSpecialistTypeChange={setSelectedSpecialistType}
             onServicesChange={setSelectedServices}
+            onLanguagesChange={setSelectedLanguages}
             viewMode={viewMode}
             onViewModeChange={setViewMode}
             sortBy={sortBy}
@@ -426,68 +458,191 @@ export default function SpecialistsPage() {
         {/* Divider */}
         <div className="mb-8 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent dark:via-white/20"></div>
 
-        {/* Company Specialists Section */}
-        <div className="mb-12">
-          <h2 className="mb-4 text-base font-semibold sm:text-lg md:text-xl">
-            {t.companySpecialists} ({companySpecialists.length})
-          </h2>
-          {loading ? (
-            <div className={viewMode === 'grid' 
-              ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-              : "flex flex-col gap-4"
-            }>
-              {Array.from({ length: 6 }).map((_, i) => (
-                <SpecialistCardSkeleton key={i} viewMode={viewMode} />
-              ))}
-            </div>
-          ) : companySpecialists.length > 0 ? (
-            <div className={viewMode === 'grid' 
-              ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-              : "flex flex-col gap-4"
-            }>
-              {companySpecialists.map((specialist) => (
-                <CompanySpecialistCard key={specialist.id} specialist={specialist} viewMode={viewMode} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 text-base opacity-60">
-              {t.noResultsDescription}
-            </div>
-          )}
-        </div>
+        {/* Dynamic Sections based on filter type */}
+        {/* When "solo" is selected, show only solo specialists */}
+        {/* When "company" is selected, show only company specialists */}
+        {/* When city/language/service filter is active (without type filter), show unified results */}
+        {/* When no filter, show both with company first */}
 
-        {/* Divider */}
-        <div className="mb-8 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent dark:via-white/20"></div>
+        {/* Check if we have other filters active (city, language, services) but no type filter */}
+        {(() => {
+          const hasOtherFilters = selectedCity || selectedLanguages.length > 0 || selectedServices.length > 0 || debouncedSearchTerm;
+          const totalResults = soloSpecialists.length + companySpecialists.length;
 
-        {/* Solo Specialists Section */}
-        <div className="mb-12">
-          <h2 className="mb-4 text-base font-semibold sm:text-lg md:text-xl">
-            {t.soloSpecialists} ({soloSpecialists.length})
-          </h2>
-          {loading ? (
-            <div className={viewMode === 'grid' 
-              ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-              : "flex flex-col gap-4"
-            }>
-              {Array.from({ length: 6 }).map((_, i) => (
-                <SpecialistCardSkeleton key={i} viewMode={viewMode} />
-              ))}
-            </div>
-          ) : soloSpecialists.length > 0 ? (
-            <div className={viewMode === 'grid' 
-              ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-              : "flex flex-col gap-4"
-            }>
-              {soloSpecialists.map((specialist) => (
-                <SoloSpecialistCard key={specialist.id} specialist={specialist} viewMode={viewMode} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 text-base opacity-60">
-              {t.noResultsDescription}
-            </div>
-          )}
-        </div>
+          // Unified filtered results view - when city, language, or service filter is active without type filter
+          if (hasOtherFilters && !selectedSpecialistType) {
+            return (
+              <div className="mb-12">
+                <h2 className="mb-4 text-base font-semibold sm:text-lg md:text-xl">
+                  {t.filteredResults} ({totalResults})
+                </h2>
+                {loading ? (
+                  <div className={viewMode === 'grid' 
+                    ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                    : "flex flex-col gap-4"
+                  }>
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <SpecialistCardSkeleton key={i} viewMode={viewMode} />
+                    ))}
+                  </div>
+                ) : totalResults > 0 ? (
+                  <div className={viewMode === 'grid' 
+                    ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                    : "flex flex-col gap-4"
+                  }>
+                    {/* Show all specialists in unified view - solo first, then company */}
+                    {soloSpecialists.map((specialist) => (
+                      <SoloSpecialistCard key={specialist.id} specialist={specialist} viewMode={viewMode} />
+                    ))}
+                    {companySpecialists.map((specialist) => (
+                      <CompanySpecialistCard key={specialist.id} specialist={specialist} viewMode={viewMode} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-base opacity-60">
+                    {t.noResultsDescription}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          // Solo specialists only - when type filter is "solo"
+          if (selectedSpecialistType === 'solo') {
+            return (
+              <div className="mb-12">
+                <h2 className="mb-4 text-base font-semibold sm:text-lg md:text-xl">
+                  {t.soloSpecialists} ({soloSpecialists.length})
+                </h2>
+                {loading ? (
+                  <div className={viewMode === 'grid' 
+                    ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                    : "flex flex-col gap-4"
+                  }>
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <SpecialistCardSkeleton key={i} viewMode={viewMode} />
+                    ))}
+                  </div>
+                ) : soloSpecialists.length > 0 ? (
+                  <div className={viewMode === 'grid' 
+                    ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                    : "flex flex-col gap-4"
+                  }>
+                    {soloSpecialists.map((specialist) => (
+                      <SoloSpecialistCard key={specialist.id} specialist={specialist} viewMode={viewMode} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-base opacity-60">
+                    {t.noResultsDescription}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          // Company specialists only - when type filter is "company"
+          if (selectedSpecialistType === 'company') {
+            return (
+              <div className="mb-12">
+                <h2 className="mb-4 text-base font-semibold sm:text-lg md:text-xl">
+                  {t.companySpecialists} ({companySpecialists.length})
+                </h2>
+                {loading ? (
+                  <div className={viewMode === 'grid' 
+                    ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                    : "flex flex-col gap-4"
+                  }>
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <SpecialistCardSkeleton key={i} viewMode={viewMode} />
+                    ))}
+                  </div>
+                ) : companySpecialists.length > 0 ? (
+                  <div className={viewMode === 'grid' 
+                    ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                    : "flex flex-col gap-4"
+                  }>
+                    {companySpecialists.map((specialist) => (
+                      <CompanySpecialistCard key={specialist.id} specialist={specialist} viewMode={viewMode} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-base opacity-60">
+                    {t.noResultsDescription}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          // Default view - no filters, show both sections
+          return (
+            <>
+              {/* Company Specialists Section */}
+              <div className="mb-12">
+                <h2 className="mb-4 text-base font-semibold sm:text-lg md:text-xl">
+                  {t.companySpecialists} ({companySpecialists.length})
+                </h2>
+                {loading ? (
+                  <div className={viewMode === 'grid' 
+                    ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                    : "flex flex-col gap-4"
+                  }>
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <SpecialistCardSkeleton key={i} viewMode={viewMode} />
+                    ))}
+                  </div>
+                ) : companySpecialists.length > 0 ? (
+                  <div className={viewMode === 'grid' 
+                    ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                    : "flex flex-col gap-4"
+                  }>
+                    {companySpecialists.map((specialist) => (
+                      <CompanySpecialistCard key={specialist.id} specialist={specialist} viewMode={viewMode} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-base opacity-60">
+                    {t.noResultsDescription}
+                  </div>
+                )}
+              </div>
+
+              {/* Divider */}
+              <div className="mb-8 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent dark:via-white/20"></div>
+
+              {/* Solo Specialists Section */}
+              <div className="mb-12">
+                <h2 className="mb-4 text-base font-semibold sm:text-lg md:text-xl">
+                  {t.soloSpecialists} ({soloSpecialists.length})
+                </h2>
+                {loading ? (
+                  <div className={viewMode === 'grid' 
+                    ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                    : "flex flex-col gap-4"
+                  }>
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <SpecialistCardSkeleton key={i} viewMode={viewMode} />
+                    ))}
+                  </div>
+                ) : soloSpecialists.length > 0 ? (
+                  <div className={viewMode === 'grid' 
+                    ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                    : "flex flex-col gap-4"
+                  }>
+                    {soloSpecialists.map((specialist) => (
+                      <SoloSpecialistCard key={specialist.id} specialist={specialist} viewMode={viewMode} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-base opacity-60">
+                    {t.noResultsDescription}
+                  </div>
+                )}
+              </div>
+            </>
+          );
+        })()}
       </div>
     </div>
   );

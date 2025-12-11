@@ -89,10 +89,10 @@ export default function Position5({ posts }: Position5Props) {
                     }`}
                   >
                     <div className="mb-1.5 flex items-center justify-between">
-                      <span className={`text-[9px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                      <span className={`text-[11px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
                         {publishedTime}
                       </span>
-                      <span className="rounded-full px-1.5 py-0.5 text-[8px] bg-red-600 text-white">
+                      <span className="rounded-full px-1.5 py-0.5 text-[10px] bg-red-600 text-white">
                         {translation.category}
                       </span>
                     </div>
@@ -114,7 +114,7 @@ export default function Position5({ posts }: Position5Props) {
             modules={[Autoplay]}
             direction="vertical"
             slidesPerView={3}
-            spaceBetween={0}
+            spaceBetween={8}
             autoplay={{ delay: 3000, disableOnInteraction: false }}
             loop={posts.length > 3}
             className="h-full"
@@ -126,34 +126,27 @@ export default function Position5({ posts }: Position5Props) {
                 minute: '2-digit' 
               }) : ''
               return (
-                <SwiperSlide key={post.id}>
-                  <div className="py-1">
-                    <Link 
-                      href={`/${locale}/news/${translation.slug}`}
-                      className={`block cursor-pointer rounded-lg p-2.5 transition-colors hover:${
-                        isDark ? 'bg-white/10' : 'bg-black/10'
-                      }`}
-                    >
-                      <div className="mb-1.5 flex items-center justify-between">
-                        <span className={`text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-                          {publishedTime}
-                        </span>
-                        <span className="rounded-full px-1.5 py-0.5 text-[9px] bg-red-600 text-white">
-                          {translation.category}
-                        </span>
-                      </div>
-                      <p className={`text-xs leading-snug line-clamp-2 ${
-                        isDark ? 'text-white/80' : 'text-black/80'
-                      }`}>
-                        {translation.title}
-                      </p>
-                    </Link>
-                    
-                    {/* Centered divider line */}
-                    <div className="flex justify-center mt-1">
-                      <div className={`h-px w-full ${isDark ? 'bg-white/10' : 'bg-black/10'}`} />
+                <SwiperSlide key={post.id} className="!h-auto">
+                  <Link 
+                    href={`/${locale}/news/${translation.slug}`}
+                    className={`block h-full cursor-pointer rounded-lg p-2 md:p-2 lg:p-2.5 transition-colors ${
+                      isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'
+                    }`}
+                  >
+                    <div className="mb-1 flex items-center justify-between">
+                      <span className={`text-[9px] md:text-[9px] lg:text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                        {publishedTime}
+                      </span>
+                      <span className="rounded-full px-1.5 py-0.5 text-[9px] md:text-[9px] lg:text-[10px] bg-red-600 text-white">
+                        {translation.category}
+                      </span>
                     </div>
-                  </div>
+                    <p className={`text-[10px] md:text-[10px] lg:text-xs leading-snug line-clamp-2 ${
+                      isDark ? 'text-white/80' : 'text-black/80'
+                    }`}>
+                      {translation.title}
+                    </p>
+                  </Link>
                 </SwiperSlide>
               )
             })}

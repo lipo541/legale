@@ -85,7 +85,8 @@ async function getCompanyAlternates(companyId: string) {
 
 // Function to generate metadata
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug, locale } = await params
+  const { slug: encodedSlug, locale } = await params
+  const slug = decodeURIComponent(encodedSlug)
   const supabase = createStaticClient()
 
   let companyData: Record<string, unknown> | null = null
@@ -259,7 +260,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function CompanyPage({ params }: PageProps) {
-  const { slug, locale } = await params
+  const { slug: encodedSlug, locale } = await params
+  const slug = decodeURIComponent(encodedSlug)
   
   // Check if slug belongs to different language - server-side redirect
   const { shouldRedirect, redirectLocale, redirectSlug } = await getCompanyBySlug(slug, locale)
