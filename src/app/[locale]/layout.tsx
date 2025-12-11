@@ -2,6 +2,7 @@ import { ReactNode } from 'react'
 import { notFound } from 'next/navigation'
 import Header from '@/components/header/Header'
 import Footer from '@/components/footer/Footer'
+import DashboardSidebar from '@/components/sidebar/DashboardSidebar'
 import { Providers } from '@/components/providers/Providers'
 import { siteConfig, getLanguageAlternates } from '@/lib/config'
 import { locales } from '@/lib/i18n/config'
@@ -119,6 +120,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
       />
       <Providers>
         <Header />
+        <DashboardSidebar />
         <main className="flex-1">{children}</main>
         <Footer />
       </Providers>
