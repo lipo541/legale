@@ -41,6 +41,13 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // Root to /ka redirect (308 permanent)
+      // This is critical for SEO - Google should know /ka is the canonical homepage
+      {
+        source: '/',
+        destination: '/ka',
+        permanent: true, // 308 status code
+      },
       // WWW to non-WWW redirect (308 permanent)
       // Primary domain: legal.ge
       // www.legal.ge redirects to legal.ge
