@@ -1,14 +1,24 @@
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import type { Metadata } from 'next'
+import { siteConfig } from '@/lib/config'
 
-// Root page redirects to locale - allow indexing so Google can follow
+// Root page redirects to /ka - tell Google the canonical is /ka
 export const metadata: Metadata = {
   title: 'Legal.ge - იურიდიული პლატფორმა',
   description: 'საქართველოს წამყვანი იურიდიული პლატფორმა - იპოვეთ იურისტები, კომპანიები და სამართლებრივი სიახლეები',
   robots: {
-    index: true,
+    index: false,  // Don't index root, only index /ka
     follow: true,
+  },
+  alternates: {
+    canonical: `${siteConfig.baseUrl}/ka`,
+    languages: {
+      'ka': `${siteConfig.baseUrl}/ka`,
+      'en': `${siteConfig.baseUrl}/en`,
+      'ru': `${siteConfig.baseUrl}/ru`,
+      'x-default': `${siteConfig.baseUrl}/ka`,
+    },
   },
 }
 
