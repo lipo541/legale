@@ -1,6 +1,8 @@
 import { createStaticClient } from '@/lib/supabase/static'
 import { notFound } from 'next/navigation'
 import AuthorPageClient from './AuthorPageClient'
+import { Metadata } from 'next'
+import { siteConfig, getLanguageAlternates } from '@/lib/config'
 
 interface PageProps {
   params: Promise<{
@@ -165,13 +167,13 @@ export default async function AuthorPage({ params }: PageProps) {
 }
 
 // Generate metadata
-export async function generateMetadata({ params }: PageProps) {
-  const { authorId } = await params
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { authorId, locale } = await params
   const supabase = createStaticClient()
 
   const { data: author } = await supabase
     .from('profiles')
-    .select('full_name, email, role')
+    .select('full_name, email, role, avatar_url, logo_url')
     .eq('id', authorId)
     .single()
 
@@ -182,11 +184,51 @@ export async function generateMetadata({ params }: PageProps) {
   }
 
   const authorName = author.full_name || author.email
-  const pageType = author.role === 'COMPANY' ? 'კომპანიის' : 'ავტორის'
+  const avatarUrl = author.avatar_url || author.logo_url
+  const canonicalUrl = `${siteConfig.baseUrl}/${locale}/news/author/${authorId}`
+  
+  const titles: Record<string, { title: string; description: string; pageType: string }> = {
+    ka: {
+      title: `${authorName} - ${author.role === 'COMPANY' ? 'კომპანიის' : 'ავტორის'} პოსტები`,
+      description: `ყველა სტატია ${authorName}-${author.role === 'COMPANY' ? 'ისგან' : 'მ დაწერა'}`,
+      pageType: author.role === 'COMPANY' ? 'კომპანიის' : 'ავტორის',
+    },
+    en: {
+      title: `${authorName} - ${author.role === 'COMPANY' ? 'Company' : 'Author'} Posts`,
+      description: `All articles by ${authorName}`,
+      pageType: author.role === 'COMPANY' ? 'Company' : 'Author',
+    },
+    ru: {
+      title: `${authorName} - Статьи ${author.role === 'COMPANY' ? 'компании' : 'автора'}`,
+      description: `Все статьи от ${authorName}`,
+      pageType: author.role === 'COMPANY' ? 'компании' : 'автора',
+    },
+  }
+
+  const meta = titles[locale] || titles.ka
 
   return {
-    title: `${authorName} - ${pageType} პოსტები`,
-    description: `ყველა სტატია ${authorName}-${author.role === 'COMPANY' ? 'ისგან' : 'მ დაწერა'}`,
+    title: meta.title,
+    description: meta.description,
+    alternates: {
+      canonical: canonicalUrl,
+      languages: getLanguageAlternates(`/news/author/${authorId}`),
+    },
+    openGraph: {
+      title: meta.title,
+      description: meta.description,
+      url: canonicalUrl,
+      siteName: 'Legal.ge',
+      type: 'profile',
+      images: avatarUrl ? [avatarUrl] : [],
+      locale: locale === 'ka' ? 'ka_GE' : locale === 'ru' ? 'ru_RU' : 'en_US',
+    },
+    twitter: {
+      card: avatarUrl ? 'summary_large_image' : 'summary',
+      title: meta.title,
+      description: meta.description,
+      images: avatarUrl ? [avatarUrl] : [],
+    },
   }
 }
 

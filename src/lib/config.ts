@@ -53,7 +53,7 @@ export function getCanonicalUrl(path: string = '', locale: Locale = 'ka'): strin
  * @returns Object with language alternates (all with /locale/ prefix)
  */
 export function getLanguageAlternates(path: string = ''): Record<string, string> {
-  const { baseUrl, locales } = siteConfig
+  const { baseUrl, locales, defaultLocale } = siteConfig
   
   const alternates: Record<string, string> = {}
   
@@ -61,6 +61,9 @@ export function getLanguageAlternates(path: string = ''): Record<string, string>
   locales.forEach((locale) => {
     alternates[locale] = `${baseUrl}/${locale}${path}`
   })
+  
+  // Add x-default pointing to default locale
+  alternates['x-default'] = `${baseUrl}/${defaultLocale}${path}`
   
   return alternates
 }

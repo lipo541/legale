@@ -2,6 +2,7 @@ import TeamPage from '@/components/teampage/TeamPage'
 import { createStaticClient } from '@/lib/supabase/static'
 import { notFound } from 'next/navigation'
 import { Metadata } from 'next'
+import { siteConfig, getLanguageAlternates } from '@/lib/config'
 
 // Enable Incremental Static Regeneration - revalidate every 1 hour
 export const revalidate = 3600
@@ -34,15 +35,23 @@ export async function generateMetadata({ params }: TeamPageProps): Promise<Metad
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const team = teamTranslation.team as any
   const ogImageUrl = team?.og_image_url
+  const canonicalUrl = `${siteConfig.baseUrl}/${locale}/teams/${slug}`
 
   return {
     title: teamTranslation.meta_title || teamTranslation.name,
     description: teamTranslation.meta_description || undefined,
+    alternates: {
+      canonical: canonicalUrl,
+      languages: getLanguageAlternates(`/teams/${slug}`),
+    },
     openGraph: {
       title: teamTranslation.og_title || teamTranslation.meta_title || teamTranslation.name,
       description: teamTranslation.og_description || teamTranslation.meta_description || undefined,
+      url: canonicalUrl,
+      siteName: 'Legal.ge',
       images: ogImageUrl ? [ogImageUrl] : [],
-      type: 'website'
+      type: 'website',
+      locale: locale === 'ka' ? 'ka_GE' : locale === 'ru' ? 'ru_RU' : 'en_US',
     },
     twitter: {
       card: 'summary_large_image',
