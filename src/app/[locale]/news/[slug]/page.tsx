@@ -43,12 +43,12 @@ export default async function PostPage({ params }: PageProps) {
   const slug = decodeURIComponent(encodedSlug)
   const supabase = createStaticClient()
 
-  // Check if slug belongs to different language - server-side redirect
+  // Check if slug belongs to different language - server-side redirect (308 permanent)
   const { shouldRedirect, redirectLocale, redirectSlug } = await getPostBySlug(slug, locale)
   
   if (shouldRedirect && redirectLocale && redirectSlug) {
-    const { redirect } = await import('next/navigation')
-    redirect(`/${redirectLocale}/news/${encodeURIComponent(redirectSlug)}`)
+    const { permanentRedirect } = await import('next/navigation')
+    permanentRedirect(`/${redirectLocale}/news/${encodeURIComponent(redirectSlug)}`)
   }
 
   // Fetch post by slug

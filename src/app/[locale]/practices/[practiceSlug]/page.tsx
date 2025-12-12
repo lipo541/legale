@@ -181,10 +181,11 @@ export default async function PracticePage({ params }: Props) {
 
   // Step 2: If the slug belongs to a different language, redirect to that language's URL
   // This ensures /ka/practices/tax-and-accounting redirects to /en/practices/tax-and-accounting
+  // Using permanentRedirect (308) so Google treats this as permanent and updates index
   if (practiceBySlug.language !== locale) {
-    const { redirect } = await import('next/navigation')
+    const { permanentRedirect } = await import('next/navigation')
     // Encode slug to handle non-ASCII characters (Georgian, etc.)
-    redirect(`/${practiceBySlug.language}/practices/${encodeURIComponent(slug)}`)
+    permanentRedirect(`/${practiceBySlug.language}/practices/${encodeURIComponent(slug)}`)
   }
 
   // Step 3: Fetch the full practice data with the translation for the requested locale

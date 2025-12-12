@@ -265,12 +265,12 @@ export default async function SpecialistPage({ params }: PageProps) {
   const slug = decodeURIComponent(resolvedParams.slug)
   const locale = resolvedParams.locale || 'ka'
 
-  // Check if slug belongs to different language - server-side redirect
+  // Check if slug belongs to different language - server-side redirect (308 permanent)
   const { shouldRedirect, redirectLocale, redirectSlug } = await getSpecialistBySlug(slug, locale)
   
   if (shouldRedirect && redirectLocale && redirectSlug) {
-    const { redirect } = await import('next/navigation')
-    redirect(`/${redirectLocale}/specialists/${encodeURIComponent(redirectSlug)}`)
+    const { permanentRedirect } = await import('next/navigation')
+    permanentRedirect(`/${redirectLocale}/specialists/${encodeURIComponent(redirectSlug)}`)
   }
 
   console.log('Page rendered with slug:', slug, 'locale:', locale)

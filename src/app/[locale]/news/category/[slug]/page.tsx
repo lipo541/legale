@@ -1,5 +1,5 @@
 import { createStaticClient } from '@/lib/supabase/static'
-import { notFound, redirect } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import CategoryPageClient from './CategoryPageClient'
 import { siteConfig, getAssetUrl } from '@/lib/config'
 
@@ -61,11 +61,11 @@ export default async function CategoryPage({ params }: PageProps) {
   const slug = decodeURIComponent(encodedSlug)
   const supabase = createStaticClient()
 
-  // Check if slug belongs to different language - server-side redirect
+  // Check if slug belongs to different language - server-side redirect (308 permanent)
   const { shouldRedirect, redirectLocale, redirectSlug } = await getCategoryBySlug(slug, locale)
   
   if (shouldRedirect && redirectLocale && redirectSlug) {
-    redirect(`/${redirectLocale}/news/category/${encodeURIComponent(redirectSlug)}`)
+    permanentRedirect(`/${redirectLocale}/news/category/${encodeURIComponent(redirectSlug)}`)
   }
 
   // Fetch category by slug

@@ -210,7 +210,7 @@ export default async function ServicePage({ params }: Props) {
     notFound()
   }
 
-  // Step 2: If the slug belongs to a different language, redirect to that language's URL
+  // Step 2: If the slug belongs to a different language, redirect to that language's URL (308 permanent)
   if (serviceBySlug.language !== locale) {
     // Get the practice slug in the service's language
     const { data: practiceForService } = await supabase
@@ -228,9 +228,9 @@ export default async function ServicePage({ params }: Props) {
         .single()
       
       const correctPracticeSlug = correctPracticeTranslation?.slug || practiceSlug
-      const { redirect } = await import('next/navigation')
+      const { permanentRedirect } = await import('next/navigation')
       // Encode slugs to handle non-ASCII characters (Georgian, etc.)
-      redirect(`/${serviceBySlug.language}/practices/${encodeURIComponent(correctPracticeSlug)}/${encodeURIComponent(serviceSlug)}`)
+      permanentRedirect(`/${serviceBySlug.language}/practices/${encodeURIComponent(correctPracticeSlug)}/${encodeURIComponent(serviceSlug)}`)
     }
   }
 

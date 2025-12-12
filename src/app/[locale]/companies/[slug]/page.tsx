@@ -263,12 +263,12 @@ export default async function CompanyPage({ params }: PageProps) {
   const { slug: encodedSlug, locale } = await params
   const slug = decodeURIComponent(encodedSlug)
   
-  // Check if slug belongs to different language - server-side redirect
+  // Check if slug belongs to different language - server-side redirect (308 permanent)
   const { shouldRedirect, redirectLocale, redirectSlug } = await getCompanyBySlug(slug, locale)
   
   if (shouldRedirect && redirectLocale && redirectSlug) {
-    const { redirect } = await import('next/navigation')
-    redirect(`/${redirectLocale}/companies/${encodeURIComponent(redirectSlug)}`)
+    const { permanentRedirect } = await import('next/navigation')
+    permanentRedirect(`/${redirectLocale}/companies/${encodeURIComponent(redirectSlug)}`)
   }
   
   console.log('Company page rendered with slug:', slug, 'locale:', locale)
