@@ -249,14 +249,14 @@ export async function generateMetadata({ params }: PageProps) {
   const languageAlternates: { [key: string]: string } = {}
   if (allTranslations) {
     allTranslations.forEach(trans => {
-      languageAlternates[trans.language] = `${siteConfig.baseUrl}/${trans.language}/news/category/${trans.slug}`
+      languageAlternates[trans.language] = encodeURI(`${siteConfig.baseUrl}/${trans.language}/news/category/${trans.slug}`)
     })
   }
 
   // Build metadata
   const title = categoryData.seo_title || `${categoryData.name} - Legal.ge`
   const description = categoryData.seo_description || `იხილეთ სტატიები კატეგორიაში "${categoryData.name}" Legal.ge-ზე`
-  const canonicalUrl = `${siteConfig.baseUrl}/${locale}/news/category/${slug}`
+  const canonicalUrl = encodeURI(`${siteConfig.baseUrl}/${locale}/news/category/${slug}`)
   const ogImage = getAssetUrl(siteConfig.defaultOgImage)
 
   // CollectionPage Schema Markup

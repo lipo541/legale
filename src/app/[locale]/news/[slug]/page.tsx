@@ -288,7 +288,7 @@ export async function generateMetadata({ params }: PageProps) {
   const languageAlternates: { [key: string]: string } = {}
   if (allTranslations) {
     allTranslations.forEach(trans => {
-      languageAlternates[trans.language] = `${siteConfig.baseUrl}/${trans.language}/news/${trans.slug}`
+      languageAlternates[trans.language] = encodeURI(`${siteConfig.baseUrl}/${trans.language}/news/${trans.slug}`)
     })
   }
 
@@ -311,7 +311,7 @@ export async function generateMetadata({ params }: PageProps) {
   const ogImage = postData.og_image || featuredImage || getAssetUrl(siteConfig.defaultOgImage)
   const title = postData.meta_title || postData.title
   const description = postData.meta_description || postData.excerpt || postData.title
-  const canonicalUrl = `${siteConfig.baseUrl}/${locale}/news/${slug}`
+  const canonicalUrl = encodeURI(`${siteConfig.baseUrl}/${locale}/news/${slug}`)
 
   // Breadcrumb labels by locale
   const breadcrumbLabels = {

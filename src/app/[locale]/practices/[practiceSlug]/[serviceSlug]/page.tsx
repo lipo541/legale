@@ -78,7 +78,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     for (const serviceTrans of allServiceTranslations) {
       const practiceTrans = allPracticeTranslations.find(pt => pt.language === serviceTrans.language)
       if (practiceTrans) {
-        languageAlternates[serviceTrans.language] = `${siteConfig.baseUrl}/${serviceTrans.language}/practices/${practiceTrans.slug}/${serviceTrans.slug}`
+        // Ensure URLs are properly encoded
+        languageAlternates[serviceTrans.language] = encodeURI(
+          `${siteConfig.baseUrl}/${serviceTrans.language}/practices/${practiceTrans.slug}/${serviceTrans.slug}`
+        )
       }
     }
   }
@@ -94,7 +97,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const ogTitle = translationData.og_title || title
   const ogDescription = translationData.og_description || description
   const ogImage = serviceData?.og_image_url || serviceData?.image_url || '/default-og-image.jpg'
-  const canonicalUrl = `${siteConfig.baseUrl}/${locale}/practices/${practiceSlug}/${serviceSlug}`
+  
+  // Ensure canonical URL is properly encoded
+  const canonicalUrl = encodeURI(`${siteConfig.baseUrl}/${locale}/practices/${practiceSlug}/${serviceSlug}`)
 
   // Get practice title for breadcrumb
   const { data: practiceTranslation } = await supabase

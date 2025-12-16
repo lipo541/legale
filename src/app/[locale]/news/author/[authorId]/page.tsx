@@ -185,7 +185,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const authorName = author.full_name || author.email
   const avatarUrl = author.avatar_url || author.logo_url
-  const canonicalUrl = `${siteConfig.baseUrl}/${locale}/news/author/${authorId}`
+  const canonicalUrl = encodeURI(`${siteConfig.baseUrl}/${locale}/news/author/${authorId}`)
   
   const titles: Record<string, { title: string; description: string; pageType: string }> = {
     ka: {

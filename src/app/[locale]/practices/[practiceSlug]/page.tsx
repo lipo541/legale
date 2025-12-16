@@ -64,7 +64,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const languageAlternates: { [key: string]: string } = {};
   if (allTranslations) {
     allTranslations.forEach(trans => {
-      languageAlternates[trans.language] = `${siteConfig.baseUrl}/${trans.language}/practices/${trans.slug}`;
+      // Ensure URLs are properly encoded
+      languageAlternates[trans.language] = encodeURI(
+        `${siteConfig.baseUrl}/${trans.language}/practices/${trans.slug}`
+      );
     });
   }
 
@@ -74,7 +77,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const ogTitle = translationData.og_title || translationData.meta_title || translationData.title;
   const ogDescription = translationData.og_description || description;
   const ogImage = translationData.og_image_url || getAssetUrl(siteConfig.defaultOgImage);
-  const canonicalUrl = `${siteConfig.baseUrl}/${locale}/practices/${slug}`;
+  
+  // Ensure canonical URL is properly encoded
+  const canonicalUrl = encodeURI(`${siteConfig.baseUrl}/${locale}/practices/${slug}`);
 
   // Breadcrumb labels by locale
   const breadcrumbLabels = {

@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: TeamPageProps): Promise<Metad
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const team = teamTranslation.team as any
   const ogImageUrl = team?.og_image_url
-  const canonicalUrl = `${siteConfig.baseUrl}/${locale}/teams/${slug}`
+  const canonicalUrl = encodeURI(`${siteConfig.baseUrl}/${locale}/teams/${slug}`)
 
   return {
     title: teamTranslation.meta_title || teamTranslation.name,

@@ -44,7 +44,7 @@ export function getCanonicalUrl(path: string = '', locale: Locale = 'ka'): strin
   const { baseUrl } = siteConfig
   
   // Always include locale prefix for all languages including default (ka)
-  return `${baseUrl}/${locale}${path}`
+  return encodeURI(`${baseUrl}/${locale}${path}`)
 }
 
 /**
@@ -59,11 +59,11 @@ export function getLanguageAlternates(path: string = ''): Record<string, string>
   
   // All locales get /locale/ prefix including default (ka)
   locales.forEach((locale) => {
-    alternates[locale] = `${baseUrl}/${locale}${path}`
+    alternates[locale] = encodeURI(`${baseUrl}/${locale}${path}`)
   })
   
   // Add x-default pointing to default locale
-  alternates['x-default'] = `${baseUrl}/${defaultLocale}${path}`
+  alternates['x-default'] = encodeURI(`${baseUrl}/${defaultLocale}${path}`)
   
   return alternates
 }

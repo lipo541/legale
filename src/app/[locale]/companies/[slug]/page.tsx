@@ -65,7 +65,7 @@ async function getCompanyAlternates(companyId: string) {
     .single()
   
   if (profile?.company_slug) {
-    alternates['ka'] = `${baseUrl}/ka/companies/${profile.company_slug}`
+    alternates['ka'] = encodeURI(`${baseUrl}/ka/companies/${profile.company_slug}`)
   }
   
   // Get other language slugs from translations
@@ -76,7 +76,7 @@ async function getCompanyAlternates(companyId: string) {
   
   if (translations) {
     translations.forEach((t) => {
-      alternates[t.language] = `${baseUrl}/${t.language}/companies/${t.slug}`
+      alternates[t.language] = encodeURI(`${baseUrl}/${t.language}/companies/${t.slug}`)
     })
   }
   
@@ -165,7 +165,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = String(companyTranslation?.meta_title || companyData.meta_title || companyTranslation?.company_name || companyData.company_name || 'Company')
   const description = String(companyTranslation?.meta_description || companyData.meta_description || companyTranslation?.summary || companyData.summary || '')
   const ogImage = String(companyData.social_image_url || companyData.logo_url || '/asset/images/og-image.jpg')
-  const canonicalUrl = `${siteConfig.baseUrl}/${locale}/companies/${slug}`
+  const canonicalUrl = encodeURI(`${siteConfig.baseUrl}/${locale}/companies/${slug}`)
 
   // Get correct alternates for each language
   const languageAlternates = await getCompanyAlternates(companyId)

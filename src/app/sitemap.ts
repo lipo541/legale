@@ -27,7 +27,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ) => {
     locales.forEach((locale) => {
       // Always include locale prefix for consistency
-      const url = `${baseUrl}/${locale}${path}`
+      // Ensure URL is properly encoded (handling Georgian characters)
+      const url = encodeURI(`${baseUrl}/${locale}${path}`)
       sitemap.push({
         url,
         lastModified,
@@ -143,7 +144,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         const slug = translation.slug
         
         if (slug) {
-          const url = `${baseUrl}/${locale}/specialists/${slug}`
+          const url = encodeURI(`${baseUrl}/${locale}/specialists/${slug}`)
           sitemap.push({
             url,
             lastModified: translation.updated_at ? new Date(translation.updated_at) : new Date(),
@@ -157,7 +158,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Process Companies (Georgian)
     if (companiesKa) {
       companiesKa.forEach((company) => {
-        const url = `${baseUrl}/ka/companies/${company.company_slug}`
+        const url = encodeURI(`${baseUrl}/ka/companies/${company.company_slug}`)
         sitemap.push({
           url,
           lastModified: company.updated_at ? new Date(company.updated_at) : new Date(),
@@ -170,7 +171,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Process Companies (Other languages)
     if (companyTranslations) {
       companyTranslations.forEach((translation) => {
-        const url = `${baseUrl}/${translation.language}/companies/${translation.slug}`
+        const url = encodeURI(`${baseUrl}/${translation.language}/companies/${translation.slug}`)
         sitemap.push({
           url,
           lastModified: translation.updated_at ? new Date(translation.updated_at) : new Date(),
@@ -193,7 +194,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         translations.forEach((translation) => {
           if (translation && translation.slug && translation.language) {
             const locale = translation.language
-            const url = `${baseUrl}/${locale}/practices/${translation.slug}`
+            const url = encodeURI(`${baseUrl}/${locale}/practices/${translation.slug}`)
             
             sitemap.push({
               url,
@@ -222,7 +223,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
               const practiceSlug = practiceSlugMap.get(`${service.practice_id}:${locale}`)
 
               if (practiceSlug) {
-                const url = `${baseUrl}/${locale}/practices/${practiceSlug}/${translation.slug}`
+                const url = encodeURI(`${baseUrl}/${locale}/practices/${practiceSlug}/${translation.slug}`)
 
                 sitemap.push({
                   url,
@@ -241,7 +242,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (teamTranslations) {
       teamTranslations.forEach((translation) => {
         const locale = translation.language
-        const url = `${baseUrl}/${locale}/teams/${translation.slug}`
+        const url = encodeURI(`${baseUrl}/${locale}/teams/${translation.slug}`)
         
         sitemap.push({
           url,
@@ -256,7 +257,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (postTranslations) {
       postTranslations.forEach((translation) => {
         const locale = translation.language
-        const url = `${baseUrl}/${locale}/news/${translation.slug}`
+        const url = encodeURI(`${baseUrl}/${locale}/news/${translation.slug}`)
         
         sitemap.push({
           url,
@@ -271,7 +272,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (categoryTranslations) {
       categoryTranslations.forEach((translation) => {
         const locale = translation.language
-        const url = `${baseUrl}/${locale}/news/category/${translation.slug}`
+        const url = encodeURI(`${baseUrl}/${locale}/news/category/${translation.slug}`)
         
         sitemap.push({
           url,

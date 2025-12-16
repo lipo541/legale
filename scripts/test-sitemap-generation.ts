@@ -21,7 +21,7 @@ async function generateSitemap() {
   // Helper function
   const addMultiLocaleUrls = (path: string) => {
     locales.forEach((locale) => {
-      sitemap.push(`${baseUrl}/${locale}${path}`)
+      sitemap.push(encodeURI(`${baseUrl}/${locale}${path}`))
     })
   }
 
