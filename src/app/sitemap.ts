@@ -2,6 +2,9 @@ import { MetadataRoute } from 'next'
 import { createClient } from '@supabase/supabase-js'
 import { siteConfig } from '@/lib/config'
 
+// Enable ISR: Revalidate sitemap every hour
+export const revalidate = 3600
+
 // Note: Using service_role key for server-side generation to bypass RLS
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -48,21 +51,98 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   addMultiLocaleUrls('/cookies', new Date(), 'yearly', 0.2)
 
   try {
-    // Fetch ALL specialists from specialist_translations (contains slug per language)
-    // Only include specialists that are not blocked
-    const { data: specialistTranslations } = await supabase
-      .from('specialist_translations')
-      .select('slug, language, updated_at, profiles!inner(is_blocked)')
-      .eq('profiles.is_blocked', false)
-      .not('slug', 'is', null)
+    // Fetch all data in parallel for better performance
+    const [
+      { data: specialistTranslations },
+      { data: companiesKa },
+      { data: companyTranslations },
+      { data: practices },
+      { data: services },
+      { data: teamTranslations },
+      { data: postTranslations },
+      { data: categoryTranslations }
+    ] = await Promise.all([
+      // 1. Specialists
+      supabase
+        .from('specialist_translations')
+        .select('slug, language, updated_at, profiles!inner(is_blocked)')
+        .eq('profiles.is_blocked', false)
+        .not('slug', 'is', null),
 
+      // 2. Companies (Georgian)
+      supabase
+        .from('profiles')
+        .select('company_slug, updated_at')
+        .eq('role', 'COMPANY')
+        .eq('is_blocked', false)
+        .not('company_slug', 'is', null),
+
+      // 3. Companies (Other languages)
+      supabase
+        .from('company_translations')
+        .select('slug, language, updated_at, profiles!inner(is_blocked)')
+        .eq('profiles.is_blocked', false)
+        .not('slug', 'is', null)
+        .neq('language', 'ka'),
+
+      // 4. Practices
+      supabase
+        .from('practices')
+        .select(`
+          id,
+          status,
+          practice_translations (
+            slug,
+            language,
+            updated_at
+          )
+        `)
+        .eq('status', 'published'),
+
+      // 5. Services
+      supabase
+        .from('services')
+        .select(`
+          id,
+          practice_id,
+          status,
+          service_translations (
+            slug,
+            language,
+            updated_at
+          )
+        `)
+        .eq('status', 'published'),
+
+      // 6. Teams
+      supabase
+        .from('team_translations')
+        .select('slug, language, updated_at, teams!inner(is_active)')
+        .eq('teams.is_active', true)
+        .not('slug', 'is', null),
+
+      // 7. News Posts
+      supabase
+        .from('post_translations')
+        .select('slug, language, updated_at, posts!inner(status, published_at)')
+        .eq('posts.status', 'published')
+        .not('slug', 'is', null)
+        .order('updated_at', { ascending: false }),
+
+      // 8. News Categories
+      supabase
+        .from('post_category_translations')
+        .select('slug, language')
+        .not('slug', 'is', null)
+    ])
+
+    // Process Specialists
     if (specialistTranslations) {
       specialistTranslations.forEach((translation) => {
         const locale = translation.language
         const slug = translation.slug
         
         if (slug) {
-          // Always include locale prefix
           const url = `${baseUrl}/${locale}/specialists/${slug}`
           sitemap.push({
             url,
@@ -74,18 +154,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })
     }
 
-    // Fetch companies: Georgian slug from profiles, other languages from company_translations
-    // First, get Georgian companies from profiles (only non-blocked companies)
-    const { data: companiesKa } = await supabase
-      .from('profiles')
-      .select('company_slug, updated_at')
-      .eq('role', 'COMPANY')
-      .eq('is_blocked', false)
-      .not('company_slug', 'is', null)
-
+    // Process Companies (Georgian)
     if (companiesKa) {
       companiesKa.forEach((company) => {
-        // Always include /ka/ prefix for Georgian companies
         const url = `${baseUrl}/ka/companies/${company.company_slug}`
         sitemap.push({
           url,
@@ -96,16 +167,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })
     }
 
-    // Then, get English and Russian translations from company_translations
-    // Exclude 'ka' to avoid duplicates (Georgian slugs come from profiles table)
-    // Only include non-blocked companies
-    const { data: companyTranslations } = await supabase
-      .from('company_translations')
-      .select('slug, language, updated_at, profiles!inner(is_blocked)')
-      .eq('profiles.is_blocked', false)
-      .not('slug', 'is', null)
-      .neq('language', 'ka')
-
+    // Process Companies (Other languages)
     if (companyTranslations) {
       companyTranslations.forEach((translation) => {
         const url = `${baseUrl}/${translation.language}/companies/${translation.slug}`
@@ -118,95 +180,64 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })
     }
 
-    // Fetch practices from practice_translations (all languages including Georgian)
-    // Only include published practices
-    const { data: practiceTranslations } = await supabase
-      .from('practice_translations')
-      .select('slug, language, updated_at, practices!inner(status)')
-      .eq('practices.status', 'published')
-      .not('slug', 'is', null)
+    // Process Practices
+    // Map to store practice slugs: "practiceId:language" -> slug
+    const practiceSlugMap = new Map<string, string>()
 
-    if (practiceTranslations) {
-      practiceTranslations.forEach((translation) => {
-        const locale = translation.language
-        const url = `${baseUrl}/${locale}/practices/${translation.slug}`
-        
-        sitemap.push({
-          url,
-          lastModified: translation.updated_at ? new Date(translation.updated_at) : new Date(),
-          changeFrequency: 'monthly',
-          priority: 0.9,
+    if (practices) {
+      practices.forEach((practice) => {
+        const translations = Array.isArray(practice.practice_translations)
+          ? practice.practice_translations
+          : [practice.practice_translations]
+
+        translations.forEach((translation) => {
+          if (translation && translation.slug && translation.language) {
+            const locale = translation.language
+            const url = `${baseUrl}/${locale}/practices/${translation.slug}`
+            
+            sitemap.push({
+              url,
+              lastModified: translation.updated_at ? new Date(translation.updated_at) : new Date(),
+              changeFrequency: 'monthly',
+              priority: 0.9,
+            })
+
+            practiceSlugMap.set(`${practice.id}:${locale}`, translation.slug)
+          }
         })
       })
     }
 
-    // Fetch services with practice slug (hierarchical URL: /practices/{practice_slug}/{service_slug})
-    // Need to join: service_translations -> services -> practices -> practice_translations
-    const { data: serviceTranslations } = await supabase
-      .from('service_translations')
-      .select(`
-        slug, 
-        language, 
-        updated_at,
-        services!inner(
-          status,
-          practices!inner(
-            practice_translations!inner(slug, language)
-          )
-        )
-      `)
-      .eq('services.status', 'published')
-      .not('slug', 'is', null)
+    // Process Services
+    if (services) {
+      services.forEach((service) => {
+        if (service.practice_id) {
+          const translations = Array.isArray(service.service_translations)
+            ? service.service_translations
+            : [service.service_translations]
 
-    if (serviceTranslations) {
-      serviceTranslations.forEach((translation) => {
-        const locale = translation.language
-        
-        // Extract nested data from Supabase join with proper type handling
-        const servicesData = translation.services as unknown as Record<string, unknown> | Record<string, unknown>[]
-        const service = Array.isArray(servicesData) && servicesData.length > 0 
-          ? servicesData[0] 
-          : servicesData as Record<string, unknown>
+          translations.forEach((translation) => {
+            if (translation && translation.slug && translation.language) {
+              const locale = translation.language
+              const practiceSlug = practiceSlugMap.get(`${service.practice_id}:${locale}`)
 
-        const practicesData = (service as Record<string, unknown>).practices as unknown as Record<string, unknown> | Record<string, unknown>[]
-        const practice = Array.isArray(practicesData) && practicesData.length > 0
-          ? practicesData[0]
-          : practicesData as Record<string, unknown>
+              if (practiceSlug) {
+                const url = `${baseUrl}/${locale}/practices/${practiceSlug}/${translation.slug}`
 
-        const practiceTranslationsData = (practice as Record<string, unknown>).practice_translations as unknown as Array<{ slug: string; language: string }> | { slug: string; language: string }
-        
-        // Find practice translation matching the service's language
-        const practiceTranslation = Array.isArray(practiceTranslationsData)
-          ? practiceTranslationsData.find((pt) => pt.language === locale)
-          : practiceTranslationsData?.language === locale 
-            ? practiceTranslationsData 
-            : null
-
-        const practiceSlug = practiceTranslation?.slug
-        
-        if (translation.slug && practiceSlug) {
-          // Build hierarchical URL: /{locale}/practices/{practice_slug}/{service_slug}
-          const url = `${baseUrl}/${locale}/practices/${practiceSlug}/${translation.slug}`
-
-          sitemap.push({
-            url,
-            lastModified: translation.updated_at 
-              ? new Date(translation.updated_at) 
-              : new Date(),
-            changeFrequency: 'monthly',
-            priority: 0.9,
+                sitemap.push({
+                  url,
+                  lastModified: translation.updated_at ? new Date(translation.updated_at) : new Date(),
+                  changeFrequency: 'monthly',
+                  priority: 0.9,
+                })
+              }
+            }
           })
         }
       })
     }
 
-    // Fetch teams from team_translations (all languages)
-    const { data: teamTranslations } = await supabase
-      .from('team_translations')
-      .select('slug, language, updated_at, teams!inner(is_active)')
-      .eq('teams.is_active', true)
-      .not('slug', 'is', null)
-
+    // Process Teams
     if (teamTranslations) {
       teamTranslations.forEach((translation) => {
         const locale = translation.language
@@ -221,14 +252,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })
     }
 
-    // Fetch news posts (published only) from post_translations
-    const { data: postTranslations } = await supabase
-      .from('post_translations')
-      .select('slug, language, updated_at, posts!inner(status, published_at)')
-      .eq('posts.status', 'published')
-      .not('slug', 'is', null)
-      .order('updated_at', { ascending: false })
-
+    // Process News Posts
     if (postTranslations) {
       postTranslations.forEach((translation) => {
         const locale = translation.language
@@ -243,12 +267,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })
     }
 
-    // Fetch news categories from post_category_translations
-    const { data: categoryTranslations } = await supabase
-      .from('post_category_translations')
-      .select('slug, language')
-      .not('slug', 'is', null)
-
+    // Process News Categories
     if (categoryTranslations) {
       categoryTranslations.forEach((translation) => {
         const locale = translation.language
