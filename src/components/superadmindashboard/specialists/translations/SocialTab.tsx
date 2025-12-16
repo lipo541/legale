@@ -1,16 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useSpecialistTranslations } from '@/contexts/SpecialistTranslationsContext'
 import { createClient } from '@/lib/supabase/client'
-import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react'
+import { Upload, X, Loader2 } from 'lucide-react'
 
 export default function SocialTab() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
   const { activeLanguage, data, updateSocialField, specialistId } = useSpecialistTranslations()
-  const supabase = createClient()
+  
+  // Memoize supabase client
+  const supabase = useMemo(() => createClient(), [])
 
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
@@ -119,20 +121,20 @@ export default function SocialTab() {
     }
   }
 
-  // Get image URL for preview
-  const getImageUrl = (path: string) => {
+  // Get image URL for preview - memoized
+  const getImageUrl = useCallback((path: string) => {
     if (!path) return null
     const { data: { publicUrl } } = supabase.storage
       .from('specialist-social-images')
       .getPublicUrl(path)
     return publicUrl
-  }
+  }, [supabase])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-4">
       {/* Social Title */}
       <div>
-        <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+        <label className={`mb-1 sm:mb-1.5 block text-[11px] sm:text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
           Social Media სათაური
         </label>
         <input
@@ -140,41 +142,41 @@ export default function SocialTab() {
           value={currentData.social_title}
           onChange={(e) => updateSocialField('social_title', e.target.value)}
           placeholder={getPlaceholder('social_title')}
-          className={`w-full rounded-lg border px-4 py-2 transition-colors ${
+          className={`w-full rounded-lg border px-2.5 sm:px-3 py-1.5 sm:py-2 text-[11px] sm:text-xs transition-colors ${
             isDark
               ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
               : 'border-black/10 bg-black/5 text-black focus:border-black/20'
           }`}
         />
-        <p className={`mt-1 text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-          გამოჩნდება როცა პროფილს გააზიარებენ სოციალურ ქსელებში
+        <p className={`mt-1 text-[9px] sm:text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+          გაზიარებისას გამოჩნდება
         </p>
       </div>
 
       {/* Social Description */}
       <div>
-        <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+        <label className={`mb-1 sm:mb-1.5 block text-[11px] sm:text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
           Social Media აღწერა
         </label>
         <textarea
-          rows={4}
+          rows={3}
           value={currentData.social_description}
           onChange={(e) => updateSocialField('social_description', e.target.value)}
           placeholder={getPlaceholder('social_description')}
-          className={`w-full rounded-lg border px-4 py-3 transition-colors resize-none ${
+          className={`w-full rounded-lg border px-2.5 sm:px-3 py-1.5 sm:py-2 text-[11px] sm:text-xs transition-colors resize-none ${
             isDark
               ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
               : 'border-black/10 bg-black/5 text-black focus:border-black/20'
           }`}
         />
-        <p className={`mt-1 text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-          მოკლე და მიმზიდველი აღწერა სოციალური გაზიარებისთვის
+        <p className={`mt-1 text-[9px] sm:text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+          მოკლე აღწერა გაზიარებისთვის
         </p>
       </div>
 
       {/* Social Hashtags */}
       <div>
-        <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+        <label className={`mb-1 sm:mb-1.5 block text-[11px] sm:text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
           Hashtags
         </label>
         <input
@@ -182,44 +184,44 @@ export default function SocialTab() {
           value={currentData.social_hashtags}
           onChange={(e) => updateSocialField('social_hashtags', e.target.value)}
           placeholder={getPlaceholder('social_hashtags')}
-          className={`w-full rounded-lg border px-4 py-2 transition-colors ${
+          className={`w-full rounded-lg border px-2.5 sm:px-3 py-1.5 sm:py-2 text-[11px] sm:text-xs transition-colors ${
             isDark
               ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
               : 'border-black/10 bg-black/5 text-black focus:border-black/20'
           }`}
         />
-        <p className={`mt-1 text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-          დაამატეთ რელევანტური hashtags (გამოყავით ჰაშით)
+        <p className={`mt-1 text-[9px] sm:text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+          რელევანტური hashtags
         </p>
       </div>
 
       {/* Social Image Upload */}
       <div>
-        <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-          სოციალური მედიის სურათი (Open Graph / Twitter Card)
+        <label className={`mb-1 sm:mb-1.5 block text-[11px] sm:text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+          სოციალური მედიის სურათი (OG Image)
         </label>
         
         {currentData.social_image_url ? (
-          <div className={`rounded-lg border p-4 ${isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/5'}`}>
-            <div className="flex items-start gap-4">
+          <div className={`rounded-lg border p-2 sm:p-3 ${isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/5'}`}>
+            <div className="flex items-start gap-2 sm:gap-3">
               <img
                 src={getImageUrl(currentData.social_image_url) || ''}
                 alt="Social preview"
-                className="w-32 h-32 object-cover rounded-lg"
+                className="w-16 h-16 sm:w-24 sm:h-24 object-cover rounded-lg"
               />
-              <div className="flex-1">
-                <p className={`text-sm mb-2 ${isDark ? 'text-white/70' : 'text-black/70'}`}>
-                  რეკომენდებული ზომა: 1200x630px
+              <div className="flex-1 min-w-0">
+                <p className={`text-[9px] sm:text-[10px] mb-1 sm:mb-1.5 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                  <span className="hidden sm:inline">რეკომენდებული: </span>1200x630px
                 </p>
                 <button
                   onClick={handleRemoveImage}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                  className={`flex items-center gap-1 sm:gap-1.5 px-2 py-1 rounded-md text-[9px] sm:text-[10px] transition-colors ${
                     isDark
                       ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
                       : 'bg-red-500/20 text-red-600 hover:bg-red-500/30'
                   }`}
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3 h-3" />
                   წაშლა
                 </button>
               </div>
@@ -229,7 +231,7 @@ export default function SocialTab() {
           <div>
             <label
               htmlFor="social-image-upload"
-              className={`flex flex-col items-center justify-center w-full h-40 rounded-lg border-2 border-dashed cursor-pointer transition-colors ${
+              className={`flex flex-col items-center justify-center w-full h-24 sm:h-28 rounded-lg border-2 border-dashed cursor-pointer transition-colors ${
                 uploading ? 'opacity-50 cursor-not-allowed' : ''
               } ${
                 isDark
@@ -238,21 +240,21 @@ export default function SocialTab() {
               }`}
             >
               {uploading ? (
-                <div className="flex flex-col items-center gap-2">
-                  <Loader2 className={`w-8 h-8 animate-spin ${isDark ? 'text-white/60' : 'text-black/60'}`} />
-                  <p className={`text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                <div className="flex flex-col items-center gap-1">
+                  <Loader2 className={`w-5 h-5 animate-spin ${isDark ? 'text-white/60' : 'text-black/60'}`} />
+                  <p className={`text-[9px] sm:text-[10px] ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                     იტვირთება...
                   </p>
                 </div>
               ) : (
-                <div className="flex flex-col items-center gap-2">
-                  <Upload className={`w-8 h-8 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
+                <div className="flex flex-col items-center gap-1">
+                  <Upload className={`w-5 h-5 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
                   <div className="text-center">
-                    <p className={`text-sm font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
-                      დააჭირეთ სურათის ასატვირთად
+                    <p className={`text-[11px] sm:text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+                      ატვირთვა
                     </p>
-                    <p className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-                      PNG, JPG, WEBP (მაქს. 5MB)
+                    <p className={`text-[9px] sm:text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                      PNG, JPG (მაქს. 5MB)
                     </p>
                   </div>
                 </div>
@@ -270,17 +272,17 @@ export default function SocialTab() {
         )}
 
         {uploadError && (
-          <p className="mt-2 text-sm text-red-500">{uploadError}</p>
+          <p className="mt-1 text-[9px] sm:text-[10px] text-red-500">{uploadError}</p>
         )}
 
-        <p className={`mt-2 text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-          რეკომენდებული ზომა: 1200x630px (Facebook, Twitter, LinkedIn)
+        <p className={`mt-1 text-[9px] sm:text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+          რეკომენდებული: 1200x630px
         </p>
       </div>
 
       {/* Social Media Preview */}
-      <div className={`rounded-lg border p-4 ${isDark ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/10'}`}>
-        <h4 className={`text-sm font-semibold mb-3 ${isDark ? 'text-white' : 'text-black'}`}>
+      <div className={`rounded-lg border p-2 sm:p-3 ${isDark ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/10'}`}>
+        <h4 className={`text-[11px] sm:text-xs font-medium mb-1.5 sm:mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
           📱 Preview
         </h4>
         <div className={`rounded-lg border overflow-hidden ${isDark ? 'bg-black border-white/10' : 'bg-white border-black/10'}`}>
@@ -288,18 +290,18 @@ export default function SocialTab() {
             <img
               src={getImageUrl(currentData.social_image_url) || ''}
               alt="Social preview"
-              className="w-full h-48 object-cover"
+              className="w-full h-24 sm:h-32 object-cover"
             />
           )}
-          <div className="p-4">
-            <div className={`font-semibold mb-1 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
-              {currentData.social_title || 'Social Media სათაური'}
+          <div className="p-2 sm:p-3">
+            <div className={`text-[11px] sm:text-xs font-medium mb-0.5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+              {currentData.social_title || 'სათაური'}
             </div>
-            <div className={`text-sm mb-2 ${isDark ? 'text-white/70' : 'text-black/70'}`}>
-              {currentData.social_description || 'Social Media აღწერა გამოჩნდება აქ...'}
+            <div className={`text-[9px] sm:text-[10px] mb-1 sm:mb-1.5 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+              {currentData.social_description || 'აღწერა...'}
             </div>
             {currentData.social_hashtags && (
-              <div className={`text-xs ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+              <div className={`text-[9px] sm:text-[10px] ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
                 {currentData.social_hashtags}
               </div>
             )}
@@ -308,15 +310,13 @@ export default function SocialTab() {
       </div>
 
       {/* Social Tips */}
-      <div className={`rounded-lg border p-4 ${isDark ? 'bg-purple-500/10 border-purple-500/30' : 'bg-purple-500/10 border-purple-500/30'}`}>
-        <h4 className={`text-sm font-semibold mb-2 ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>
-          💡 Social Media რჩევები
+      <div className={`rounded-lg border p-2 sm:p-3 ${isDark ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/10'}`}>
+        <h4 className={`text-[11px] sm:text-xs font-medium mb-1 sm:mb-1.5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+          💡 რჩევები
         </h4>
-        <ul className={`text-xs space-y-1 ${isDark ? 'text-white/70' : 'text-black/70'}`}>
-          <li>• სათაური უნდა იყოს დამაინტრიგებელი და ყურადღების მიმზიდველი</li>
-          <li>• აღწერა უნდა აიძულებდეს კლიკს და გაზიარებას</li>
-          <li>• გამოიყენეთ პოპულარული და რელევანტური hashtags</li>
-          <li>• მოარგეთ კონტენტი თითოეული პლატფორმისთვის</li>
+        <ul className={`text-[9px] sm:text-[10px] space-y-0.5 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+          <li>• დამაინტრიგებელი სათაური</li>
+          <li>• რელევანტური hashtags</li>
         </ul>
       </div>
     </div>

@@ -7,23 +7,12 @@
 
 /* ============================================
    Mobile Input Zoom Prevention (iOS Safari)
-   Setting font-size to 16px prevents auto-zoom
+   Only applies to inputs WITHOUT explicit text-* classes
+   Uses :where() for zero specificity so Tailwind can override
    ============================================ */
 @media screen and (max-width: 768px) {
-  input,
-  input[type="text"],
-  input[type="email"],
-  input[type="password"],
-  input[type="number"],
-  input[type="tel"],
-  input[type="url"],
-  input[type="search"],
-  input[type="date"],
-  input[type="time"],
-  input[type="datetime-local"],
-  textarea,
-  select {
-    font-size: 16px !important;
+  :where(input, textarea, select):not([class*="text-"]) {
+    font-size: 16px;
   }
 }
 

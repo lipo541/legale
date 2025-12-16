@@ -43,13 +43,13 @@ function CompanyTranslationsContent({ companyId, companyName }: CompanyTranslati
   }
 
   return (
-    <div className={`rounded-xl border p-6 ${isDark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
+    <div className={`rounded-lg border p-4 ${isDark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
       {/* Main Tabs: Content, SEO, Social Media */}
-      <div className="flex gap-6 mb-6 border-b border-white/10">
+      <div className={`flex gap-4 mb-4 border-b ${isDark ? 'border-white/10' : 'border-black/10'}`}>
         <button
           onClick={() => setActiveTab('content')}
           disabled={loading || saving}
-          className={`flex items-center gap-2 px-4 py-3 font-medium transition-all relative disabled:opacity-50 disabled:cursor-not-allowed ${
+          className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-all relative disabled:opacity-50 disabled:cursor-not-allowed ${
             activeTab === 'content'
               ? isDark
                 ? 'text-emerald-400'
@@ -59,7 +59,7 @@ function CompanyTranslationsContent({ companyId, companyName }: CompanyTranslati
               : 'text-black/60 hover:text-black/80'
           }`}
         >
-          <FileText className="h-4 w-4" />
+          <FileText className="h-3.5 w-3.5" />
           Content
           {activeTab === 'content' && (
             <div className={`absolute bottom-0 left-0 right-0 h-0.5 ${isDark ? 'bg-emerald-400' : 'bg-emerald-600'}`} />
@@ -69,7 +69,7 @@ function CompanyTranslationsContent({ companyId, companyName }: CompanyTranslati
         <button
           onClick={() => setActiveTab('seo')}
           disabled={loading || saving}
-          className={`flex items-center gap-2 px-4 py-3 font-medium transition-all relative disabled:opacity-50 disabled:cursor-not-allowed ${
+          className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-all relative disabled:opacity-50 disabled:cursor-not-allowed ${
             activeTab === 'seo'
               ? isDark
                 ? 'text-emerald-400'
@@ -79,7 +79,7 @@ function CompanyTranslationsContent({ companyId, companyName }: CompanyTranslati
               : 'text-black/60 hover:text-black/80'
           }`}
         >
-          <Search className="h-4 w-4" />
+          <Search className="h-3.5 w-3.5" />
           SEO
           {activeTab === 'seo' && (
             <div className={`absolute bottom-0 left-0 right-0 h-0.5 ${isDark ? 'bg-emerald-400' : 'bg-emerald-600'}`} />
@@ -89,7 +89,7 @@ function CompanyTranslationsContent({ companyId, companyName }: CompanyTranslati
         <button
           onClick={() => setActiveTab('social')}
           disabled={loading || saving}
-          className={`flex items-center gap-2 px-4 py-3 font-medium transition-all relative disabled:opacity-50 disabled:cursor-not-allowed ${
+          className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-all relative disabled:opacity-50 disabled:cursor-not-allowed ${
             activeTab === 'social'
               ? isDark
                 ? 'text-emerald-400'
@@ -99,7 +99,7 @@ function CompanyTranslationsContent({ companyId, companyName }: CompanyTranslati
               : 'text-black/60 hover:text-black/80'
           }`}
         >
-          <Share2 className="h-4 w-4" />
+          <Share2 className="h-3.5 w-3.5" />
           Social Media
           {activeTab === 'social' && (
             <div className={`absolute bottom-0 left-0 right-0 h-0.5 ${isDark ? 'bg-emerald-400' : 'bg-emerald-600'}`} />
@@ -108,17 +108,17 @@ function CompanyTranslationsContent({ companyId, companyName }: CompanyTranslati
       </div>
 
       {/* Language Tabs */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className={`text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+      <div className="mb-4">
+        <div className="flex items-center gap-2 mb-2">
+          <div className={`text-[10px] font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
             🌐 ენის არჩევა
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-1.5">
           <button
             onClick={() => setActiveLanguage('georgian')}
             disabled={loading || saving}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
               activeLanguage === 'georgian'
                 ? isDark
                   ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
@@ -133,7 +133,7 @@ function CompanyTranslationsContent({ companyId, companyName }: CompanyTranslati
           <button
             onClick={() => setActiveLanguage('english')}
             disabled={loading || saving}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
               activeLanguage === 'english'
                 ? isDark
                   ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
@@ -148,7 +148,7 @@ function CompanyTranslationsContent({ companyId, companyName }: CompanyTranslati
           <button
             onClick={() => setActiveLanguage('russian')}
             disabled={loading || saving}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
               activeLanguage === 'russian'
                 ? isDark
                   ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
@@ -164,10 +164,10 @@ function CompanyTranslationsContent({ companyId, companyName }: CompanyTranslati
       </div>
 
       {/* Tab Content */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         {loading ? (
-          <div className="flex items-center justify-center h-[400px]">
-            <Loader2 className={`w-8 h-8 animate-spin ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+          <div className="flex items-center justify-center h-[200px]">
+            <Loader2 className={`w-6 h-6 animate-spin ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
           </div>
         ) : (
           <>
@@ -178,23 +178,23 @@ function CompanyTranslationsContent({ companyId, companyName }: CompanyTranslati
         )}
 
         {/* Save Button */}
-        <div className="flex gap-3 pt-4">
+        <div className="flex gap-2 pt-3">
           <button
             onClick={handleSave}
             disabled={loading || saving}
-            className={`flex-1 rounded-xl px-4 py-3 font-semibold text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
+            className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 ${
               isDark
                 ? 'bg-emerald-500 hover:bg-emerald-600'
                 : 'bg-emerald-500 hover:bg-emerald-600'
             }`}
           >
-            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+            {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             შენახვა
           </button>
         </div>
       </div>
 
-      <p className={`text-xs text-center mt-6 ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+      <p className={`text-[9px] text-center mt-4 ${isDark ? 'text-white/30' : 'text-black/30'}`}>
         Company: {companyName} (ID: {companyId})
       </p>
     </div>

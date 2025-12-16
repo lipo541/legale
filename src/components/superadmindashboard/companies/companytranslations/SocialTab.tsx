@@ -102,10 +102,10 @@ export default function SocialTab({ companyId }: { companyId: string }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Social Title */}
       <div>
-        <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+        <label className={`mb-1.5 block text-[10px] font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
           📱 Social Media სათაური
         </label>
         <input
@@ -113,41 +113,41 @@ export default function SocialTab({ companyId }: { companyId: string }) {
           value={currentData.social_title}
           onChange={(e) => updateSocialField(activeLanguage, 'social_title', e.target.value)}
           placeholder={getPlaceholder('social_title')}
-          className={`w-full rounded-lg border px-4 py-2 transition-colors ${
+          className={`w-full rounded-lg border px-3 py-1.5 text-xs transition-colors ${
             isDark
               ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
               : 'border-black/10 bg-black/5 text-black focus:border-black/20'
           }`}
         />
-        <p className={`mt-1 text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-          სათაური, რომელიც გამოჩნდება სოციალურ მედიაში გაზიარებისას
+        <p className={`mt-1 text-[9px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+          სათაური სოციალურ მედიაში გაზიარებისას
         </p>
       </div>
 
       {/* Social Description */}
       <div>
-        <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+        <label className={`mb-1.5 block text-[10px] font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
           💬 Social Media აღწერა
         </label>
         <textarea
-          rows={3}
+          rows={2}
           value={currentData.social_description}
           onChange={(e) => updateSocialField(activeLanguage, 'social_description', e.target.value)}
           placeholder={getPlaceholder('social_description')}
-          className={`w-full rounded-lg border px-4 py-3 transition-colors resize-none ${
+          className={`w-full rounded-lg border px-3 py-1.5 text-xs transition-colors resize-none ${
             isDark
               ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
               : 'border-black/10 bg-black/5 text-black focus:border-black/20'
           }`}
         />
-        <p className={`mt-1 text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-          აღწერა სოციალური მედიისთვის (Facebook, Twitter, LinkedIn)
+        <p className={`mt-1 text-[9px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+          აღწერა (Facebook, Twitter, LinkedIn)
         </p>
       </div>
 
       {/* Social Hashtags */}
       <div>
-        <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+        <label className={`mb-1.5 block text-[10px] font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
           #️⃣ ჰეშთეგები
         </label>
         <input
@@ -155,20 +155,20 @@ export default function SocialTab({ companyId }: { companyId: string }) {
           value={currentData.social_hashtags}
           onChange={(e) => updateSocialField(activeLanguage, 'social_hashtags', e.target.value)}
           placeholder={getPlaceholder('social_hashtags')}
-          className={`w-full rounded-lg border px-4 py-2 transition-colors ${
+          className={`w-full rounded-lg border px-3 py-1.5 text-xs transition-colors ${
             isDark
               ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
               : 'border-black/10 bg-black/5 text-black focus:border-black/20'
           }`}
         />
-        <p className={`mt-1 text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-          ჰეშთეგები გამოყავით სფეისებით
+        <p className={`mt-1 text-[9px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+          გამოყავით სფეისებით
         </p>
       </div>
 
       {/* Social Image Upload */}
       <div>
-        <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+        <label className={`mb-1.5 block text-[10px] font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
           🖼️ Social Media სურათი
         </label>
         
@@ -177,21 +177,21 @@ export default function SocialTab({ companyId }: { companyId: string }) {
             <img 
               src={currentData.social_image_url} 
               alt="Social media preview" 
-              className="w-full h-64 object-cover"
+              className="w-full h-40 object-cover"
             />
-            <div className="p-3 flex items-center justify-between">
-              <p className={`text-xs ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+            <div className="p-2 flex items-center justify-between">
+              <p className={`text-[9px] ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                 სურათი ატვირთულია
               </p>
               <button
                 onClick={handleRemoveImage}
-                className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-medium transition-colors ${
                   isDark
                     ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
                     : 'bg-red-500/10 text-red-600 hover:bg-red-500/20'
                 }`}
               >
-                <X className="h-3 w-3" />
+                <X className="h-2.5 w-2.5" />
                 წაშლა
               </button>
             </div>
@@ -208,7 +208,7 @@ export default function SocialTab({ companyId }: { companyId: string }) {
             />
             <label
               htmlFor="social-image-upload"
-              className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition-colors ${
+              className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 transition-colors ${
                 uploading ? 'opacity-50 cursor-not-allowed' : ''
               } ${
                 isDark
@@ -218,18 +218,18 @@ export default function SocialTab({ companyId }: { companyId: string }) {
             >
               {uploading ? (
                 <>
-                  <Loader2 className={`h-10 w-10 animate-spin mb-3 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
-                  <p className={`text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                  <Loader2 className={`h-6 w-6 animate-spin mb-2 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
+                  <p className={`text-[10px] ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                     ატვირთვა...
                   </p>
                 </>
               ) : (
                 <>
-                  <Upload className={`h-10 w-10 mb-3 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
-                  <p className={`text-sm font-medium mb-1 ${isDark ? 'text-white' : 'text-black'}`}>
-                    დააჭირეთ სურათის ასატვირთად
+                  <Upload className={`h-6 w-6 mb-2 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
+                  <p className={`text-[10px] font-medium mb-0.5 ${isDark ? 'text-white' : 'text-black'}`}>
+                    დააჭირეთ ასატვირთად
                   </p>
-                  <p className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                  <p className={`text-[9px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
                     PNG, JPG, GIF (მაქს. 5MB)
                   </p>
                 </>
@@ -238,21 +238,20 @@ export default function SocialTab({ companyId }: { companyId: string }) {
           </div>
         )}
         
-        <p className={`mt-2 text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-          რეკომენდებული ზომა: 1200x630px (Facebook, Twitter, LinkedIn)
+        <p className={`mt-1.5 text-[9px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+          რეკომენდებული: 1200x630px
         </p>
       </div>
 
       {/* Social Media Preview Info */}
-      <div className={`rounded-lg border p-4 ${isDark ? 'bg-purple-500/10 border-purple-500/30' : 'bg-purple-500/10 border-purple-500/30'}`}>
-        <h4 className={`text-sm font-semibold mb-2 ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>
+      <div className={`rounded-lg border p-3 ${isDark ? 'bg-purple-500/10 border-purple-500/30' : 'bg-purple-500/10 border-purple-500/30'}`}>
+        <h4 className={`text-[10px] font-semibold mb-1.5 ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>
           📲 Social Media რჩევები
         </h4>
-        <ul className={`text-xs space-y-1 ${isDark ? 'text-white/70' : 'text-black/70'}`}>
-          <li>• სურათი გამოჩნდება Facebook, Twitter, LinkedIn-ზე გაზიარებისას</li>
+        <ul className={`text-[9px] space-y-0.5 ${isDark ? 'text-white/70' : 'text-black/70'}`}>
           <li>• სათაური: 55-60 სიმბოლო</li>
           <li>• აღწერა: 150-300 სიმბოლო</li>
-          <li>• გამოიყენეთ მაღალი ხარისხის სურათები</li>
+          <li>• მაღალი ხარისხის სურათები</li>
         </ul>
       </div>
     </div>

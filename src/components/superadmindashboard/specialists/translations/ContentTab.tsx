@@ -4,13 +4,15 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { useSpecialistTranslations } from '@/contexts/SpecialistTranslationsContext'
 import { createClient } from '@/lib/supabase/client'
 import { X, User } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 
 export default function ContentTab() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
   const { activeLanguage, data, updateContentField, specialistId } = useSpecialistTranslations()
-  const supabase = createClient()
+  
+  // Memoize supabase client
+  const supabase = useMemo(() => createClient(), [])
   
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
 
@@ -72,16 +74,16 @@ export default function ContentTab() {
   }
 
   // Generate slug from current name with language suffix
-  const generateSlugFromName = () => {
+  const generateSlugFromName = useCallback(() => {
     if (!currentData?.full_name) {
-      alert('ჯერ შეიყვანეთ სახელი!')
+      // Slug won't be generated without name
       return
     }
     const baseSlug = generateSlug(currentData.full_name)
     const langSuffix = activeLanguage === 'georgian' ? '-ka' : activeLanguage === 'english' ? '-en' : '-ru'
     const generatedSlug = baseSlug + langSuffix
     updateContentField('slug', generatedSlug)
-  }
+  }, [currentData?.full_name, activeLanguage, updateContentField])
 
   // Helper to get placeholder text based on active language
   const getPlaceholder = (fieldKey: string): string => {
@@ -188,10 +190,10 @@ export default function ContentTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-4">
       {/* Full Name */}
       <div>
-        <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+        <label className={`mb-1 sm:mb-1.5 block text-[11px] sm:text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
           სახელი და გვარი
         </label>
         <input
@@ -199,7 +201,7 @@ export default function ContentTab() {
           value={currentData.full_name}
           onChange={(e) => handleNameChange(e.target.value)}
           placeholder={getPlaceholder('full_name')}
-          className={`w-full rounded-lg border px-4 py-2 transition-colors ${
+          className={`w-full rounded-lg border px-2.5 sm:px-3 py-1.5 sm:py-2 text-[11px] sm:text-xs transition-colors ${
             isDark
               ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
               : 'border-black/10 bg-black/5 text-black focus:border-black/20'
@@ -208,14 +210,14 @@ export default function ContentTab() {
       </div>
 
       {/* Slug Input - თითოეული ენისთვის ცალ-ცალკე */}
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between">
-          <label className={`text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+      <div className="space-y-1 sm:space-y-1.5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
+          <label className={`text-[11px] sm:text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
             URL Slug ({activeLanguage === 'georgian' ? 'ქართული' : activeLanguage === 'english' ? 'ინგლისური' : 'რუსული'})
           </label>
           <button
             onClick={generateSlugFromName}
-            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+            className={`px-2.5 sm:px-3 py-1 text-[10px] sm:text-xs font-medium rounded-md transition-colors ${
               isDark
                 ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30'
                 : 'bg-emerald-500/20 text-emerald-600 hover:bg-emerald-500/30 border border-emerald-500/30'
@@ -224,32 +226,35 @@ export default function ContentTab() {
             🔄 ავტო-გენერაცია
           </button>
         </div>
-        <div className={`flex items-center gap-1.5 px-2 py-1.5 text-xs rounded-md border ${
+        <div className={`flex items-center gap-1 sm:gap-1.5 px-2 py-1.5 text-[11px] sm:text-xs rounded-md border ${
           isDark
             ? 'bg-white/5 border-white/20'
             : 'bg-black/10 border-black/10'
         }`}>
-          <span className={`${isDark ? 'text-white/40' : 'text-black/40'}`}>
+          <span className={`hidden sm:inline ${isDark ? 'text-white/40' : 'text-black/40'}`}>
             /specialists/
+          </span>
+          <span className={`sm:hidden ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+            /
           </span>
           <input
             type="text"
             value={currentData?.slug || ''}
             onChange={(e) => handleSlugChange(e.target.value)}
             placeholder="slug-avtomaturad-generirebuli"
-            className={`flex-1 bg-transparent border-none outline-none ${
+            className={`flex-1 min-w-0 bg-transparent border-none outline-none ${
               isDark ? 'text-white placeholder:text-white/40' : 'text-black placeholder:text-black/40'
             }`}
           />
         </div>
-        <p className={`text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+        <p className={`text-[10px] sm:text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
           💡 დააჭირეთ &ldquo;🔄 ავტო-გენერაცია&rdquo; ღილაკს → slug დაგენერირდება სახელიდან + -{activeLanguage === 'georgian' ? 'ka' : activeLanguage === 'english' ? 'en' : 'ru'} სუფიქსით
         </p>
       </div>
 
       {/* Role Title */}
       <div>
-        <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+        <label className={`mb-1 sm:mb-1.5 block text-[11px] sm:text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
           პოზიცია
         </label>
         <input
@@ -257,7 +262,7 @@ export default function ContentTab() {
           value={currentData.role_title}
           onChange={(e) => updateContentField('role_title', e.target.value)}
           placeholder={getPlaceholder('role_title')}
-          className={`w-full rounded-lg border px-4 py-2 transition-colors ${
+          className={`w-full rounded-lg border px-2.5 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-xs transition-colors ${
             isDark
               ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
               : 'border-black/10 bg-black/5 text-black focus:border-black/20'
@@ -266,10 +271,10 @@ export default function ContentTab() {
       </div>
 
       {/* Avatar Alt Text - With Image Preview */}
-      <div className={`rounded-lg border p-4 ${isDark ? 'bg-blue-500/5 border-blue-500/20' : 'bg-blue-500/5 border-blue-500/20'}`}>
-        <div className="flex items-start gap-4 mb-4">
+      <div className={`rounded-lg border p-2 sm:p-3 ${isDark ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/10'}`}>
+        <div className="flex items-start gap-2 sm:gap-3 mb-2 sm:mb-3">
           {/* Avatar Preview */}
-          <div className={`flex-shrink-0 w-20 h-20 rounded-full overflow-hidden ${isDark ? 'bg-white/10' : 'bg-black/10'}`}>
+          <div className={`flex-shrink-0 w-10 h-10 sm:w-14 sm:h-14 rounded-full overflow-hidden ${isDark ? 'bg-white/10' : 'bg-black/10'}`}>
             {avatarUrl ? (
               <img 
                 src={avatarUrl} 
@@ -278,57 +283,51 @@ export default function ContentTab() {
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <User className={`w-10 h-10 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
+                <User className={`w-5 h-5 sm:w-7 sm:h-7 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
               </div>
             )}
           </div>
 
           {/* Info */}
-          <div className="flex-1">
-            <h4 className={`text-sm font-semibold mb-1 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
-              📸 პროფილის სურათის Alt ტექსტი
+          <div className="flex-1 min-w-0">
+            <h4 className={`text-[11px] sm:text-xs font-medium mb-0.5 ${isDark ? 'text-white' : 'text-black'}`}>
+              📸 პროფილის სურათის Alt
             </h4>
-            <p className={`text-xs ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-              აღწერეთ რას ასახავს პროფილის სურათი (Accessibility & SEO)
+            <p className={`text-[10px] ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+              აღწერეთ რას ასახავს სურათი
             </p>
           </div>
         </div>
 
         <div>
-          <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/70' : 'text-black/70'}`}>
-            Alt ტექსტი ({activeLanguage === 'georgian' ? '🇬🇪 ქართული' : activeLanguage === 'english' ? '🇬🇧 English' : '🇷🇺 Русский'})
+          <label className={`mb-1 sm:mb-1.5 block text-[11px] sm:text-xs font-medium ${isDark ? 'text-white/70' : 'text-black/70'}`}>
+            Alt ტექსტი ({activeLanguage === 'georgian' ? '🇬🇪' : activeLanguage === 'english' ? '🇬🇧' : '🇷🇺'})
           </label>
           <input
             type="text"
             value={currentData.avatar_alt_text}
             onChange={(e) => updateContentField('avatar_alt_text', e.target.value)}
             placeholder={getPlaceholder('avatar_alt_text')}
-            className={`w-full rounded-lg border px-4 py-2 transition-colors ${
+            className={`w-full rounded-lg border px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs transition-colors ${
               isDark
-                ? 'border-white/10 bg-white/5 text-white focus:border-blue-400'
-                : 'border-black/10 bg-black/5 text-black focus:border-blue-600'
+                ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
+                : 'border-black/10 bg-black/5 text-black focus:border-black/20'
             }`}
           />
-          <div className="mt-2 flex items-start gap-2">
-            <span className="text-xs">💡</span>
-            <p className={`text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
-              მაგალითი: &ldquo;ადვოკატ გიორგი გელაშვილი ოფისში&rdquo;, &ldquo;Attorney Giorgi Gelashvili in office&rdquo;
-            </p>
-          </div>
         </div>
       </div>
 
       {/* Bio */}
       <div>
-        <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+        <label className={`mb-1 sm:mb-1.5 block text-[11px] sm:text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
           ბიოგრაფია
         </label>
         <textarea
-          rows={5}
+          rows={3}
           value={currentData.bio}
           onChange={(e) => updateContentField('bio', e.target.value)}
           placeholder={getPlaceholder('bio')}
-          className={`w-full rounded-lg border px-4 py-3 transition-colors resize-none ${
+          className={`w-full rounded-lg border px-2.5 sm:px-4 py-2 sm:py-3 text-[11px] sm:text-xs transition-colors resize-none ${
             isDark
               ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
               : 'border-black/10 bg-black/5 text-black focus:border-black/20'
@@ -338,15 +337,15 @@ export default function ContentTab() {
 
       {/* Philosophy */}
       <div>
-        <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+        <label className={`mb-1 sm:mb-1.5 block text-[11px] sm:text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
           ფილოსოფია
         </label>
         <textarea
-          rows={5}
+          rows={3}
           value={currentData.philosophy}
           onChange={(e) => updateContentField('philosophy', e.target.value)}
           placeholder={getPlaceholder('philosophy')}
-          className={`w-full rounded-lg border px-4 py-3 transition-colors resize-none ${
+          className={`w-full rounded-lg border px-2.5 sm:px-4 py-2 sm:py-3 text-[11px] sm:text-xs transition-colors resize-none ${
             isDark
               ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
               : 'border-black/10 bg-black/5 text-black focus:border-black/20'
@@ -356,15 +355,15 @@ export default function ContentTab() {
 
       {/* Focus Areas */}
       <div>
-        <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+        <label className={`mb-1 sm:mb-1.5 block text-[11px] sm:text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
           სპეციალიზაციები (ერთი თითო ხაზზე)
         </label>
         <textarea
-          rows={4}
+          rows={3}
           value={currentData.focus_areas.join('\n')}
           onChange={(e) => handleFocusAreasChange(e.target.value)}
           placeholder={getPlaceholder('focus_areas')}
-          className={`w-full rounded-lg border px-4 py-3 transition-colors resize-none ${
+          className={`w-full rounded-lg border px-2.5 sm:px-4 py-2 sm:py-3 text-[11px] sm:text-xs transition-colors resize-none ${
             isDark
               ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
               : 'border-black/10 bg-black/5 text-black focus:border-black/20'
@@ -374,15 +373,15 @@ export default function ContentTab() {
 
       {/* Representative Matters */}
       <div>
-        <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-          წარმომადგენლობითი საქმეები (ერთი თითო ხაზზე)
+        <label className={`mb-1 sm:mb-1.5 block text-[11px] sm:text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+          წარმომადგენლობითი საქმეები
         </label>
         <textarea
-          rows={4}
+          rows={3}
           value={currentData.representative_matters.join('\n')}
           onChange={(e) => handleRepresentativeMattersChange(e.target.value)}
           placeholder={getPlaceholder('representative_matters')}
-          className={`w-full rounded-lg border px-4 py-3 transition-colors resize-none ${
+          className={`w-full rounded-lg border px-2.5 sm:px-4 py-2 sm:py-3 text-[11px] sm:text-xs transition-colors resize-none ${
             isDark
               ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
               : 'border-black/10 bg-black/5 text-black focus:border-black/20'
@@ -392,15 +391,15 @@ export default function ContentTab() {
 
       {/* Teaching, Writing & Speaking */}
       <div>
-        <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+        <label className={`mb-1 sm:mb-1.5 block text-[11px] sm:text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
           სწავლება, წერა და გამოსვლები
         </label>
         <textarea
-          rows={5}
+          rows={3}
           value={currentData.teaching_writing_speaking}
           onChange={(e) => updateContentField('teaching_writing_speaking', e.target.value)}
           placeholder={getPlaceholder('teaching_writing_speaking')}
-          className={`w-full rounded-lg border px-4 py-3 transition-colors resize-none ${
+          className={`w-full rounded-lg border px-2.5 sm:px-4 py-2 sm:py-3 text-[11px] sm:text-xs transition-colors resize-none ${
             isDark
               ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
               : 'border-black/10 bg-black/5 text-black focus:border-black/20'
@@ -410,15 +409,15 @@ export default function ContentTab() {
 
       {/* Credentials & Memberships */}
       <div>
-        <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-          სერტიფიკატები და წევრობები (ერთი თითო ხაზზე)
+        <label className={`mb-1 sm:mb-1.5 block text-[11px] sm:text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+          სერტიფიკატები და წევრობები
         </label>
         <textarea
-          rows={4}
+          rows={3}
           value={currentData.credentials_memberships.join('\n')}
           onChange={(e) => handleCredentialsChange(e.target.value)}
           placeholder={getPlaceholder('credentials_memberships')}
-          className={`w-full rounded-lg border px-4 py-3 transition-colors resize-none ${
+          className={`w-full rounded-lg border px-2.5 sm:px-4 py-2 sm:py-3 text-[11px] sm:text-xs transition-colors resize-none ${
             isDark
               ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
               : 'border-black/10 bg-black/5 text-black focus:border-black/20'
@@ -428,19 +427,19 @@ export default function ContentTab() {
 
       {/* Values & How We Work */}
       <div>
-        <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+        <label className={`mb-1 sm:mb-1.5 block text-[11px] sm:text-xs font-medium ${isDark ? 'text-white/80' : 'text-black/80'}`}>
           ღირებულებები და მუშაობის სტილი
         </label>
-        <div className="space-y-3">
+        <div className="space-y-2">
           {Object.entries(currentData.values_how_we_work).map(([key, val], index) => (
-            <div key={index} className={`flex gap-2 items-start p-3 rounded-lg ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
-              <div className="flex-1 grid grid-cols-2 gap-3">
+            <div key={index} className={`flex flex-col sm:flex-row gap-2 sm:items-start p-2 sm:p-3 rounded-lg ${isDark ? 'bg-white/5' : 'bg-black/5'}`}>
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                 <input
                   type="text"
                   value={key}
                   onChange={(e) => updateValueFieldKey(key, e.target.value)}
                   placeholder="ველის სახელი"
-                  className={`rounded-lg border px-3 py-2 text-sm transition-colors font-medium ${
+                  className={`rounded-lg border px-2.5 sm:px-3 py-1.5 sm:py-2 text-[11px] sm:text-sm transition-colors font-medium ${
                     isDark
                       ? 'border-white/10 bg-white/5 text-emerald-400 focus:border-white/20'
                       : 'border-black/10 bg-white text-emerald-600 focus:border-black/20'
@@ -451,7 +450,7 @@ export default function ContentTab() {
                   value={val}
                   onChange={(e) => updateValueFieldValue(key, e.target.value)}
                   placeholder="მნიშვნელობა"
-                  className={`rounded-lg border px-3 py-2 text-sm transition-colors ${
+                  className={`rounded-lg border px-2.5 sm:px-3 py-1.5 sm:py-2 text-[11px] sm:text-sm transition-colors ${
                     isDark
                       ? 'border-white/10 bg-white/5 text-white focus:border-white/20'
                       : 'border-black/10 bg-white text-black focus:border-black/20'
@@ -461,7 +460,7 @@ export default function ContentTab() {
               <button
                 type="button"
                 onClick={() => removeValueField(key)}
-                className={`p-2 rounded-lg transition-all hover:scale-110 ${
+                className={`self-end sm:self-auto p-1.5 sm:p-2 rounded-lg transition-all hover:scale-110 ${
                   isDark
                     ? 'text-red-400 hover:bg-red-500/20'
                     : 'text-red-600 hover:bg-red-500/10'
@@ -474,14 +473,14 @@ export default function ContentTab() {
           <button
             type="button"
             onClick={addValueField}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] ${
+            className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-sm font-medium transition-all hover:scale-[1.02] ${
               isDark
                 ? 'bg-white/10 text-white hover:bg-white/20'
                 : 'bg-black/10 text-black hover:bg-black/20'
             }`}
           >
             <span className="text-lg">+</span>
-            ახალი ველის დამატება
+            ახალი ველი
           </button>
         </div>
       </div>

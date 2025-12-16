@@ -1,3 +1,11 @@
+﻿node.exe : Initialising login role...
+At D:\npx.ps1:29 char:3
++   & $NODE_EXE $NPX_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Initialising login role...:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Dumping schemas from remote database...
 
 
 
@@ -92,39 +100,39 @@ BEGIN
   base_slug := lower(trim(category_name));
   
   -- Georgian to English transliteration (basic)
-  base_slug := replace(base_slug, 'ა', 'a');
-  base_slug := replace(base_slug, 'ბ', 'b');
-  base_slug := replace(base_slug, 'გ', 'g');
-  base_slug := replace(base_slug, 'დ', 'd');
-  base_slug := replace(base_slug, 'ე', 'e');
-  base_slug := replace(base_slug, 'ვ', 'v');
-  base_slug := replace(base_slug, 'ზ', 'z');
-  base_slug := replace(base_slug, 'თ', 't');
-  base_slug := replace(base_slug, 'ი', 'i');
-  base_slug := replace(base_slug, 'კ', 'k');
-  base_slug := replace(base_slug, 'ლ', 'l');
-  base_slug := replace(base_slug, 'მ', 'm');
-  base_slug := replace(base_slug, 'ნ', 'n');
-  base_slug := replace(base_slug, 'ო', 'o');
-  base_slug := replace(base_slug, 'პ', 'p');
-  base_slug := replace(base_slug, 'ჟ', 'zh');
-  base_slug := replace(base_slug, 'რ', 'r');
-  base_slug := replace(base_slug, 'ს', 's');
-  base_slug := replace(base_slug, 'ტ', 't');
-  base_slug := replace(base_slug, 'უ', 'u');
-  base_slug := replace(base_slug, 'ფ', 'p');
-  base_slug := replace(base_slug, 'ქ', 'k');
-  base_slug := replace(base_slug, 'ღ', 'gh');
-  base_slug := replace(base_slug, 'ყ', 'q');
-  base_slug := replace(base_slug, 'შ', 'sh');
-  base_slug := replace(base_slug, 'ჩ', 'ch');
-  base_slug := replace(base_slug, 'ც', 'ts');
-  base_slug := replace(base_slug, 'ძ', 'dz');
-  base_slug := replace(base_slug, 'წ', 'ts');
-  base_slug := replace(base_slug, 'ჭ', 'ch');
-  base_slug := replace(base_slug, 'ხ', 'kh');
-  base_slug := replace(base_slug, 'ჯ', 'j');
-  base_slug := replace(base_slug, 'ჰ', 'h');
+  base_slug := replace(base_slug, 'ßâÉ', 'a');
+  base_slug := replace(base_slug, 'ßâæ', 'b');
+  base_slug := replace(base_slug, 'ßâÆ', 'g');
+  base_slug := replace(base_slug, 'ßâô', 'd');
+  base_slug := replace(base_slug, 'ßâö', 'e');
+  base_slug := replace(base_slug, 'ßâò', 'v');
+  base_slug := replace(base_slug, 'ßâû', 'z');
+  base_slug := replace(base_slug, 'ßâù', 't');
+  base_slug := replace(base_slug, 'ßâÿ', 'i');
+  base_slug := replace(base_slug, 'ßâÖ', 'k');
+  base_slug := replace(base_slug, 'ßâÜ', 'l');
+  base_slug := replace(base_slug, 'ßâ¢', 'm');
+  base_slug := replace(base_slug, 'ßâ£', 'n');
+  base_slug := replace(base_slug, 'ßâ¥', 'o');
+  base_slug := replace(base_slug, 'ßâ₧', 'p');
+  base_slug := replace(base_slug, 'ßâƒ', 'zh');
+  base_slug := replace(base_slug, 'ßâá', 'r');
+  base_slug := replace(base_slug, 'ßâí', 's');
+  base_slug := replace(base_slug, 'ßâó', 't');
+  base_slug := replace(base_slug, 'ßâú', 'u');
+  base_slug := replace(base_slug, 'ßâñ', 'p');
+  base_slug := replace(base_slug, 'ßâÑ', 'k');
+  base_slug := replace(base_slug, 'ßâª', 'gh');
+  base_slug := replace(base_slug, 'ßâº', 'q');
+  base_slug := replace(base_slug, 'ßâ¿', 'sh');
+  base_slug := replace(base_slug, 'ßâ⌐', 'ch');
+  base_slug := replace(base_slug, 'ßâ¬', 'ts');
+  base_slug := replace(base_slug, 'ßâ½', 'dz');
+  base_slug := replace(base_slug, 'ßâ¼', 'ts');
+  base_slug := replace(base_slug, 'ßâ¡', 'ch');
+  base_slug := replace(base_slug, 'ßâ«', 'kh');
+  base_slug := replace(base_slug, 'ßâ»', 'j');
+  base_slug := replace(base_slug, 'ßâ░', 'h');
   
   -- Replace spaces and special characters with hyphens
   base_slug := regexp_replace(base_slug, '[^a-z0-9]+', '-', 'g');
@@ -206,7 +214,7 @@ CREATE OR REPLACE FUNCTION "public"."get_messages_for_user"("p_user_id" "uuid", 
 DECLARE
   v_user_role TEXT;
 BEGIN
-  -- აიღე მომხმარებლის როლი
+  -- ßâÉßâÿßâªßâö ßâ¢ßâ¥ßâ¢ßâ«ßâ¢ßâÉßâáßâößâæßâÜßâÿßâí ßâáßâ¥ßâÜßâÿ
   SELECT role INTO v_user_role
   FROM public.profiles
   WHERE profiles.id = p_user_id;
@@ -261,17 +269,17 @@ DECLARE
   v_count INTEGER;
   v_user_role TEXT;
 BEGIN
-  -- აიღე მომხმარებლის როლი
+  -- ßâÉßâÿßâªßâö ßâ¢ßâ¥ßâ¢ßâ«ßâ¢ßâÉßâáßâößâæßâÜßâÿßâí ßâáßâ¥ßâÜßâÿ
   SELECT role INTO v_user_role
   FROM public.profiles
   WHERE id = p_user_id;
   
-  -- თუ მომხმარებელი არ არსებობს
+  -- ßâùßâú ßâ¢ßâ¥ßâ¢ßâ«ßâ¢ßâÉßâáßâößâæßâößâÜßâÿ ßâÉßâá ßâÉßâáßâíßâößâæßâ¥ßâæßâí
   IF v_user_role IS NULL THEN
     RETURN 0;
   END IF;
   
-  -- დაითვალე წაუკითხავი შეტყობინებები
+  -- ßâôßâÉßâÿßâùßâòßâÉßâÜßâö ßâ¼ßâÉßâúßâÖßâÿßâùßâ«ßâÉßâòßâÿ ßâ¿ßâößâóßâºßâ¥ßâæßâÿßâ£ßâößâæßâößâæßâÿ
   SELECT COUNT(DISTINCT gm.id) INTO v_count
   FROM public.global_messages gm
   INNER JOIN public.message_target_roles mtr ON mtr.message_id = gm.id
@@ -279,7 +287,7 @@ BEGIN
   WHERE gm.is_active = true
     AND (gm.expires_at IS NULL OR gm.expires_at > NOW())
     AND mtr.target_role = v_user_role
-    AND urm.user_id IS NULL; -- არ არის წაკითხული
+    AND urm.user_id IS NULL; -- ßâÉßâá ßâÉßâáßâÿßâí ßâ¼ßâÉßâÖßâÿßâùßâ«ßâúßâÜßâÿ
   
   RETURN COALESCE(v_count, 0);
 END;
@@ -336,12 +344,12 @@ DECLARE
   v_user_role TEXT;
   v_is_valid BOOLEAN;
 BEGIN
-  -- აიღე მომხმარებლის როლი
+  -- ßâÉßâÿßâªßâö ßâ¢ßâ¥ßâ¢ßâ«ßâ¢ßâÉßâáßâößâæßâÜßâÿßâí ßâáßâ¥ßâÜßâÿ
   SELECT role INTO v_user_role
   FROM public.profiles
   WHERE id = p_user_id;
   
-  -- შეამოწმე რომ შეტყობინება ნამდვილად ამ როლისთვისაა
+  -- ßâ¿ßâößâÉßâ¢ßâ¥ßâ¼ßâ¢ßâö ßâáßâ¥ßâ¢ ßâ¿ßâößâóßâºßâ¥ßâæßâÿßâ£ßâößâæßâÉ ßâ£ßâÉßâ¢ßâôßâòßâÿßâÜßâÉßâô ßâÉßâ¢ ßâáßâ¥ßâÜßâÿßâíßâùßâòßâÿßâíßâÉßâÉ
   SELECT EXISTS (
     SELECT 1 FROM public.global_messages gm
     INNER JOIN public.message_target_roles mtr ON mtr.message_id = gm.id
@@ -351,12 +359,12 @@ BEGIN
       AND (gm.expires_at IS NULL OR gm.expires_at > NOW())
   ) INTO v_is_valid;
   
-  -- თუ არავალიდურია, არ შეინახო
+  -- ßâùßâú ßâÉßâáßâÉßâòßâÉßâÜßâÿßâôßâúßâáßâÿßâÉ, ßâÉßâá ßâ¿ßâößâÿßâ£ßâÉßâ«ßâ¥
   IF NOT v_is_valid THEN
     RAISE EXCEPTION 'Message not valid for this user role';
   END IF;
   
-  -- დაამატე ან განაახლე read status
+  -- ßâôßâÉßâÉßâ¢ßâÉßâóßâö ßâÉßâ£ ßâÆßâÉßâ£ßâÉßâÉßâ«ßâÜßâö read status
   INSERT INTO public.user_read_messages (user_id, message_id, read_at)
   VALUES (p_user_id, p_message_id, NOW())
   ON CONFLICT (user_id, message_id) DO UPDATE
@@ -3405,7 +3413,7 @@ CREATE POLICY "Users can update their own profile" ON "public"."profiles" FOR UP
 
 
 
-COMMENT ON POLICY "Users can update their own profile" ON "public"."profiles" IS 'SECURITY: Users can update profile fields. Role changes are RESTRICTED: Only USER → SOLO_SPECIALIST self-upgrade allowed. All other role assignments (SPECIALIST, COMPANY, MODERATOR, SUPER_ADMIN, AUTHOR) require SUPER_ADMIN approval via access_requests table.';
+COMMENT ON POLICY "Users can update their own profile" ON "public"."profiles" IS 'SECURITY: Users can update profile fields. Role changes are RESTRICTED: Only USER ΓåÆ SOLO_SPECIALIST self-upgrade allowed. All other role assignments (SPECIALIST, COMPANY, MODERATOR, SUPER_ADMIN, AUTHOR) require SUPER_ADMIN approval via access_requests table.';
 
 
 

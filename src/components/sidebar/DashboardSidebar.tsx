@@ -20,7 +20,10 @@ import {
   Presentation,
   FileStack,
   UserPlus,
-  Bell
+  Bell,
+  Menu,
+  X,
+  ChevronUp
 } from 'lucide-react'
 
 // ============================================================================
@@ -338,6 +341,7 @@ export default function DashboardSidebar() {
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0)
   const [draftPostsCount, setDraftPostsCount] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
 
 
@@ -699,45 +703,135 @@ export default function DashboardSidebar() {
       </aside>
 
       {/* ========== MOBILE BOTTOM NAVIGATION ========== */}
-      <nav className={`
+      <div className={`
         lg:hidden
         fixed bottom-0 left-0 right-0 z-50
         border-t
         ${isDark 
-          ? 'border-white/10 bg-black/80' 
-          : 'border-black/10 bg-white/80'
+          ? 'border-white/10 bg-black/95 backdrop-blur-lg' 
+          : 'border-black/10 bg-white/95 backdrop-blur-lg'
         }
-        backdrop-blur-2xl
       `}>
-        <div className="flex items-center justify-around px-1 py-1 safe-area-pb">
-          {menuItems.slice(0, 4).map((item) => (
-            <MobileNavItem
-              key={item.id}
-              item={item}
-              isActive={activeTab === item.id}
-              onClick={() => handleTabChange(item.id)}
-              isDark={isDark}
-              badge={item.badge}
-            />
-          ))}
-          
-          {/* More menu items in a dropdown could be added here */}
-          
-          {/* Logout Button */}
-          <button
-            onClick={handleLogout}
-            className="relative flex flex-col items-center justify-center gap-0.5 flex-1 py-1.5 px-1 text-red-500"
-          >
-            <LogOut className="h-4 w-4" />
-            <span className="text-[9px] font-medium">{t.logout}</span>
-          </button>
-        </div>
-      </nav>
+        {/* Collapsed State - Quick access + expand button */}
+        {!mobileMenuOpen && (
+          <div className="flex items-center justify-between px-2 py-1.5 safe-area-pb">
+            {/* Quick access items */}
+            <div className="flex items-center gap-1 overflow-x-auto flex-1 hide-scrollbar">
+              {menuItems.slice(0, menuItems.length > 5 ? 4 : menuItems.length).map((item) => (
+                <MobileNavItem
+                  key={item.id}
+                  item={item}
+                  isActive={activeTab === item.id}
+                  onClick={() => handleTabChange(item.id)}
+                  isDark={isDark}
+                  badge={item.badge}
+                />
+              ))}
+            </div>
+            
+            {/* Expand button - only show if more than 5 items */}
+            {menuItems.length > 5 ? (
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                className={`
+                  flex items-center gap-1 rounded-lg px-3 py-2 ml-2
+                  ${isDark ? 'bg-white/10 text-white' : 'bg-black/10 text-black'}
+                `}
+              >
+                <Menu className="h-4 w-4" />
+                <ChevronUp className="h-3 w-3" />
+              </button>
+            ) : (
+              /* Logout Button for small menus */
+              <button
+                onClick={handleLogout}
+                className="flex flex-col items-center justify-center gap-0.5 py-1.5 px-2 text-red-500"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="text-[9px] font-medium">{t.logout}</span>
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Expanded State - Full menu grid */}
+        {mobileMenuOpen && (
+          <div className={`
+            max-h-[70vh] overflow-y-auto
+            ${isDark ? 'bg-black' : 'bg-white'}
+          `}>
+            {/* Header */}
+            <div className={`
+              sticky top-0 flex items-center justify-between px-3 py-2 border-b
+              ${isDark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}
+            `}>
+              <span className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
+                ნავიგაცია
+              </span>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className={`
+                  flex items-center gap-1 rounded-lg px-2 py-1 text-xs
+                  ${isDark ? 'text-white/60 hover:bg-white/10' : 'text-black/60 hover:bg-black/10'}
+                `}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Grid of all items */}
+            <div className="grid grid-cols-4 gap-1 p-2">
+              {menuItems.map((item) => (
+                <MobileNavItem
+                  key={item.id}
+                  item={item}
+                  isActive={activeTab === item.id}
+                  onClick={() => {
+                    handleTabChange(item.id)
+                    setMobileMenuOpen(false)
+                  }}
+                  isDark={isDark}
+                  badge={item.badge}
+                />
+              ))}
+            </div>
+
+            {/* Logout Button */}
+            <div className={`p-2 border-t ${isDark ? 'border-white/10' : 'border-black/10'}`}>
+              <button
+                onClick={handleLogout}
+                className={`
+                  w-full flex items-center justify-center gap-2 rounded-lg py-2.5 
+                  text-red-500 hover:bg-red-500/10 transition-colors
+                `}
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="text-xs font-medium">{t.logout}</span>
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Mobile menu backdrop */}
+      {mobileMenuOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
 
       {/* Custom Styles */}
       <style jsx global>{`
         .safe-area-pb {
           padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
       `}</style>
     </>
