@@ -63,6 +63,7 @@ export default async function PostPage({ params }: PageProps) {
         status,
         featured_image_url,
         published_at,
+        created_at,
         category_id
       )
     `)
@@ -193,7 +194,7 @@ export default async function PostPage({ params }: PageProps) {
         content: postData.content,
         slug: postData.slug,
         featuredImage: postData.post.featured_image_url,
-        publishedAt: postData.post.published_at,
+        publishedAt: postData.post.published_at || postData.post.created_at,
         wordCount: postData.word_count,
         readingTime: postData.reading_time,
         metaTitle: postData.meta_title,

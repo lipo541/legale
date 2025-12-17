@@ -74,8 +74,11 @@ export default function PostPageClient({ post, author, category, relatedPosts, l
   const isDark = theme === 'dark'
   const [formattedDate, setFormattedDate] = useState('')
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return ''
     const date = new Date(dateString)
+    // Check if date is valid and not Unix epoch (January 1, 1970)
+    if (isNaN(date.getTime()) || date.getTime() === 0) return ''
     return new Intl.DateTimeFormat(locale, {
       day: 'numeric',
       month: 'long',
@@ -85,7 +88,9 @@ export default function PostPageClient({ post, author, category, relatedPosts, l
 
   // Format date on client-side to avoid hydration mismatch
   useEffect(() => {
-    setFormattedDate(formatDate(post.publishedAt))
+    if (post.publishedAt) {
+      setFormattedDate(formatDate(post.publishedAt))
+    }
   }, [post.publishedAt, locale])
 
   const handleShare = async (platform: string) => {
@@ -171,12 +176,14 @@ export default function PostPageClient({ post, author, category, relatedPosts, l
           <div className={`flex flex-wrap items-center gap-4 mb-8 pb-6 border-b ${
             isDark ? 'border-white/[0.08]' : 'border-black/[0.08]'
           }`}>
-            <div className={`flex items-center gap-2 text-sm font-light ${
-              isDark ? 'text-white/50' : 'text-black/50'
-            }`}>
-              <Calendar className="h-4 w-4 opacity-50" />
-              <span>{formattedDate || '...'}</span>
-            </div>
+            {formattedDate && (
+              <div className={`flex items-center gap-2 text-sm font-light ${
+                isDark ? 'text-white/50' : 'text-black/50'
+              }`}>
+                <Calendar className="h-4 w-4 opacity-50" />
+                <span>{formattedDate}</span>
+              </div>
+            )}
             
             {author?.full_name && author.id && (
               <div className="flex items-center gap-2">

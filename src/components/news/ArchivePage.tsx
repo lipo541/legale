@@ -252,8 +252,11 @@ export default function ArchivePage({ locale }: ArchivePageProps) {
     setExpandedCategories(newExpanded)
   }
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return ''
     const date = new Date(dateString)
+    // Check if date is valid and not Unix epoch (January 1, 1970)
+    if (isNaN(date.getTime()) || date.getTime() === 0) return ''
     return new Intl.DateTimeFormat(locale, {
       day: 'numeric',
       month: 'long',

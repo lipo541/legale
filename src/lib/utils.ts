@@ -99,6 +99,38 @@ export function formatDate(date: Date | string, locale: string = 'ka'): string {
   })
 }
 
+/**
+ * Robust date formatter for posts - handles null, undefined, invalid dates
+ * Returns empty string instead of showing "January 1, 1970" (Unix epoch)
+ * 
+ * @param publishedAt - Primary date field (published_at)
+ * @param createdAt - Fallback date field (created_at)
+ * @param locale - Locale for formatting
+ * @param format - 'short' for "17 Dec 2025", 'long' for "17 December 2025"
+ * @returns Formatted date string or empty string if invalid
+ */
+export function formatPostDate(
+  publishedAt: string | null | undefined,
+  createdAt?: string | null,
+  locale: string = 'ka',
+  format: 'short' | 'long' = 'short'
+): string {
+  const dateString = publishedAt || createdAt
+  
+  if (!dateString) return ''
+  
+  const date = new Date(dateString)
+  
+  // Check if date is valid and not Unix epoch (January 1, 1970)
+  if (isNaN(date.getTime()) || date.getTime() === 0) return ''
+  
+  return new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: format === 'short' ? 'short' : 'long',
+    year: 'numeric'
+  }).format(date)
+}
+
 export function generateSlug(text: string): string {
   return text
     .toLowerCase()
