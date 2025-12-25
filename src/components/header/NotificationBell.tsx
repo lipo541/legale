@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Bell } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useRouter, usePathname } from 'next/navigation'
 import { getUnreadMessagesCount } from '@/lib/actions/messages'
-import { createClient } from '@/lib/supabase/client'
+import { getClientSingleton } from '@/lib/supabase/client'
 
 interface NotificationBellProps {
   locale: string
@@ -18,49 +18,49 @@ export default function NotificationBell({ locale }: NotificationBellProps) {
   const pathname = usePathname()
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(true)
+  const isFetching = useRef(false)
+  const mountedRef = useRef(true)
 
   useEffect(() => {
+    mountedRef.current = true
     loadUnreadCount()
 
-    // Set up real-time subscription for message updates
-    const supabase = createClient()
+    // Realtime subscription temporarily disabled for debugging
+    // TODO: Re-enable after fixing connection issues
+    /*
+    const supabase = getClientSingleton()
     const channel = supabase
       .channel('messages-updates')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'global_messages' },
         () => {
-          loadUnreadCount()
-        }
-      )
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'message_target_roles' },
-        () => {
-          loadUnreadCount()
-        }
-      )
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'user_read_messages' },
-        () => {
-          loadUnreadCount()
+          if (mountedRef.current) loadUnreadCount()
         }
       )
       .subscribe()
+    */
 
     return () => {
-      supabase.removeChannel(channel)
+      mountedRef.current = false
+      // supabase.removeChannel(channel)
     }
   }, [])
 
   const loadUnreadCount = async () => {
+    // Prevent concurrent fetches
+    if (isFetching.current) return
+    isFetching.current = true
+    
     try {
       const result = await getUnreadMessagesCount()
-      if (result.success && result.count !== undefined) {
+      if (mountedRef.current && result.success && result.count !== undefined) {
         setUnreadCount(result.count)
       }
     } catch (error) {
       console.error('Error loading unread count:', error)
     } finally {
-      setLoading(false)
+      isFetching.current = false
+      if (mountedRef.current) setLoading(false)
     }
   }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { 
   LayoutDashboard,
@@ -10,7 +10,7 @@ import {
   Shield
 } from 'lucide-react'
 import PostsPage from '@/components/superadmindashboard/posts/PostsPage'
-import { createClient } from '@/lib/supabase/client'
+import { getClientSingleton } from '@/lib/supabase/client'
 import CacheClearButton from '@/components/superadmindashboard/common/CacheClearButton'
 
 export default function ModeratorDashboard() {
@@ -19,37 +19,50 @@ export default function ModeratorDashboard() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [activeTab, setActiveTab] = useState('dashboard')
   const [draftCount, setDraftCount] = useState(0)
+  const isFetching = useRef(false)
+  const mountedRef = useRef(true)
 
   // Fetch draft posts count
   useEffect(() => {
+    mountedRef.current = true
+    const supabase = getClientSingleton()
+    
     const fetchDraftCount = async () => {
-      const supabase = createClient()
-      const { count, error } = await supabase
-        .from('posts')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'draft')
+      if (isFetching.current) return
+      isFetching.current = true
       
-      if (!error && count !== null) {
-        setDraftCount(count)
+      try {
+        const { count, error } = await supabase
+          .from('posts')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'draft')
+        
+        if (!error && count !== null && mountedRef.current) {
+          setDraftCount(count)
+        }
+      } finally {
+        isFetching.current = false
       }
     }
 
     fetchDraftCount()
     
-    // Optional: Set up real-time subscription for draft count updates
-    const supabase = createClient()
+    // Realtime temporarily disabled for debugging
+    /*
     const channel = supabase
       .channel('draft-posts-changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'posts', filter: 'status=eq.draft' },
         () => {
-          fetchDraftCount()
+          if (mountedRef.current) fetchDraftCount()
         }
       )
       .subscribe()
+    */
 
     return () => {
-      supabase.removeChannel(channel)
+      mountedRef.current = false
+      // supabase.removeChannel(channel)
     }
   }, [])
 

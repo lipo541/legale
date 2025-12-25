@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { useTheme } from '@/contexts/ThemeContext';
-import { createClient } from '@/lib/supabase/client';
+import { getClientSingleton } from '@/lib/supabase/client';
 import { Building2, Search, SlidersHorizontal } from 'lucide-react';
 import CompanyCard from './companycard/CompanyCard';
 import CompanyCardSkeleton from './CompanyCardSkeleton';
@@ -32,7 +32,7 @@ interface Company {
 export default function CompaniesPage() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  const supabase = createClient();
+  const supabase = getClientSingleton();
   const pathname = usePathname();
   const locale = pathname?.split('/')[1] || 'ka';
   const t = companiesTranslations[locale as keyof typeof companiesTranslations] || companiesTranslations.ka;
@@ -233,6 +233,18 @@ export default function CompaniesPage() {
     };
 
     fetchData();
+    
+    // Refetch on tab visibility change
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchData();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, [supabase, locale]);
 
   // Apply filters - memoized to prevent recreation on every render

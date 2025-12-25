@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback, memo } from 'react'
 import Link from 'next/link'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { usePathname, useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { getClientSingleton } from '@/lib/supabase/client'
 import { 
   LayoutDashboard,
   User,
@@ -328,7 +329,10 @@ export default function DashboardSidebar() {
   const isDark = theme === 'dark'
   const router = useRouter()
   const pathname = usePathname()
-  const supabase = createClient()
+  const supabase = getClientSingleton()
+  
+  // Use centralized auth context
+  const { user: authUser, role: authRole, signOut } = useAuth()
   
   // Get current locale from pathname
   const currentLocale = (pathname?.split('/')[1] as Locale) || 'ka'
@@ -342,6 +346,7 @@ export default function DashboardSidebar() {
   const [draftPostsCount, setDraftPostsCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [lastFetchedUserId, setLastFetchedUserId] = useState<string | null>(null)
 
 
 
@@ -349,23 +354,29 @@ export default function DashboardSidebar() {
   // Effects
   // ============================================================================
 
+  // Fetch additional profile data when auth user changes
   useEffect(() => {
     const fetchUserData = async () => {
-      setLoading(true)
-      
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
+      // Use auth context user instead of fetching again
+      if (!authUser) {
         setUserProfile(null)
+        setLastFetchedUserId(null)
         setLoading(false)
         return
       }
+
+      // Skip fetch if we already have data for this user (prevents tab switch re-fetching)
+      if (lastFetchedUserId === authUser.id && userProfile) {
+        return
+      }
+
+      setLoading(true)
 
       // Fetch profile
       const { data: profile } = await supabase
         .from('profiles')
         .select('full_name, avatar_url, logo_url, role, verification_status')
-        .eq('id', user.id)
+        .eq('id', authUser.id)
         .single()
 
       if (!profile) {
@@ -380,7 +391,7 @@ export default function DashboardSidebar() {
         const { data: translationData } = await supabase
           .from('specialist_translations')
           .select('slug')
-          .eq('specialist_id', user.id)
+          .eq('specialist_id', authUser.id)
           .eq('language', currentLocale)
           .single()
         slug = translationData?.slug
@@ -388,16 +399,16 @@ export default function DashboardSidebar() {
         const { data: translationData } = await supabase
           .from('company_translations')
           .select('slug')
-          .eq('company_id', user.id)
+          .eq('company_id', authUser.id)
           .eq('language', currentLocale)
           .single()
         slug = translationData?.slug
       }
 
       setUserProfile({
-        id: user.id,
+        id: authUser.id,
         full_name: profile.full_name,
-        email: user.email,
+        email: authUser.email,
         avatar_url: profile.avatar_url,
         logo_url: profile.logo_url,
         role: profile.role,
@@ -410,7 +421,7 @@ export default function DashboardSidebar() {
         const { count } = await supabase
           .from('access_requests')
           .select('*', { count: 'exact', head: true })
-          .eq('company_id', user.id)
+          .eq('company_id', authUser.id)
           .eq('status', 'PENDING')
         setPendingRequestsCount(count || 0)
       }
@@ -424,20 +435,14 @@ export default function DashboardSidebar() {
         setDraftPostsCount(count || 0)
       }
 
+      // Remember which user we fetched for
+      setLastFetchedUserId(authUser.id)
       setLoading(false)
     }
     
     fetchUserData()
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-        fetchUserData()
-      }
-    })
-
-    return () => subscription?.unsubscribe()
-  }, [supabase, currentLocale])
+    // No more auth listener here - AuthProvider handles it centrally
+  }, [supabase, currentLocale, authUser])
 
   // Sync activeTab with URL
   useEffect(() => {
@@ -475,9 +480,8 @@ export default function DashboardSidebar() {
   }, [router, userProfile, currentLocale])
 
   const handleLogout = useCallback(async () => {
-    await supabase.auth.signOut()
-    router.push(`/${currentLocale}`)
-  }, [supabase, router, currentLocale])
+    await signOut() // Use centralized signOut from AuthProvider
+  }, [signOut])
 
   // ============================================================================
   // Menu Items by Role

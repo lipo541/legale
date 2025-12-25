@@ -15,10 +15,7 @@ export async function createClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, {
-                ...options,
-                domain: '.legal.ge',
-              })
+              cookieStore.set(name, value, options)
             )
           } catch {
             // Server Component-ში set არ მუშაობს

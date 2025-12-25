@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { getClientSingleton } from '@/lib/supabase/client'
 import { ArrowRight } from 'lucide-react'
 import NewsCard from './common/NewsCard'
 import { newsTranslations } from '@/translations/news'
@@ -47,10 +47,11 @@ export default function FeaturedNewsSection({ initialPosts }: FeaturedNewsSectio
   const params = useParams()
   const locale = (params?.locale as 'ka' | 'en' | 'ru') || 'ka'
   const t = newsTranslations[locale as keyof typeof newsTranslations]
-  const supabase = createClient()
+  const supabase = getClientSingleton()
 
   const [posts, setPosts] = useState<Post[]>(initialPosts || [])
   const [loading, setLoading] = useState(!initialPosts)
+  const [refetchKey, setRefetchKey] = useState(0)
 
   useEffect(() => {
     if (initialPosts) return
@@ -131,7 +132,7 @@ export default function FeaturedNewsSection({ initialPosts }: FeaturedNewsSectio
     }
 
     fetchPosts()
-  }, [initialPosts, supabase])
+  }, [initialPosts, supabase, refetchKey])
 
   // Get category name for a post
   const getCategoryName = (post: Post): string | undefined => {

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { ArrowRight, Phone } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useParams, useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { getClientSingleton } from '@/lib/supabase/client'
 import { HeroSlide, HeroSlideButton } from '@/lib/types/hero'
 
 interface HeroProps {
@@ -18,7 +18,7 @@ export default function Hero({ initialSlides }: HeroProps) {
   const params = useParams()
   const router = useRouter()
   const locale = (params?.locale as 'ka' | 'en' | 'ru') || 'ka'
-  const supabase = createClient()
+  const supabase = getClientSingleton()
 
   const [slides, setSlides] = useState<HeroSlide[]>(initialSlides || [])
   const [currentIndex, setCurrentIndex] = useState(0)

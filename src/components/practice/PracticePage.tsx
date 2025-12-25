@@ -2,9 +2,9 @@
 
 import { useTheme } from '@/contexts/ThemeContext'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Search, Command, Sparkles } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { getClientSingleton } from '@/lib/supabase/client'
 import { practiceTranslations } from '@/translations/practices'
 import PracticeCard from './PracticeCard'
 import PracticeCardSkeleton from './PracticeCardSkeleton'
@@ -85,6 +85,101 @@ export default function PracticePage() {
     'grid'
   )
   const [displayCount, setDisplayCount] = useState(12)
+  const isFetching = useRef(false)
+
+  // Fetch data function (extracted for reuse)
+  const fetchData = useCallback(async () => {
+    // Skip if already fetching
+    if (isFetching.current) return
+    isFetching.current = true
+    
+    setLoading(true)
+    setError(false)
+    const supabase = getClientSingleton()
+
+    try {
+      // Fetch practices
+      const { data: practicesData, error: practicesError } = await supabase
+        .from('practices')
+        .select(
+          `
+          id,
+          hero_image_url,
+          practice_translations!inner (
+            title,
+            slug,
+            description,
+            hero_image_alt
+          ),
+          services:services!practice_id(count)
+        `
+        )
+        .eq('practice_translations.language', locale)
+        .eq('services.status', 'published')
+
+      if (practicesError) {
+        console.error('Supabase practices error:', practicesError)
+        throw practicesError
+      }
+
+      // Fetch services
+      const { data: servicesData, error: servicesError } = await supabase
+        .from('services')
+        .select(
+          `
+          id,
+          image_url,
+          practice_id,
+          service_translations!inner (
+            title,
+            slug,
+            description,
+            image_alt
+          ),
+          practices!inner (
+            practice_translations!inner (
+              title,
+              slug
+            )
+          )
+        `
+        )
+        .eq('service_translations.language', locale)
+        .eq('status', 'published')
+
+      if (servicesError) {
+        console.error('Supabase services error:', servicesError)
+        throw servicesError
+      }
+
+      if (practicesData) {
+        const validPractices = practicesData.filter(
+          (practice) =>
+            practice.practice_translations &&
+            practice.practice_translations.length > 0
+        )
+        setPractices(validPractices as PracticeData[])
+        setFilteredPractices(validPractices as PracticeData[])
+      }
+
+      if (servicesData) {
+        const validServices = servicesData.filter(
+          (service) =>
+            service.service_translations &&
+            service.service_translations.length > 0
+        )
+        setServices(validServices as ServiceData[])
+        setFilteredServices(validServices as ServiceData[])
+      }
+    } catch (err) {
+      console.error('Error fetching data:', err)
+      console.error('Error details:', JSON.stringify(err, null, 2))
+      setError(true)
+    } finally {
+      setLoading(false)
+      isFetching.current = false
+    }
+  }, [locale])
 
   // Debounce search query (300ms delay)
   useEffect(() => {
@@ -123,98 +218,10 @@ export default function PracticePage() {
     }
   }, [viewMode])
 
-  // Fetch practices and services
+  // Initial fetch only (removed visibility change handler to prevent race conditions)
   useEffect(() => {
-    async function fetchData() {
-      setLoading(true)
-      setError(false)
-      const supabase = createClient()
-
-      try {
-        // Fetch practices
-        const { data: practicesData, error: practicesError } = await supabase
-          .from('practices')
-          .select(
-            `
-            id,
-            hero_image_url,
-            practice_translations!inner (
-              title,
-              slug,
-              description,
-              hero_image_alt
-            ),
-            services:services!practice_id(count)
-          `
-          )
-          .eq('practice_translations.language', locale)
-          .eq('services.status', 'published')
-
-        if (practicesError) {
-          console.error('Supabase practices error:', practicesError)
-          throw practicesError
-        }
-
-        // Fetch services
-        const { data: servicesData, error: servicesError } = await supabase
-          .from('services')
-          .select(
-            `
-            id,
-            image_url,
-            practice_id,
-            service_translations!inner (
-              title,
-              slug,
-              description,
-              image_alt
-            ),
-            practices!inner (
-              practice_translations!inner (
-                title,
-                slug
-              )
-            )
-          `
-          )
-          .eq('service_translations.language', locale)
-          .eq('status', 'published')
-
-        if (servicesError) {
-          console.error('Supabase services error:', servicesError)
-          throw servicesError
-        }
-
-        if (practicesData) {
-          const validPractices = practicesData.filter(
-            (practice) =>
-              practice.practice_translations &&
-              practice.practice_translations.length > 0
-          )
-          setPractices(validPractices as PracticeData[])
-          setFilteredPractices(validPractices as PracticeData[])
-        }
-
-        if (servicesData) {
-          const validServices = servicesData.filter(
-            (service) =>
-              service.service_translations &&
-              service.service_translations.length > 0
-          )
-          setServices(validServices as ServiceData[])
-          setFilteredServices(validServices as ServiceData[])
-        }
-      } catch (err) {
-        console.error('Error fetching data:', err)
-        console.error('Error details:', JSON.stringify(err, null, 2))
-        setError(true)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchData()
-  }, [locale])
+  }, [locale, fetchData])
 
   // Filter and search for practices
   useEffect(() => {

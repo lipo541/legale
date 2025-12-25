@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { Locale, getWindowWidth } from '@/lib/enums'
 import { getOptimizedImageUrl, imagePresets } from '@/lib/utils'
 import Link from 'next/link'
 import { IoTimeOutline, IoCalendarOutline, IoArrowBack, IoDocumentTextOutline, IoChevronForward, IoBriefcaseOutline, IoLogoFacebook, IoLogoLinkedin, IoLogoTwitter, IoChevronDown, IoChevronUp } from 'react-icons/io5'
-import { createClient } from '@/lib/supabase/client'
+import { getClientSingleton } from '@/lib/supabase/client'
 
 interface Service {
   id: string
@@ -48,7 +48,7 @@ export default function PracticeDetail({
 }: PracticeDetailProps) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
-  const supabase = createClient()
+  const supabase = getClientSingleton()
 
   // State for services
   const [services, setServices] = useState<Service[]>([])
@@ -57,47 +57,50 @@ export default function PracticeDetail({
   const [formattedUpdatedAt, setFormattedUpdatedAt] = useState<string>('')
   const [searchTerm, setSearchTerm] = useState('')
   const [isServicesOpen, setIsServicesOpen] = useState(false) // Mobile dropdown state
+  const isFetching = useRef(false)
 
   // Fetch services for this practice
-  useEffect(() => {
-    const fetchServices = async () => {
-      setServicesLoading(true)
-      
-      try {
-        // Fetch services for this practice
-        const { data: servicesData, error: servicesError } = await supabase
-          .from('services')
-          .select('id')
-          .eq('practice_id', practice.id)
-          .eq('status', 'published')
+  const fetchServices = useCallback(async () => {
+    if (isFetching.current) return
+    isFetching.current = true
+    setServicesLoading(true)
+    
+    try {
+      // Fetch services for this practice
+      const { data: servicesData, error: servicesError } = await supabase
+        .from('services')
+        .select('id')
+        .eq('practice_id', practice.id)
+        .eq('status', 'published')
 
-        if (servicesError) {
-          console.error('Error fetching services:', servicesError)
-          return
-        }
+      if (servicesError) {
+        console.error('Error fetching services:', servicesError)
+        return
+      }
 
-        if (!servicesData || servicesData.length === 0) {
-          setServices([])
-          setServicesLoading(false)
-          return
-        }
+      if (!servicesData || servicesData.length === 0) {
+        setServices([])
+        setServicesLoading(false)
+        isFetching.current = false
+        return
+      }
 
-        // Fetch translations for these services
-        const serviceIds = servicesData.map(s => s.id)
-        const { data: translationsData, error: translationsError } = await supabase
-          .from('service_translations')
-          .select('service_id, title, slug')
-          .in('service_id', serviceIds)
-          .eq('language', locale)
+      // Fetch translations for these services
+      const serviceIds = servicesData.map(s => s.id)
+      const { data: translationsData, error: translationsError } = await supabase
+        .from('service_translations')
+        .select('service_id, title, slug')
+        .in('service_id', serviceIds)
+        .eq('language', locale)
 
-        if (translationsError) {
-          console.error('Error fetching service translations:', translationsError)
-          return
-        }
+      if (translationsError) {
+        console.error('Error fetching service translations:', translationsError)
+        return
+      }
 
-        // Combine services with their translations
-        const servicesWithTranslations: Service[] = servicesData
-          .map(service => {
+      // Combine services with their translations
+      const servicesWithTranslations: Service[] = servicesData
+        .map(service => {
             const translation = translationsData?.find(t => t.service_id === service.id)
             if (!translation) return null
             return {
@@ -113,11 +116,14 @@ export default function PracticeDetail({
         console.error('Fetch error:', error)
       } finally {
         setServicesLoading(false)
+        isFetching.current = false
       }
-    }
-
-    fetchServices()
   }, [practice.id, locale, supabase])
+
+  // Initial fetch only (removed visibility handler to prevent race conditions)
+  useEffect(() => {
+    fetchServices()
+  }, [fetchServices])
 
   // Filter services based on search term
   const filteredServices = services.filter(s => 

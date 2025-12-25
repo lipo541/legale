@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { getClientSingleton } from '@/lib/supabase/client';
 import { useParams } from 'next/navigation';
 import SpecialistsHero from './SpecialistsHero';
 import SpecialistsStatistics from './statistics/SpecialistsStatistics';
@@ -47,6 +47,7 @@ export default function SpecialistsPage() {
   const [soloSpecialists, setSoloSpecialists] = useState<SoloSpecialist[]>([]);
   const [companySpecialists, setCompanySpecialists] = useState<CompanySpecialist[]>([]);
   const [loading, setLoading] = useState(true);
+  const isFetching = useRef(false);
   
   // Statistics counts
   const [totalCompanies, setTotalCompanies] = useState(0);
@@ -123,8 +124,13 @@ export default function SpecialistsPage() {
   }, [sortBy, locale]);
 
   const fetchSpecialists = useCallback(async () => {
+    // Prevent concurrent fetches
+    if (isFetching.current) return;
+    isFetching.current = true;
+    
     try {
-      const supabase = createClient();
+      setLoading(true);
+      const supabase = getClientSingleton();
       
       console.log('Fetching specialists with filters:', { searchTerm: debouncedSearchTerm, selectedCity, selectedSpecialistType, selectedServices });
       
@@ -408,9 +414,11 @@ export default function SpecialistsPage() {
       console.error('Catch error:', error);
     } finally {
       setLoading(false);
+      isFetching.current = false;
     }
   }, [debouncedSearchTerm, selectedCity, selectedSpecialistType, selectedServices, selectedLanguages, sortSpecialists, locale]);
 
+  // Initial fetch only (removed visibility handler to prevent race conditions)
   useEffect(() => {
     fetchSpecialists();
   }, [fetchSpecialists]);

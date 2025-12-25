@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { cookies } from 'next/headers'
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
@@ -25,6 +26,10 @@ export async function GET(request: NextRequest) {
         // Session is now stored in cookies by the Supabase client
         console.log('Session created for user:', data.user.id)
         
+        // Force set cookies with proper attributes
+        const cookieStore = await cookies()
+        const response = NextResponse.redirect(`${origin}/ka`)
+        
         // Check user role from profiles table
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
@@ -32,28 +37,31 @@ export async function GET(request: NextRequest) {
           .eq('id', data.user.id)
           .single()
         
-        // Determine redirect based on role
+        // Determine redirect URL based on role
+        let redirectUrl = `${origin}/ka`
+        
         if (!profileError && profile?.role) {
           switch (profile.role) {
             case 'SUPER_ADMIN':
             case 'ADMIN':
-              return NextResponse.redirect(`${origin}/ka/admin`)
+              redirectUrl = `${origin}/ka/admin`
+              break
             case 'SOLO_SPECIALIST':
-              return NextResponse.redirect(`${origin}/ka/solo-specialist-dashboard`)
+              redirectUrl = `${origin}/ka/solo-specialist-dashboard`
+              break
             case 'SPECIALIST':
-              return NextResponse.redirect(`${origin}/ka/specialist-dashboard`)
+              redirectUrl = `${origin}/ka/specialist-dashboard`
+              break
             case 'COMPANY':
-              return NextResponse.redirect(`${origin}/ka/company-dashboard`)
+              redirectUrl = `${origin}/ka/company-dashboard`
+              break
             case 'AUTHOR':
-              return NextResponse.redirect(`${origin}/ka/author-dashboard`)
-            default:
-              // USER role or unknown - redirect to home
-              return NextResponse.redirect(`${origin}/ka`)
+              redirectUrl = `${origin}/ka/author-dashboard`
+              break
           }
         }
         
-        // Default redirect to home page if no profile or error
-        return NextResponse.redirect(`${origin}/ka`)
+        return NextResponse.redirect(redirectUrl)
       }
     } catch (err) {
       console.error('Unexpected error in auth callback:', err)

@@ -5,8 +5,8 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { getClientSingleton } from '@/lib/supabase/client'
 
 interface PostTranslation {
   language: string
@@ -54,7 +54,7 @@ export function useNewsPosts(locale: string): UseNewsPostsResult {
   const [error, setError] = useState<Error | null>(null)
 
   const fetchPosts = useCallback(async () => {
-    const supabase = createClient()
+    const supabase = getClientSingleton()
     setLoading(true)
     setError(null)
 
@@ -88,6 +88,7 @@ export function useNewsPosts(locale: string): UseNewsPostsResult {
     }
   }, [locale])
 
+  // Initial fetch only (removed visibility handler to prevent race conditions)
   useEffect(() => {
     fetchPosts()
   }, [fetchPosts])

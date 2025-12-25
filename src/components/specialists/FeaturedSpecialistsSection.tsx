@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { getClientSingleton } from '@/lib/supabase/client'
 import { ArrowRight } from 'lucide-react'
 import SpecialistCard from './common/SpecialistCard'
 import { specialistsTranslations } from '@/translations/specialists'
@@ -35,10 +35,11 @@ export default function FeaturedSpecialistsSection({ initialSpecialists }: Featu
   const params = useParams()
   const locale = (params?.locale as 'ka' | 'en' | 'ru') || 'ka'
   const t = specialistsTranslations[locale as keyof typeof specialistsTranslations]
-  const supabase = createClient()
+  const supabase = getClientSingleton()
 
   const [specialists, setSpecialists] = useState<Specialist[]>(initialSpecialists || [])
   const [loading, setLoading] = useState(!initialSpecialists)
+  const [refetchKey, setRefetchKey] = useState(0)
 
   // Daily seed for pseudo-random ordering (changes daily)
   const dailySeed = useMemo(() => {
@@ -162,7 +163,7 @@ export default function FeaturedSpecialistsSection({ initialSpecialists }: Featu
     }
 
     fetchSpecialists()
-  }, [initialSpecialists, supabase, dailySeed])
+  }, [initialSpecialists, supabase, dailySeed, refetchKey])
 
   // Simple hash function for daily seed
   function hashCode(str: string): number {

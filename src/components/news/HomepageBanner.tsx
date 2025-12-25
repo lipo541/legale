@@ -3,7 +3,7 @@
 import { useTheme } from '@/contexts/ThemeContext'
 import { useParams, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { getClientSingleton } from '@/lib/supabase/client'
 
 interface BannerData {
   id: string
@@ -27,7 +27,7 @@ export default function HomepageBanner() {
     const fetchBanner = async () => {
       try {
         setLoading(true)
-        const supabase = createClient()
+        const supabase = getClientSingleton()
         
         // Fetch the homepage featured banner
         const { data: bannerData, error: bannerError } = await supabase
