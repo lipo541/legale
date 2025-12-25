@@ -1,11 +1,42 @@
 'use client'
 
 import { useTheme } from '@/contexts/ThemeContext'
+import type { ViewMode } from './types'
 
-export default function PracticeCardSkeleton() {
+interface PracticeCardSkeletonProps {
+  viewMode?: ViewMode
+}
+
+export default function PracticeCardSkeleton({ viewMode = 'grid' }: PracticeCardSkeletonProps) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
 
+  // List View Skeleton
+  if (viewMode === 'list') {
+    return (
+      <div
+        className={`flex items-center gap-3 md:gap-4 rounded-lg overflow-hidden border animate-pulse ${
+          isDark
+            ? 'bg-white/5 border-white/10'
+            : 'bg-white border-black/10 shadow-sm'
+        }`}
+      >
+        {/* Image Skeleton */}
+        <div className={`w-24 md:w-32 aspect-[4/3] flex-shrink-0 ${isDark ? 'bg-white/10' : 'bg-black/5'}`} />
+
+        {/* Content Skeleton */}
+        <div className="flex-1 py-2 md:py-3 pr-3 md:pr-4 flex items-center justify-between gap-3 md:gap-4">
+          <div className="flex-1 min-w-0 space-y-2">
+            <div className={`h-4 md:h-5 rounded ${isDark ? 'bg-white/20' : 'bg-black/10'} w-2/3`} />
+            <div className={`h-3 rounded ${isDark ? 'bg-white/10' : 'bg-black/5'} w-1/3`} />
+          </div>
+          <div className={`h-4 rounded ${isDark ? 'bg-white/10' : 'bg-black/5'} w-16`} />
+        </div>
+      </div>
+    )
+  }
+
+  // Grid View Skeleton (default)
   return (
     <div
       className={`rounded-lg overflow-hidden border animate-pulse ${

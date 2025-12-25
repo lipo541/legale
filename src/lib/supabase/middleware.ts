@@ -31,7 +31,8 @@ export async function updateSession(request: NextRequest) {
     const { error } = await supabase.auth.getUser();
     
     // If there's an auth error (invalid token, etc), clear the session
-    if (error) {
+    // Note: "Auth session missing!" is expected for unauthenticated users - don't log it
+    if (error && error.message !== 'Auth session missing!') {
       console.error('Auth error in middleware:', error.message);
       
       // Clear all auth cookies

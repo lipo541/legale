@@ -344,9 +344,14 @@ export default async function ServicePage({ params }: Props) {
   )
 }
 
-// Generate static params - return empty for faster builds
-// ISR will cache pages after first visit (revalidate = 3600)
-// This is SEO-safe: meta tags, OG tags, schema.org all render correctly on first request
+// Generate static params - empty for faster builds
+// ISR (revalidate = 3600) will cache pages after first visit
+// With dynamicParams = true (default), pages are generated on-demand
 export async function generateStaticParams() {
+  // All service pages use ISR - generated on first request, cached for 1 hour
+  // This avoids 1200+ page generation at build time (400 services × 3 locales)
   return []
 }
+
+// Ensure dynamic pages are allowed (not strictly static)
+export const dynamicParams = true

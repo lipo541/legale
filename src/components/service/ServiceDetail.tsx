@@ -2,50 +2,29 @@
 
 import { useState, useEffect } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
-import { useToast } from '@/contexts/ToastContext'
 import { Locale, getWindowWidth } from '@/lib/enums'
 import { getServiceDetailTranslations } from '@/translations/service-detail'
 import { getOptimizedImageUrl, imagePresets } from '@/lib/utils'
 import Link from 'next/link'
-import { IoTimeOutline, IoCalendarOutline, IoArrowBack, IoDocumentTextOutline, IoChevronForward, IoBriefcaseOutline, IoLogoFacebook, IoLogoLinkedin, IoLogoTwitter, IoChevronDown, IoChevronUp } from 'react-icons/io5'
-import { createClient } from '@/lib/supabase/client'
+import { 
+  IoTimeOutline, 
+  IoCalendarOutline, 
+  IoArrowBack, 
+  IoDocumentTextOutline, 
+  IoChevronForward, 
+  IoBriefcaseOutline, 
+  IoLogoFacebook, 
+  IoLogoLinkedin, 
+  IoLogoTwitter, 
+  IoChevronDown, 
+  IoChevronUp 
+} from 'react-icons/io5'
+
+// Import from local modules
+import { useServiceItems, useShareHandler } from './hooks'
+import { formatServiceDate } from './utils'
 import ServiceSpecialistCard from './ServiceSpecialistCard'
-
-interface ServiceItem {
-  id: string
-  title: string
-  slug: string
-}
-
-interface ServiceDetailProps {
-  service: {
-    id: string
-    practiceId: string
-    imageUrl: string
-    ogImageUrl: string | null
-    status: string
-    createdAt: string
-    updatedAt: string
-  }
-  translation: {
-    title: string
-    slug: string
-    description: string // HTML content
-    imageAlt: string
-    wordCount: number
-    readingTime: number
-    metaTitle: string | null
-    metaDescription: string | null
-    ogTitle: string | null
-    ogDescription: string | null
-  }
-  practice: {
-    id: string
-    title: string
-    slug: string
-  }
-  locale: Locale
-}
+import type { ServiceDetailProps, SharePlatform } from './types'
 
 export default function ServiceDetail({ 
   service, 
@@ -55,141 +34,34 @@ export default function ServiceDetail({
 }: ServiceDetailProps) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
-  const { showToast } = useToast()
-  const supabase = createClient()
   const text = getServiceDetailTranslations(locale)
 
-  // State for services list
-  const [services, setServices] = useState<ServiceItem[]>([])
-  const [servicesLoading, setServicesLoading] = useState(true)
+  // Use extracted hooks
+  const { services, loading: servicesLoading } = useServiceItems(service.practiceId, locale)
+  const { handleShare } = useShareHandler()
+
+  // Local state for UI
+  const [searchTerm, setSearchTerm] = useState('')
+  const [isServicesOpen, setIsServicesOpen] = useState(false)
   const [formattedCreatedAt, setFormattedCreatedAt] = useState<string>('')
   const [formattedUpdatedAt, setFormattedUpdatedAt] = useState<string>('')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [isServicesOpen, setIsServicesOpen] = useState(false) // Mobile dropdown state
 
-  // Fetch all services for this practice
+  // Format dates on client side to avoid hydration mismatch
   useEffect(() => {
-    const fetchServices = async () => {
-      setServicesLoading(true)
-      
-      try {
-        // Fetch services for this practice
-        const { data: servicesData, error: servicesError } = await supabase
-          .from('services')
-          .select('id')
-          .eq('practice_id', service.practiceId)
-          .eq('status', 'published')
-
-        if (servicesError) {
-          console.error('Error fetching services:', servicesError)
-          showToast(text.errorLoadingServices, 'error')
-          return
-        }
-
-        if (!servicesData || servicesData.length === 0) {
-          setServices([])
-          setServicesLoading(false)
-          return
-        }
-
-        // Fetch translations for these services
-        const serviceIds = servicesData.map(s => s.id)
-        const { data: translationsData, error: translationsError } = await supabase
-          .from('service_translations')
-          .select('service_id, title, slug')
-          .in('service_id', serviceIds)
-          .eq('language', locale)
-
-        if (translationsError) {
-          console.error('Error fetching service translations:', translationsError)
-          showToast(text.errorLoadingTranslations, 'error')
-          return
-        }
-
-        // Combine services with their translations
-        const servicesWithTranslations: ServiceItem[] = servicesData
-          .map(s => {
-            const trans = translationsData?.find(t => t.service_id === s.id)
-            if (!trans) return null
-            return {
-              id: s.id,
-              title: trans.title,
-              slug: trans.slug
-            }
-          })
-          .filter((s): s is ServiceItem => s !== null)
-
-        setServices(servicesWithTranslations)
-      } catch (error) {
-        console.error('Fetch error:', error)
-        showToast(text.errorGeneral, 'error')
-      } finally {
-        setServicesLoading(false)
-      }
-    }
-
-    fetchServices()
-  }, [service.practiceId, locale, supabase, showToast, text])
+    setFormattedCreatedAt(formatServiceDate(service.createdAt, locale))
+    setFormattedUpdatedAt(formatServiceDate(service.updatedAt, locale))
+  }, [service.createdAt, service.updatedAt, locale])
 
   // Filter services based on search term
   const filteredServices = services.filter(s => 
     s.title.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  // Format dates on client side to avoid hydration mismatch
-  useEffect(() => {
-    const formatDate = (dateString: string): string => {
-      const date = new Date(dateString)
-      const options: Intl.DateTimeFormatOptions = { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      }
-      
-      const localeMap = {
-        ka: 'ka-GE',
-        en: 'en-US',
-        ru: 'ru-RU'
-      }
-      
-      return date.toLocaleDateString(localeMap[locale], options)
-    }
-
-    setFormattedCreatedAt(formatDate(service.createdAt))
-    setFormattedUpdatedAt(formatDate(service.updatedAt))
-  }, [service.createdAt, service.updatedAt, locale])
-
-  // Share functionality
-  const handleShare = async (platform: 'facebook' | 'linkedin' | 'twitter') => {
-    const url = window.location.href
+  // Share handler wrapper
+  const onShare = (platform: SharePlatform) => {
+    const url = typeof window !== 'undefined' ? window.location.href : ''
     const title = translation.ogTitle || translation.metaTitle || translation.title
-    const description = translation.ogDescription || translation.metaDescription || ''
-
-    // Check if Web Share API is supported (mobile devices)
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: title,
-          text: description,
-          url: url
-        })
-        return // Success - native share dialog shown
-      } catch (err: unknown) {
-        // User cancelled or error - fall back to URL method
-        if (err instanceof Error && err.name !== 'AbortError') {
-          console.log('Share failed:', err)
-        }
-      }
-    }
-
-    // Fallback for desktop or if Web Share API not supported
-    const shareUrls = {
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
-      twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`
-    }
-
-    window.open(shareUrls[platform], '_blank', 'width=600,height=500,noopener,noreferrer')
+    handleShare(platform, { title, url })
   }
 
   return (
@@ -328,7 +200,7 @@ export default function ServiceDetail({
                           setTimeout(() => {
                             const contentElement = document.getElementById('service-content')
                             if (contentElement) {
-                              const offset = 80 // Account for header
+                              const offset = 80
                               const elementPosition = contentElement.getBoundingClientRect().top
                               const offsetPosition = elementPosition + window.pageYOffset - offset
 
@@ -443,10 +315,10 @@ export default function ServiceDetail({
                   </div>
                 </div>
 
-                {/* Share Buttons - Below on mobile, right side on desktop */}
+                {/* Share Buttons */}
                 <div className="flex gap-2">
                   <button
-                    onClick={() => handleShare('facebook')}
+                    onClick={() => onShare('facebook')}
                     className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                       isDark 
                         ? 'bg-white/5 hover:bg-white/10 text-white border border-white/10' 
@@ -457,7 +329,7 @@ export default function ServiceDetail({
                     <span className="sm:inline">Facebook</span>
                   </button>
                   <button
-                    onClick={() => handleShare('linkedin')}
+                    onClick={() => onShare('linkedin')}
                     className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                       isDark 
                         ? 'bg-white/5 hover:bg-white/10 text-white border border-white/10' 
@@ -468,7 +340,7 @@ export default function ServiceDetail({
                     <span className="sm:inline">LinkedIn</span>
                   </button>
                   <button
-                    onClick={() => handleShare('twitter')}
+                    onClick={() => onShare('twitter')}
                     className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                       isDark 
                         ? 'bg-white/5 hover:bg-white/10 text-white border border-white/10' 

@@ -1,7 +1,7 @@
 import Hero from '@/components/hero/Hero'
 import HomepageBanner from '@/components/news/HomepageBanner'
 import FeaturedNewsSection from '@/components/news/FeaturedNewsSection'
-import FeaturedSpecialistsSection from '@/components/specialists/FeaturedSpecialistsSection'
+import { FeaturedSpecialistsSection } from '@/components/specialists'
 import { Metadata } from 'next'
 import { siteConfig, getLanguageAlternates } from '@/lib/config'
 

@@ -38,6 +38,8 @@ export default function TeamBannerSlider({ language = 'ka' }: TeamBannerSliderPr
       try {
         const supabase = createClient()
 
+        // Try to get translations with banner images directly
+        // This avoids dependency on teams table which may not exist
         const { data, error } = await supabase
           .from('team_translations')
           .select(`
@@ -45,16 +47,19 @@ export default function TeamBannerSlider({ language = 'ka' }: TeamBannerSliderPr
             slug,
             name,
             banner_image_url,
-            banner_alt,
-            team:teams!inner(
-              is_active
-            )
+            banner_alt
           `)
           .eq('language', language)
-          .eq('team.is_active', true)
           .not('banner_image_url', 'is', null)
 
         if (error) {
+          // If team_translations table doesn't exist, silently fail
+          if (error.code === 'PGRST205' || error.message?.includes('Could not find')) {
+            console.log('Team banners not available - teams table not configured')
+            setTeams([])
+            setLoading(false)
+            return
+          }
           console.error('Error fetching team banners:', error)
           return
         }

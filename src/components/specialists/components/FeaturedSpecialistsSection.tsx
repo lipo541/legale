@@ -6,7 +6,7 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { useParams } from 'next/navigation'
 import { getClientSingleton } from '@/lib/supabase/client'
 import { ArrowRight } from 'lucide-react'
-import SpecialistCard from './common/SpecialistCard'
+import FeaturedSpecialistCard from './FeaturedSpecialistCard'
 import { specialistsTranslations } from '@/translations/specialists'
 
 interface Specialist {
@@ -251,7 +251,7 @@ export default function FeaturedSpecialistsSection({ initialSpecialists }: Featu
         `}
       >
         {specialists.map((specialist) => (
-          <SpecialistCard
+          <FeaturedSpecialistCard
             key={specialist.id}
             id={specialist.id}
             full_name={specialist.full_name}

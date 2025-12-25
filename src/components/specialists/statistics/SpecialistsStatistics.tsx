@@ -13,6 +13,9 @@ interface SpecialistsStatisticsProps {
   totalCompanies: number;
   totalSpecialists: number;
   totalServices: number;
+  // Pre-fetched data from server (optional for backward compatibility)
+  cities?: Array<{ id: string; name: string; count?: number }>;
+  services?: Array<{ id: string; title: string }>;
   onSearchChange?: (search: string) => void;
   onCityChange?: (city: string | null) => void;
   onSpecialistTypeChange?: (type: string | null) => void;
@@ -28,6 +31,8 @@ export default function SpecialistsStatistics({
   totalCompanies, 
   totalSpecialists, 
   totalServices,
+  cities: propCities,
+  services: propServices,
   onSearchChange,
   onCityChange,
   onSpecialistTypeChange,
@@ -59,16 +64,24 @@ export default function SpecialistsStatistics({
   // Available languages
   const AVAILABLE_LANGUAGES = ['English', 'Georgian', 'Russian', 'German', 'Spanish'];
 
-  // Cities data
-  const [cities, setCities] = useState<Array<{ id: string; name: string; count: number }>>([])
-  const [loadingCities, setLoadingCities] = useState(true)
+  // Cities data - use props if provided, otherwise fetch
+  const [cities, setCities] = useState<Array<{ id: string; name: string; count?: number }>>(propCities || [])
+  const [loadingCities, setLoadingCities] = useState(!propCities)
 
-  // Services data
-  const [services, setServices] = useState<Array<{ id: string; title: string }>>([])
-  const [loadingServices, setLoadingServices] = useState(true)
+  // Services data - use props if provided, otherwise fetch
+  const [services, setServices] = useState<Array<{ id: string; title: string }>>(propServices || [])
+  const [loadingServices, setLoadingServices] = useState(!propServices)
 
-  // Load cities with specialist counts
+  // Load cities with specialist counts - only if not provided via props
   useEffect(() => {
+    // Skip fetching if cities were provided via props
+    if (propCities && propCities.length > 0) {
+      setCities(propCities)
+      setLoadingCities(false)
+      return
+    }
+
+    let isMounted = true
     const loadCities = async () => {
       setLoadingCities(true)
       try {
@@ -101,19 +114,33 @@ export default function SpecialistsStatistics({
           .map(([name, data]) => ({ id: data.id, name, count: data.count }))
           .sort((a, b) => b.count - a.count)
 
-        setCities(citiesArray)
+        if (isMounted) {
+          setCities(citiesArray)
+        }
       } catch (error) {
         console.error('Error loading cities:', error)
       } finally {
-        setLoadingCities(false)
+        if (isMounted) {
+          setLoadingCities(false)
+        }
       }
     }
 
     loadCities()
-  }, [locale, supabase])
+    return () => { isMounted = false }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale, propCities])
 
-  // Load all services
+  // Load all services - only if not provided via props
   useEffect(() => {
+    // Skip fetching if services were provided via props
+    if (propServices && propServices.length > 0) {
+      setServices(propServices)
+      setLoadingServices(false)
+      return
+    }
+
+    let isMounted = true
     const loadServices = async () => {
       setLoadingServices(true)
       try {
@@ -137,16 +164,22 @@ export default function SpecialistsStatistics({
           title: s.title
         })) || []
 
-        setServices(servicesArray)
+        if (isMounted) {
+          setServices(servicesArray)
+        }
       } catch (error) {
         console.error('Error loading services:', error)
       } finally {
-        setLoadingServices(false)
+        if (isMounted) {
+          setLoadingServices(false)
+        }
       }
     }
 
     loadServices()
-  }, [locale, supabase])
+    return () => { isMounted = false }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale, propServices])
 
   // Notify parent of filter changes
   useEffect(() => {

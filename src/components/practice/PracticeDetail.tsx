@@ -1,45 +1,17 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { Locale, getWindowWidth } from '@/lib/enums'
 import { getOptimizedImageUrl, imagePresets } from '@/lib/utils'
 import Link from 'next/link'
 import { IoTimeOutline, IoCalendarOutline, IoArrowBack, IoDocumentTextOutline, IoChevronForward, IoBriefcaseOutline, IoLogoFacebook, IoLogoLinkedin, IoLogoTwitter, IoChevronDown, IoChevronUp } from 'react-icons/io5'
-import { getClientSingleton } from '@/lib/supabase/client'
 
-interface Service {
-  id: string
-  title: string
-  slug: string
-}
-
-interface PracticeDetailProps {
-  practice: {
-    id: string
-    heroImageUrl: string
-    pageHeroImageUrl: string
-    status: string
-    createdAt: string
-    updatedAt: string
-  }
-  translation: {
-    title: string
-    slug: string
-    description: string // HTML content
-    heroImageAlt: string
-    pageHeroImageAlt: string
-    wordCount: number
-    readingTime: number
-    metaTitle: string | null
-    metaDescription: string | null
-    focusKeyword: string | null
-    ogTitle: string | null
-    ogDescription: string | null
-    ogImageUrl: string | null
-  }
-  locale: Locale
-}
+// Import from local modules
+import { usePracticeServices, useShareHandler } from './hooks'
+import { formatPracticeDate } from './components/utils'
+import { getPracticeDetailText } from '@/translations/practiceDetail'
+import type { PracticeDetailProps } from './types'
 
 export default function PracticeDetail({ 
   practice, 
@@ -48,161 +20,34 @@ export default function PracticeDetail({
 }: PracticeDetailProps) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
-  const supabase = getClientSingleton()
 
-  // State for services
-  const [services, setServices] = useState<Service[]>([])
-  const [servicesLoading, setServicesLoading] = useState(true)
+  // Use custom hooks
+  const { services, filteredServices, loading: servicesLoading, searchTerm, setSearchTerm } = usePracticeServices({
+    practiceId: practice.id,
+    locale,
+  })
+  const { handleShare } = useShareHandler()
+
+  // State for mobile dropdown and formatted dates
+  const [isServicesOpen, setIsServicesOpen] = useState(false)
   const [formattedCreatedAt, setFormattedCreatedAt] = useState<string>('')
   const [formattedUpdatedAt, setFormattedUpdatedAt] = useState<string>('')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [isServicesOpen, setIsServicesOpen] = useState(false) // Mobile dropdown state
-  const isFetching = useRef(false)
 
-  // Fetch services for this practice
-  const fetchServices = useCallback(async () => {
-    if (isFetching.current) return
-    isFetching.current = true
-    setServicesLoading(true)
-    
-    try {
-      // Fetch services for this practice
-      const { data: servicesData, error: servicesError } = await supabase
-        .from('services')
-        .select('id')
-        .eq('practice_id', practice.id)
-        .eq('status', 'published')
-
-      if (servicesError) {
-        console.error('Error fetching services:', servicesError)
-        return
-      }
-
-      if (!servicesData || servicesData.length === 0) {
-        setServices([])
-        setServicesLoading(false)
-        isFetching.current = false
-        return
-      }
-
-      // Fetch translations for these services
-      const serviceIds = servicesData.map(s => s.id)
-      const { data: translationsData, error: translationsError } = await supabase
-        .from('service_translations')
-        .select('service_id, title, slug')
-        .in('service_id', serviceIds)
-        .eq('language', locale)
-
-      if (translationsError) {
-        console.error('Error fetching service translations:', translationsError)
-        return
-      }
-
-      // Combine services with their translations
-      const servicesWithTranslations: Service[] = servicesData
-        .map(service => {
-            const translation = translationsData?.find(t => t.service_id === service.id)
-            if (!translation) return null
-            return {
-              id: service.id,
-              title: translation.title,
-              slug: translation.slug
-            }
-          })
-          .filter((s): s is Service => s !== null)
-
-        setServices(servicesWithTranslations)
-      } catch (error) {
-        console.error('Fetch error:', error)
-      } finally {
-        setServicesLoading(false)
-        isFetching.current = false
-      }
-  }, [practice.id, locale, supabase])
-
-  // Initial fetch only (removed visibility handler to prevent race conditions)
-  useEffect(() => {
-    fetchServices()
-  }, [fetchServices])
-
-  // Filter services based on search term
-  const filteredServices = services.filter(s => 
-    s.title.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  // Get localized text
+  const text = getPracticeDetailText(locale)
 
   // Format dates on client side to avoid hydration mismatch
   useEffect(() => {
-    const formatDate = (dateString: string): string => {
-      const date = new Date(dateString)
-      const options: Intl.DateTimeFormatOptions = { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      }
-      
-      const localeMap = {
-        ka: 'ka-GE',
-        en: 'en-US',
-        ru: 'ru-RU'
-      }
-      
-      return date.toLocaleDateString(localeMap[locale], options)
-    }
-
-    setFormattedCreatedAt(formatDate(practice.createdAt))
-    setFormattedUpdatedAt(formatDate(practice.updatedAt))
+    setFormattedCreatedAt(formatPracticeDate(practice.createdAt, locale))
+    setFormattedUpdatedAt(formatPracticeDate(practice.updatedAt, locale))
   }, [practice.createdAt, practice.updatedAt, locale])
 
-  // Share functionality
-  const handleShare = async (platform: 'facebook' | 'linkedin' | 'twitter') => {
-    const url = window.location.href
-    const title = translation.ogTitle || translation.metaTitle || translation.title
-    const description = translation.ogDescription || translation.metaDescription || ''
-
-    // Check if Web Share API is supported (mobile devices)
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: title,
-          text: description,
-          url: url
-        })
-        return // Success - native share dialog shown
-      } catch (err: unknown) {
-        // User cancelled or error - fall back to URL method
-        if (err instanceof Error && err.name !== 'AbortError') {
-          console.log('Share failed:', err)
-        }
-      }
-    }
-
-    // Fallback for desktop or if Web Share API not supported
-    const shareUrls = {
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
-      twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`
-    }
-
-    window.open(shareUrls[platform], '_blank', 'width=600,height=500,noopener,noreferrer')
-  }
-
-  // Localized text
-  const text = {
-    services: locale === 'ka' ? 'სერვისები' : locale === 'en' ? 'Services' : 'Услуги',
-    servicesAvailable: (count: number) => locale === 'ka' ? `${count} სერვისი ხელმისაწვდომია` : locale === 'en' ? `${count} services available` : `${count} услуг доступно`,
-    searchServices: locale === 'ka' ? 'სერვისების ძებნა...' : locale === 'en' ? 'Search services...' : 'Поиск услуг...',
-    noServices: locale === 'ka' ? 'სერვისები არ მოიძებნა' : locale === 'en' ? 'No services found' : 'Услуги не найдены',
-    noSearchResults: locale === 'ka' ? 'ძებნის შედეგები არ მოიძებნა' : locale === 'en' ? 'No search results found' : 'Результаты поиска не найдены',
-    loading: locale === 'ka' ? 'იტვირთება...' : locale === 'en' ? 'Loading...' : 'Загрузка...',
-    back: locale === 'ka' ? 'უკან' : locale === 'en' ? 'Back' : 'Назад',
-    share: locale === 'ka' ? 'გაზიარება' : locale === 'en' ? 'Share' : 'Поделиться',
-    readingTime: locale === 'ka' ? 'წაკითხვის დრო' : locale === 'en' ? 'Reading Time' : 'Время чтения',
-    minutes: locale === 'ka' ? 'წთ' : locale === 'en' ? 'min' : 'мин',
-    published: locale === 'ka' ? 'გამოქვეყნდა' : locale === 'en' ? 'Published' : 'Опубликовано',
-    updated: locale === 'ka' ? 'განახლდა' : locale === 'en' ? 'Updated' : 'Обновлено',
-    wordCount: locale === 'ka' ? 'სიტყვების რაოდენობა' : locale === 'en' ? 'Word Count' : 'Количество слов',
-    openServices: locale === 'ka' ? 'სერვისების გახსნა' : locale === 'en' ? 'Open services' : 'Открыть услуги',
-    closeServices: locale === 'ka' ? 'სერვისების დახურვა' : locale === 'en' ? 'Close services' : 'Закрыть услуги',
+  // Share handler with data
+  const onShare = (platform: 'facebook' | 'linkedin' | 'twitter') => {
+    handleShare(platform, {
+      title: translation.ogTitle || translation.metaTitle || translation.title,
+      description: translation.ogDescription || translation.metaDescription || '',
+    })
   }
 
   return (
@@ -445,7 +290,7 @@ export default function PracticeDetail({
                 {/* Share Buttons - Below on mobile, right side on desktop */}
                 <div className="flex gap-2">
                   <button
-                    onClick={() => handleShare('facebook')}
+                    onClick={() => onShare('facebook')}
                     className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                       isDark 
                         ? 'bg-white/5 hover:bg-white/10 text-white border border-white/10' 
@@ -456,7 +301,7 @@ export default function PracticeDetail({
                     <span className="sm:inline">Facebook</span>
                   </button>
                   <button
-                    onClick={() => handleShare('linkedin')}
+                    onClick={() => onShare('linkedin')}
                     className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                       isDark 
                         ? 'bg-white/5 hover:bg-white/10 text-white border border-white/10' 
@@ -467,10 +312,10 @@ export default function PracticeDetail({
                     <span className="sm:inline">LinkedIn</span>
                   </button>
                   <button
-                    onClick={() => handleShare('twitter')}
+                    onClick={() => onShare('twitter')}
                     className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                       isDark 
-                        ? 'bg-white/5 hover:bg-white/10 text-white border border-white/10' 
+                        ? 'bg-white/5 hover:bg-white/10 text-white border border-black/10'
                         : 'bg-black/5 hover:bg-black/10 text-black border border-black/10'
                     }`}
                   >

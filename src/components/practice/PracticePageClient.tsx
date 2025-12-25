@@ -1,10 +1,9 @@
 'use client'
 
 import { useTheme } from '@/contexts/ThemeContext'
-import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Search, Command, Sparkles } from 'lucide-react'
-import { getClientSingleton } from '@/lib/supabase/client'
 import { practiceTranslations } from '@/translations/practices'
 import PracticeCard from './PracticeCard'
 import PracticeCardSkeleton from './PracticeCardSkeleton'
@@ -17,30 +16,35 @@ import ViewModeToggle from '@/components/common/ViewModeToggle'
 import SkipLink from '@/components/common/SkipLink'
 
 // Import types from local types module
-import type { PracticeData, ServiceData, ResultType, ViewMode, SortOption } from './types'
+import type { 
+  PracticeData, 
+  ServiceData, 
+  ResultType, 
+  ViewMode, 
+  SortOption,
+  PracticePageClientProps 
+} from './types'
 
-export default function PracticePage() {
+export default function PracticePageClient({ initialData, locale }: PracticePageClientProps) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
-  const params = useParams()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const locale = (params?.locale as 'ka' | 'en' | 'ru') || 'ka'
   
   // Get translations for current locale
   const t = practiceTranslations[locale]
 
   if (!t) {
-    return null // or a loading indicator
+    return null
   }
 
-  // Initialize state from URL params or defaults
-  const [practices, setPractices] = useState<PracticeData[]>([])
-  const [services, setServices] = useState<ServiceData[]>([])
-  const [filteredPractices, setFilteredPractices] = useState<PracticeData[]>([])
-  const [filteredServices, setFilteredServices] = useState<ServiceData[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
+  // Initialize state with server data - NO LOADING needed!
+  const [practices] = useState<PracticeData[]>(initialData.practices)
+  const [services] = useState<ServiceData[]>(initialData.services)
+  const [filteredPractices, setFilteredPractices] = useState<PracticeData[]>(initialData.practices)
+  const [filteredServices, setFilteredServices] = useState<ServiceData[]>(initialData.services)
+  
+  // Interactive state only
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery)
   const [activeTab, setActiveTab] = useState<ResultType>((searchParams.get('tab') as ResultType) || 'practices')
@@ -52,101 +56,6 @@ export default function PracticePage() {
     'grid'
   )
   const [displayCount, setDisplayCount] = useState(12)
-  const isFetching = useRef(false)
-
-  // Fetch data function (extracted for reuse)
-  const fetchData = useCallback(async () => {
-    // Skip if already fetching
-    if (isFetching.current) return
-    isFetching.current = true
-    
-    setLoading(true)
-    setError(false)
-    const supabase = getClientSingleton()
-
-    try {
-      // Fetch practices
-      const { data: practicesData, error: practicesError } = await supabase
-        .from('practices')
-        .select(
-          `
-          id,
-          hero_image_url,
-          practice_translations!inner (
-            title,
-            slug,
-            description,
-            hero_image_alt
-          ),
-          services:services!practice_id(count)
-        `
-        )
-        .eq('practice_translations.language', locale)
-        .eq('services.status', 'published')
-
-      if (practicesError) {
-        console.error('Supabase practices error:', practicesError)
-        throw practicesError
-      }
-
-      // Fetch services
-      const { data: servicesData, error: servicesError } = await supabase
-        .from('services')
-        .select(
-          `
-          id,
-          image_url,
-          practice_id,
-          service_translations!inner (
-            title,
-            slug,
-            description,
-            image_alt
-          ),
-          practices!inner (
-            practice_translations!inner (
-              title,
-              slug
-            )
-          )
-        `
-        )
-        .eq('service_translations.language', locale)
-        .eq('status', 'published')
-
-      if (servicesError) {
-        console.error('Supabase services error:', servicesError)
-        throw servicesError
-      }
-
-      if (practicesData) {
-        const validPractices = practicesData.filter(
-          (practice) =>
-            practice.practice_translations &&
-            practice.practice_translations.length > 0
-        )
-        setPractices(validPractices as PracticeData[])
-        setFilteredPractices(validPractices as PracticeData[])
-      }
-
-      if (servicesData) {
-        const validServices = servicesData.filter(
-          (service) =>
-            service.service_translations &&
-            service.service_translations.length > 0
-        )
-        setServices(validServices as ServiceData[])
-        setFilteredServices(validServices as ServiceData[])
-      }
-    } catch (err) {
-      console.error('Error fetching data:', err)
-      console.error('Error details:', JSON.stringify(err, null, 2))
-      setError(true)
-    } finally {
-      setLoading(false)
-      isFetching.current = false
-    }
-  }, [locale])
 
   // Debounce search query (300ms delay)
   useEffect(() => {
@@ -184,11 +93,6 @@ export default function PracticePage() {
       localStorage.setItem('practices-view-mode', viewMode)
     }
   }, [viewMode])
-
-  // Initial fetch only (removed visibility change handler to prevent race conditions)
-  useEffect(() => {
-    fetchData()
-  }, [locale, fetchData])
 
   // Filter and search for practices
   useEffect(() => {
@@ -299,26 +203,16 @@ export default function PracticePage() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [searchQuery])
 
-  const handleRetry = useCallback(() => {
-    window.location.reload()
-  }, [])
-
   const handleLoadMore = useCallback(() => {
     setDisplayCount((prev) => prev + 12)
   }, [])
 
-  // Get unique categories
-  const categories = Array.from(
-    new Set(
-      practices
-        .map((p) => p.practice_translations[0].category)
-        .filter(Boolean)
-    )
-  )
+  // Use categories from initialData
+  const categories = initialData.categories
 
   const filterOptions = [
     { value: 'all', label: t.filterAll },
-    ...categories.map((cat) => ({ value: cat!, label: cat! })),
+    ...categories.map((cat) => ({ value: cat, label: cat })),
   ]
 
   const sortOptions = [
@@ -380,25 +274,23 @@ export default function PracticePage() {
             </div>
             
             {/* Stats Badge */}
-            {!loading && !error && (
-              <div
-                className={`hidden md:flex items-center gap-2 px-4 py-2 rounded-lg ${
-                  isDark ? 'bg-white/5 border border-white/10' : 'bg-black/5 border border-black/10'
-                }`}
-              >
-                <Sparkles
-                  className={`h-5 w-5 ${isDark ? 'text-white/60' : 'text-black/60'}`}
-                />
-                <div className="text-right">
-                  <div className={`text-xs ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-                    {t.practices}
-                  </div>
-                  <div className={`text-lg font-bold ${isDark ? 'text-white' : 'text-black'}`}>
-                    {practices.length}
-                  </div>
+            <div
+              className={`hidden md:flex items-center gap-2 px-4 py-2 rounded-lg ${
+                isDark ? 'bg-white/5 border border-white/10' : 'bg-black/5 border border-black/10'
+              }`}
+            >
+              <Sparkles
+                className={`h-5 w-5 ${isDark ? 'text-white/60' : 'text-black/60'}`}
+              />
+              <div className="text-right">
+                <div className={`text-xs ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                  {t.practices}
+                </div>
+                <div className={`text-lg font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+                  {practices.length}
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
 
@@ -461,79 +353,38 @@ export default function PracticePage() {
           </div>
 
           {/* Results Tabs */}
-          {!loading && !error && (
-            <>
-              {/* Screen Reader Announcement for Results Count */}
-              <div 
-                role="status" 
-                aria-live="polite" 
-                aria-atomic="true"
-                className="sr-only"
-              >
-                {activeTab === 'practices' 
-                  ? (locale === 'ka' 
-                    ? `${filteredPractices.length} პრაქტიკა მოიძებნა`
-                    : locale === 'en'
-                    ? `${filteredPractices.length} practices found`
-                    : `${filteredPractices.length} практик найдено`)
-                  : (locale === 'ka'
-                    ? `${filteredServices.length} სერვისი მოიძებნა`
-                    : locale === 'en'
-                    ? `${filteredServices.length} services found`
-                    : `${filteredServices.length} услуг найдено`)
-                }
-              </div>
+          <>
+            {/* Screen Reader Announcement for Results Count */}
+            <div 
+              role="status" 
+              aria-live="polite" 
+              aria-atomic="true"
+              className="sr-only"
+            >
+              {activeTab === 'practices' 
+                ? (locale === 'ka' 
+                  ? `${filteredPractices.length} პრაქტიკა მოიძებნა`
+                  : locale === 'en'
+                  ? `${filteredPractices.length} practices found`
+                  : `${filteredPractices.length} практик найдено`)
+                : (locale === 'ka'
+                  ? `${filteredServices.length} სერვისი მოიძებნა`
+                  : locale === 'en'
+                  ? `${filteredServices.length} services found`
+                  : `${filteredServices.length} услуг найдено`)
+              }
+            </div>
 
-              <div className={`flex items-center gap-2 pb-4 border-b ${
-                isDark ? 'border-white/10' : 'border-black/10'
-              }`} role="tablist" aria-label={locale === 'ka' ? 'შედეგების ტიპი' : locale === 'en' ? 'Results type' : 'Тип результатов'}>
-                <button
-                  onClick={() => setActiveTab('practices')}
-                  role="tab"
-                  aria-selected={activeTab === 'practices'}
-                  aria-controls="practices-panel"
-                  className={`relative px-4 py-2 text-sm md:text-base font-medium transition-all duration-300 ${
-                    activeTab === 'practices'
-                      ? isDark
-                        ? 'text-white'
-                        : 'text-black'
-                      : isDark
-                      ? 'text-white/50 hover:text-white/70'
-                      : 'text-black/50 hover:text-black/70'
-                  }`}
-                >
-                {t.practices}
-                {filteredPractices.length > 0 && (
-                  <span
-                    className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                      activeTab === 'practices'
-                        ? isDark
-                          ? 'bg-white text-black'
-                          : 'bg-black text-white'
-                        : isDark
-                        ? 'bg-white/10 text-white/70'
-                        : 'bg-black/10 text-black/70'
-                    }`}
-                  >
-                    {filteredPractices.length}
-                  </span>
-                )}
-                {activeTab === 'practices' && (
-                  <div
-                    className={`absolute bottom-0 left-0 right-0 h-0.5 ${
-                      isDark ? 'bg-white' : 'bg-black'
-                    }`}
-                  />
-                )}
-              </button>
-
+            <div className={`flex items-center gap-2 pb-4 border-b ${
+              isDark ? 'border-white/10' : 'border-black/10'
+            }`} role="tablist" aria-label={locale === 'ka' ? 'შედეგების ტიპი' : locale === 'en' ? 'Results type' : 'Тип результатов'}>
               <button
-                onClick={() => setActiveTab('services')}
+                onClick={() => setActiveTab('practices')}
                 role="tab"
-                aria-selected={activeTab === 'services'}
-                aria-controls="services-panel"
+                aria-selected={activeTab === 'practices'}
+                aria-controls="practices-panel"
                 className={`relative px-4 py-2 text-sm md:text-base font-medium transition-all duration-300 ${
-                  activeTab === 'services'
+                  activeTab === 'practices'
                     ? isDark
                       ? 'text-white'
                       : 'text-black'
@@ -542,33 +393,72 @@ export default function PracticePage() {
                     : 'text-black/50 hover:text-black/70'
                 }`}
               >
-                {t.services}
-                {filteredServices.length > 0 && (
-                  <span
-                    className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                      activeTab === 'services'
-                        ? isDark
-                          ? 'bg-white text-black'
-                          : 'bg-black text-white'
-                        : isDark
-                        ? 'bg-white/10 text-white/70'
-                        : 'bg-black/10 text-black/70'
-                    }`}
-                  >
-                    {filteredServices.length}
-                  </span>
-                )}
-                {activeTab === 'services' && (
-                  <div
-                    className={`absolute bottom-0 left-0 right-0 h-0.5 ${
-                      isDark ? 'bg-white' : 'bg-black'
-                    }`}
-                  />
-                )}
-              </button>
-            </div>
-            </>
-          )}
+              {t.practices}
+              {filteredPractices.length > 0 && (
+                <span
+                  className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                    activeTab === 'practices'
+                      ? isDark
+                        ? 'bg-white text-black'
+                        : 'bg-black text-white'
+                      : isDark
+                      ? 'bg-white/10 text-white/70'
+                      : 'bg-black/10 text-black/70'
+                  }`}
+                >
+                  {filteredPractices.length}
+                </span>
+              )}
+              {activeTab === 'practices' && (
+                <div
+                  className={`absolute bottom-0 left-0 right-0 h-0.5 ${
+                    isDark ? 'bg-white' : 'bg-black'
+                  }`}
+                />
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveTab('services')}
+              role="tab"
+              aria-selected={activeTab === 'services'}
+              aria-controls="services-panel"
+              className={`relative px-4 py-2 text-sm md:text-base font-medium transition-all duration-300 ${
+                activeTab === 'services'
+                  ? isDark
+                    ? 'text-white'
+                    : 'text-black'
+                  : isDark
+                  ? 'text-white/50 hover:text-white/70'
+                  : 'text-black/50 hover:text-black/70'
+              }`}
+            >
+              {t.services}
+              {filteredServices.length > 0 && (
+                <span
+                  className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                    activeTab === 'services'
+                      ? isDark
+                        ? 'bg-white text-black'
+                        : 'bg-black text-white'
+                      : isDark
+                      ? 'bg-white/10 text-white/70'
+                      : 'bg-black/10 text-black/70'
+                  }`}
+                >
+                  {filteredServices.length}
+                </span>
+              )}
+              {activeTab === 'services' && (
+                <div
+                  className={`absolute bottom-0 left-0 right-0 h-0.5 ${
+                    isDark ? 'bg-white' : 'bg-black'
+                  }`}
+                />
+              )}
+            </button>
+          </div>
+          </>
 
           {/* Filter, Sort, View Mode */}
           <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -589,31 +479,7 @@ export default function PracticePage() {
 
         {/* Content */}
         <div id="main-content" tabIndex={-1}>
-        {loading ? (
-          /* Skeleton Loading */
-          <div
-            className={`grid gap-6 md:gap-8 ${
-              viewMode === 'grid'
-                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
-                : 'grid-cols-1'
-            }`}
-            aria-busy="true"
-            aria-label={locale === 'ka' ? 'იტვირთება...' : locale === 'en' ? 'Loading...' : 'Загрузка...'}
-          >
-            {Array.from({ length: 6 }).map((_, i) => (
-              <PracticeCardSkeleton key={i} />
-            ))}
-          </div>
-        ) : error ? (
-          /* Error State */
-          <EmptyState
-            type="error"
-            title={t.error}
-            description={t.errorDesc}
-            actionLabel={t.retry}
-            onAction={handleRetry}
-          />
-        ) : activeTab === 'practices' && filteredPractices.length === 0 ? (
+        {activeTab === 'practices' && filteredPractices.length === 0 ? (
           /* Empty State for Practices */
           <EmptyState
             type={searchQuery || categoryFilter !== 'all' ? 'no-results' : 'no-data'}
