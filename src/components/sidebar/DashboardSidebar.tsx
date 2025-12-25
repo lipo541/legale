@@ -492,6 +492,7 @@ export default function DashboardSidebar() {
         return [
           { id: 'dashboard', label: t.dashboard, icon: LayoutDashboard },
           { id: 'messages', label: t.messages, icon: Bell },
+          { id: 'slider', label: t.slider, icon: Presentation },
           { id: 'practices', label: t.practices, icon: Briefcase },
           { id: 'services', label: t.services, icon: Wrench },
           { id: 'users', label: t.users, icon: Users },

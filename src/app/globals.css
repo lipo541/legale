@@ -150,6 +150,20 @@ body {
   }
 }
 
+/* Horizontal bounce animation for swipe hint */
+@keyframes bounceX {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+}
+
+.animate-bounce-x {
+  animation: bounceX 1.5s ease-in-out infinite;
+}
+
 .dark * {
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }

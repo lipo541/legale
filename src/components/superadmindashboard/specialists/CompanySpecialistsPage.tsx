@@ -115,6 +115,7 @@ export default function CompanySpecialistsPage() {
     handleToggleBlock,
     handleBulkBlock,
     handleToggleInfoActivate,
+    handleToggleHomepageFeatured,
     handleChangeVerificationStatus,
     handleSaveEdit,
     handlePhotoUpload,
@@ -438,6 +439,7 @@ export default function CompanySpecialistsPage() {
             onShowTranslations={handleShowTranslations}
             onToggleBlock={handleToggleBlock}
             onToggleInfoActivate={handleToggleInfoActivate}
+            onToggleHomepageFeatured={handleToggleHomepageFeatured}
             onDelete={handleDeleteById}
             onConvertToSolo={handleConvertToSoloSpecialist}
             onChangeCompany={handleChangeCompany}

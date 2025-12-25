@@ -539,6 +539,65 @@ const useSpecialistActions = ({
   }, [supabase, showModal])
 
   // -------------------------------------------------------------------------
+  // Toggle Homepage Featured
+  // -------------------------------------------------------------------------
+  const handleToggleHomepageFeatured = useCallback(async (specialist: CompanySpecialistProfile) => {
+    const newStatus = !specialist.is_homepage_featured
+    
+    // Check featured count if trying to add (both solo and company specialists count towards limit)
+    if (newStatus) {
+      const { count, error: countError } = await supabase
+        .from('profiles')
+        .select('id', { count: 'exact', head: true })
+        .in('role', ['SPECIALIST', 'SOLO_SPECIALIST'])
+        .eq('is_homepage_featured', true)
+      
+      if (!countError && count && count >= 8) {
+        showModal('error', 'მაქსიმუმ 8 Featured სპეციალისტი შესაძლებელია (სოლო + კომპანიის ჯამში)')
+        return
+      }
+    }
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          is_homepage_featured: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', specialist.id)
+
+      if (error) {
+        console.error('Toggle homepage featured error:', error)
+        showModal('error', 'შეცდომა Featured სტატუსის შეცვლისას')
+      } else {
+        // Calculate new order
+        const maxOrder = Math.max(
+          ...specialists
+            .filter(s => s.is_homepage_featured && s.id !== specialist.id)
+            .map(s => s.homepage_featured_order || 0),
+          0
+        )
+        
+        setSpecialists(prev => prev.map(s => 
+          s.id === specialist.id 
+            ? { 
+                ...s, 
+                is_homepage_featured: newStatus,
+                homepage_featured_order: newStatus ? maxOrder + 1 : null,
+                updated_at: new Date().toISOString() 
+              }
+            : s
+        ))
+        showModal('success', newStatus ? 'სპეციალისტი დაემატა მთავარ გვერდზე' : 'სპეციალისტი წაიშალა მთავარი გვერდიდან')
+      }
+    } catch (err) {
+      console.error('Toggle homepage featured error:', err)
+      showModal('error', 'შეცდომა Featured სტატუსის შეცვლისას')
+    }
+  }, [specialists, supabase, setSpecialists, showModal])
+
+  // -------------------------------------------------------------------------
   // Return
   // -------------------------------------------------------------------------
   return {
@@ -552,7 +611,8 @@ const useSpecialistActions = ({
     handlePhotoUpload,
     handleConvertToSoloSpecialist,
     handleChangeCompany,
-    handleSaveCities
+    handleSaveCities,
+    handleToggleHomepageFeatured
   }
 }
 

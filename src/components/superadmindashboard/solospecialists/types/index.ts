@@ -41,6 +41,8 @@ export interface SoloSpecialistProfile {
   verification_reviewed_at: string | null
   is_blocked: boolean | null
   info_activate: boolean | null
+  is_homepage_featured: boolean | null
+  homepage_featured_order: number | null
   created_at: string
   updated_at: string
 }

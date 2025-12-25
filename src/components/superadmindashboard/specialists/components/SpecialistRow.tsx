@@ -15,7 +15,8 @@ import {
   Square,
   ArrowUpDown,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  Home
 } from 'lucide-react'
 import VerificationBadge from './VerificationBadge'
 import type { 
@@ -44,6 +45,7 @@ interface SpecialistRowProps {
   onShowTranslations: (id: string) => void
   onToggleBlock: (specialist: CompanySpecialistProfile) => void
   onToggleInfoActivate: (specialist: CompanySpecialistProfile) => void
+  onToggleHomepageFeatured: (specialist: CompanySpecialistProfile) => void
   onDelete: (id: string) => void
   onConvertToSolo: (specialist: CompanySpecialistProfile) => void
   onChangeCompany: (specialistId: string, companyId: string, companyName: string) => void
@@ -69,6 +71,7 @@ const SpecialistRow = memo(function SpecialistRow({
   onShowTranslations,
   onToggleBlock,
   onToggleInfoActivate,
+  onToggleHomepageFeatured,
   onDelete,
   onConvertToSolo,
   onChangeCompany,
@@ -144,10 +147,32 @@ const SpecialistRow = memo(function SpecialistRow({
               <span className={`text-[10px] ${isDark ? 'text-white/50' : 'text-black/50'}`}>
                 {new Date(specialist.created_at).toLocaleDateString('ka-GE')}
               </span>
+              {/* Homepage Featured Badge */}
+              {specialist.is_homepage_featured && (
+                <span className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-medium ${
+                  isDark ? 'bg-amber-500/20 text-amber-400' : 'bg-amber-500/10 text-amber-600'
+                }`}>
+                  <Home className="h-2.5 w-2.5" />
+                  მთავარი #{specialist.homepage_featured_order}
+                </span>
+              )}
             </div>
 
             {/* Action Buttons - Mobile */}
             <div className="mt-2.5 flex items-center gap-1 flex-wrap">
+              {/* Homepage Featured Toggle */}
+              <button
+                onClick={() => onToggleHomepageFeatured(specialist)}
+                className={`rounded-md p-1.5 transition-colors ${
+                  specialist.is_homepage_featured
+                    ? isDark ? 'bg-amber-500/20 text-amber-400' : 'bg-amber-500/10 text-amber-600'
+                    : isDark ? 'bg-white/10 text-white/60' : 'bg-black/5 text-black/60'
+                }`}
+                title={specialist.is_homepage_featured ? 'მთავარიდან ამოშლა' : 'მთავარზე დამატება'}
+              >
+                <Home className="h-4 w-4" />
+              </button>
+
               {/* Translations */}
               <button
                 onClick={() => onShowTranslations(specialist.id)}
@@ -426,6 +451,21 @@ const SpecialistRow = memo(function SpecialistRow({
           <span className={`text-[10px] ${isDark ? 'text-white/70' : 'text-black/70'}`}>
             {new Date(specialist.created_at).toLocaleDateString('ka-GE')}
           </span>
+        </td>
+
+        {/* Homepage Featured */}
+        <td className="px-2 py-2">
+          <button
+            onClick={() => onToggleHomepageFeatured(specialist)}
+            className={`rounded-md p-1 transition-colors ${
+              specialist.is_homepage_featured
+                ? isDark ? 'bg-amber-500/20 text-amber-400' : 'bg-amber-500/10 text-amber-600'
+                : isDark ? 'hover:bg-white/10 text-white/40' : 'hover:bg-black/5 text-black/40'
+            }`}
+            title={specialist.is_homepage_featured ? `მთავარი #${specialist.homepage_featured_order}` : 'მთავარზე დამატება'}
+          >
+            <Home className={`h-3.5 w-3.5 ${specialist.is_homepage_featured ? '' : 'opacity-50'}`} />
+          </button>
         </td>
 
         {/* Actions */}

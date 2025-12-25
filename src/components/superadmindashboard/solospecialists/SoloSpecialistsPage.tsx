@@ -116,6 +116,7 @@ export default function SoloSpecialistsPage() {
     handleToggleBlock,
     handleBulkBlock,
     handleToggleInfoActivate,
+    handleToggleHomepageFeatured,
     handleChangeVerificationStatus,
     handleSaveEdit,
     handlePhotoUpload,
@@ -431,6 +432,7 @@ export default function SoloSpecialistsPage() {
             onShowTranslations={handleShowTranslations}
             onToggleBlock={handleToggleBlock}
             onToggleInfoActivate={handleToggleInfoActivate}
+            onToggleHomepageFeatured={handleToggleHomepageFeatured}
             onDelete={handleDelete}
             onConvertToCompany={handleConvertToCompanySpecialist}
             convertingDropdownId={convertingDropdownId}

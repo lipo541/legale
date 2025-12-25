@@ -22,6 +22,7 @@ import TeamCreatePage from './teamcreate/TeamCreatePage'
 import MessagesPage from './messages/MessagesPage'
 import CategoryAdd from './categories/CategoryAdd'
 import LegalPagesPage from './legalpages/LegalPagesPage'
+import { HeroManager } from './hero'
 
 // ============================================================================
 // Types
@@ -100,16 +101,7 @@ export default function SuperAdminDashboard() {
       case 'categories':
         return <CategoryAdd />
       case 'slider':
-        return (
-          <div className="p-4">
-            <h1 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
-              Slider
-            </h1>
-            <p className={`mt-1 text-xs ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-              მთავარი გვერდის სლაიდერის მართვა
-            </p>
-          </div>
-        )
+        return <HeroManager />
       case 'legal-pages':
         return <LegalPagesPage />
       case 'newsbanner':

@@ -43,6 +43,8 @@ interface Post {
   published_at: string | null
   created_at: string
   updated_at: string
+  is_homepage_featured: boolean
+  homepage_featured_order: number | null
   post_translations: Array<{
     id: string
     language: string
@@ -792,6 +794,48 @@ export default function PostsPage() {
     })
   }, [])
 
+  // Homepage Featured Toggle Handler
+  const handleToggleHomepageFeatured = useCallback(async (postId: string, currentStatus: boolean) => {
+    try {
+      // Check current featured count if trying to add
+      if (!currentStatus) {
+        const featuredCount = posts.filter(p => p.is_homepage_featured).length
+        if (featuredCount >= 8) {
+          showModal('error', 'მაქსიმუმ 8 Featured პოსტი შესაძლებელია')
+          return
+        }
+      }
+
+      const newStatus = !currentStatus
+      const { error } = await supabase
+        .from('posts')
+        .update({ is_homepage_featured: newStatus })
+        .eq('id', postId)
+
+      if (error) throw error
+
+      // Update local state immediately
+      setPosts(posts.map(p => {
+        if (p.id === postId) {
+          return { 
+            ...p, 
+            is_homepage_featured: newStatus,
+            homepage_featured_order: newStatus 
+              ? Math.max(...posts.filter(x => x.is_homepage_featured).map(x => x.homepage_featured_order || 0), 0) + 1 
+              : null
+          }
+        }
+        return p
+      }))
+      
+      showModal('success', newStatus ? 'პოსტი დაემატა მთავარ გვერდზე' : 'პოსტი წაიშალა მთავარი გვერდიდან')
+      fetchPosts()
+    } catch (error) {
+      console.error('Error toggling homepage featured:', error)
+      showModal('error', 'შეცდომა Featured სტატუსის შეცვლისას')
+    }
+  }, [posts, supabase, fetchPosts, showModal])
+
   const clearFilters = useCallback(() => {
     setSearchTerm('')
     setStatusFilter('ALL')
@@ -1276,6 +1320,11 @@ export default function PostsPage() {
                       <th className={`px-2 py-2 text-left text-[10px] font-medium uppercase tracking-wider ${
                         isDark ? 'text-white/60' : 'text-black/60'
                       }`}>
+                        <span title="Homepage Featured">🏠</span>
+                      </th>
+                      <th className={`px-2 py-2 text-left text-[10px] font-medium uppercase tracking-wider ${
+                        isDark ? 'text-white/60' : 'text-black/60'
+                      }`}>
                         <div className="flex items-center gap-1 cursor-pointer" onClick={() => handleSort('created_at')}>
                           თარიღი
                           <SortIcon column="created_at" />
@@ -1405,6 +1454,35 @@ export default function PostsPage() {
                                   </div>
                                 )}
                               </div>
+                            </td>
+                            <td className="px-2 py-2">
+                              <button
+                                onClick={() => handleToggleHomepageFeatured(post.id, post.is_homepage_featured)}
+                                className={`
+                                  relative w-8 h-4 rounded-full transition-colors
+                                  ${post.is_homepage_featured 
+                                    ? 'bg-yellow-500' 
+                                    : isDark ? 'bg-white/20' : 'bg-black/20'
+                                  }
+                                `}
+                                title={post.is_homepage_featured 
+                                  ? `Featured #${post.homepage_featured_order}` 
+                                  : 'Not featured'
+                                }
+                              >
+                                <div className={`
+                                  absolute top-0.5 w-3 h-3 rounded-full transition-transform
+                                  ${post.is_homepage_featured 
+                                    ? 'translate-x-4 bg-white' 
+                                    : 'translate-x-0.5 bg-white'
+                                  }
+                                `} />
+                              </button>
+                              {post.is_homepage_featured && post.homepage_featured_order && (
+                                <span className="ml-1 text-[9px] font-bold text-yellow-500">
+                                  #{post.homepage_featured_order}
+                                </span>
+                              )}
                             </td>
                             <td className="px-2 py-2">
                               <span className={`text-[10px] ${isDark ? 'text-white/70' : 'text-black/70'}`}>

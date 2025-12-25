@@ -73,6 +73,13 @@ export const specialistsTranslations = {
     // Card Actions
     viewMore: 'იხილეთ მეტი',
     contactSpecialist: 'დაკავშირება',
+    
+    // Homepage Featured Section
+    featuredSpecialists: 'რჩეული სპეციალისტები',
+    seeAllSpecialists: 'ყველა სპეციალისტი',
+    solo: 'დამოუკიდებელი',
+    company: 'კომპანია',
+    verified: 'ვერიფიცირებული',
 
     // Accessibility
     skipToContent: 'გადასვლა მთავარ კონტენტზე',
@@ -153,6 +160,13 @@ export const specialistsTranslations = {
     // Card Actions
     viewMore: 'View More',
     contactSpecialist: 'Contact',
+    
+    // Homepage Featured Section
+    featuredSpecialists: 'Featured Specialists',
+    seeAllSpecialists: 'See All Specialists',
+    solo: 'Independent',
+    company: 'Company',
+    verified: 'Verified',
 
     // Accessibility
     skipToContent: 'Skip to main content',
@@ -233,6 +247,13 @@ export const specialistsTranslations = {
     // Card Actions
     viewMore: 'Подробнее',
     contactSpecialist: 'Связаться',
+    
+    // Homepage Featured Section
+    featuredSpecialists: 'Рекомендуемые специалисты',
+    seeAllSpecialists: 'Все специалисты',
+    solo: 'Независимый',
+    company: 'Компания',
+    verified: 'Верифицирован',
 
     // Accessibility
     skipToContent: 'Перейти к основному содержанию',

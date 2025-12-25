@@ -41,6 +41,7 @@ interface SpecialistTableProps {
   // Actions
   onToggleBlock: (specialist: SoloSpecialistProfile) => void
   onToggleInfoActivate: (specialist: SoloSpecialistProfile) => void
+  onToggleHomepageFeatured: (specialist: SoloSpecialistProfile) => void
   onDelete: (id: string) => void
   onConvertToCompany: (specialistId: string, companyId: string, companyName: string) => void
   
@@ -72,6 +73,7 @@ const SpecialistTable = memo(function SpecialistTable({
   onShowTranslations,
   onToggleBlock,
   onToggleInfoActivate,
+  onToggleHomepageFeatured,
   onDelete,
   onConvertToCompany,
   convertingDropdownId,
@@ -153,6 +155,13 @@ const SpecialistTable = memo(function SpecialistTable({
                 </div>
               </th>
 
+              {/* Homepage Featured */}
+              <th className={`px-2 py-2 text-center text-[10px] font-medium uppercase tracking-wider ${
+                isDark ? 'text-white/60' : 'text-black/60'
+              }`}>
+                <span title="მთავარზე Featured">🏠</span>
+              </th>
+
               {/* Actions */}
               <th className={`px-2 py-2 text-right text-[10px] font-medium uppercase tracking-wider ${
                 isDark ? 'text-white/60' : 'text-black/60'
@@ -178,6 +187,7 @@ const SpecialistTable = memo(function SpecialistTable({
                 onShowTranslations={onShowTranslations}
                 onToggleBlock={onToggleBlock}
                 onToggleInfoActivate={onToggleInfoActivate}
+                onToggleHomepageFeatured={onToggleHomepageFeatured}
                 onDelete={onDelete}
                 onConvertToCompany={onConvertToCompany}
                 onSelectCompany={onSelectCompany}
@@ -230,6 +240,7 @@ const SpecialistTable = memo(function SpecialistTable({
               onShowTranslations={onShowTranslations}
               onToggleBlock={onToggleBlock}
               onToggleInfoActivate={onToggleInfoActivate}
+              onToggleHomepageFeatured={onToggleHomepageFeatured}
               onDelete={onDelete}
               onConvertToCompany={onConvertToCompany}
               onSelectCompany={onSelectCompany}

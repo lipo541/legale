@@ -41,6 +41,7 @@ interface SpecialistTableProps {
   // Actions
   onToggleBlock: (specialist: CompanySpecialistProfile) => void
   onToggleInfoActivate: (specialist: CompanySpecialistProfile) => void
+  onToggleHomepageFeatured: (specialist: CompanySpecialistProfile) => void
   onDelete: (id: string) => void
   onConvertToSolo: (specialist: CompanySpecialistProfile) => void
   onChangeCompany: (specialistId: string, companyId: string, companyName: string) => void
@@ -73,6 +74,7 @@ const SpecialistTable = memo(function SpecialistTable({
   onShowTranslations,
   onToggleBlock,
   onToggleInfoActivate,
+  onToggleHomepageFeatured,
   onDelete,
   onConvertToSolo,
   onChangeCompany,
@@ -168,6 +170,13 @@ const SpecialistTable = memo(function SpecialistTable({
                 </div>
               </th>
 
+              {/* Homepage Featured */}
+              <th className={`px-2 py-2 text-center text-[10px] font-medium uppercase tracking-wider ${
+                isDark ? 'text-white/60' : 'text-black/60'
+              }`}>
+                🏠
+              </th>
+
               {/* Actions */}
               <th className={`px-2 py-2 text-right text-[10px] font-medium uppercase tracking-wider ${
                 isDark ? 'text-white/60' : 'text-black/60'
@@ -193,6 +202,7 @@ const SpecialistTable = memo(function SpecialistTable({
                 onShowTranslations={onShowTranslations}
                 onToggleBlock={onToggleBlock}
                 onToggleInfoActivate={onToggleInfoActivate}
+                onToggleHomepageFeatured={onToggleHomepageFeatured}
                 onDelete={onDelete}
                 onConvertToSolo={onConvertToSolo}
                 onChangeCompany={onChangeCompany}
@@ -246,6 +256,7 @@ const SpecialistTable = memo(function SpecialistTable({
               onShowTranslations={onShowTranslations}
               onToggleBlock={onToggleBlock}
               onToggleInfoActivate={onToggleInfoActivate}
+              onToggleHomepageFeatured={onToggleHomepageFeatured}
               onDelete={onDelete}
               onConvertToSolo={onConvertToSolo}
               onChangeCompany={onChangeCompany}

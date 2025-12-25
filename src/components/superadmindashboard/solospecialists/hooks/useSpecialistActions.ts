@@ -511,6 +511,60 @@ export function useSpecialistActions({
   }, [supabase, showModal])
 
   // -------------------------------------------------------------------------
+  // Toggle Homepage Featured
+  // -------------------------------------------------------------------------
+  const handleToggleHomepageFeatured = useCallback(async (specialist: SoloSpecialistProfile) => {
+    const newStatus = !specialist.is_homepage_featured
+    
+    // Check featured count if trying to add
+    if (newStatus) {
+      const featuredCount = specialists.filter(s => s.is_homepage_featured).length
+      if (featuredCount >= 8) {
+        showModal('error', 'მაქსიმუმ 8 Featured სპეციალისტი შესაძლებელია')
+        return
+      }
+    }
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          is_homepage_featured: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', specialist.id)
+
+      if (error) {
+        console.error('Toggle homepage featured error:', error)
+        showModal('error', 'შეცდომა Featured სტატუსის შეცვლისას')
+      } else {
+        // Calculate new order
+        const maxOrder = Math.max(
+          ...specialists
+            .filter(s => s.is_homepage_featured && s.id !== specialist.id)
+            .map(s => s.homepage_featured_order || 0),
+          0
+        )
+        
+        setSpecialists(prev => prev.map(s => 
+          s.id === specialist.id 
+            ? { 
+                ...s, 
+                is_homepage_featured: newStatus,
+                homepage_featured_order: newStatus ? maxOrder + 1 : null,
+                updated_at: new Date().toISOString() 
+              }
+            : s
+        ))
+        showModal('success', newStatus ? 'სპეციალისტი დაემატა მთავარ გვერდზე' : 'სპეციალისტი წაიშალა მთავარი გვერდიდან')
+      }
+    } catch (err) {
+      console.error('Toggle homepage featured error:', err)
+      showModal('error', 'შეცდომა Featured სტატუსის შეცვლისას')
+    }
+  }, [specialists, supabase, setSpecialists, showModal])
+
+  // -------------------------------------------------------------------------
   // Return
   // -------------------------------------------------------------------------
   return {
@@ -523,7 +577,8 @@ export function useSpecialistActions({
     handleSaveEdit,
     handlePhotoUpload,
     handleConvertToCompanySpecialist,
-    handleSaveCities
+    handleSaveCities,
+    handleToggleHomepageFeatured
   }
 }
 

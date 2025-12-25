@@ -49,6 +49,10 @@ export const newsTranslations = {
     author: 'ავტორი',
     category: 'კატეგორია',
     
+    // Homepage Featured Section
+    featuredNews: 'რჩეული სიახლეები',
+    seeAllNews: 'ყველა სიახლე',
+    
     // Position 5 - News Ticker
     latestNews: 'ახალი ამბები',
     breakingNews: 'მნიშვნელოვანი ამბები',
@@ -212,6 +216,10 @@ export const newsTranslations = {
     author: 'Author',
     category: 'Category',
     
+    // Homepage Featured Section
+    featuredNews: 'Featured News',
+    seeAllNews: 'See All News',
+    
     // Position 5 - News Ticker
     latestNews: 'Latest News',
     breakingNews: 'Breaking News',
@@ -374,6 +382,10 @@ export const newsTranslations = {
     publishedAt: 'Опубликовано',
     author: 'Автор',
     category: 'Категория',
+    
+    // Homepage Featured Section
+    featuredNews: 'Избранные новости',
+    seeAllNews: 'Все новости',
     
     // Position 5 - News Ticker
     latestNews: 'Последние новости',

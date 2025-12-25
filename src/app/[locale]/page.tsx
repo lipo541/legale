@@ -1,4 +1,7 @@
 import Hero from '@/components/hero/Hero'
+import HomepageBanner from '@/components/news/HomepageBanner'
+import FeaturedNewsSection from '@/components/news/FeaturedNewsSection'
+import FeaturedSpecialistsSection from '@/components/specialists/FeaturedSpecialistsSection'
 import { Metadata } from 'next'
 import { siteConfig, getLanguageAlternates } from '@/lib/config'
 
@@ -70,7 +73,14 @@ export async function generateMetadata({
 }
 
 export default function LocaleHome() {
-  return <Hero />
+  return (
+    <>
+      <Hero />
+      <HomepageBanner />
+      <FeaturedNewsSection />
+      <FeaturedSpecialistsSection />
+    </>
+  )
 }
 
 // Enable ISR (Incremental Static Regeneration)

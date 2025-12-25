@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Upload, X, Image as ImageIcon, Trash2, Eye, ChevronDown, ChevronRight, Save } from 'lucide-react'
+import { Plus, Upload, X, Image as ImageIcon, Trash2, Eye, ChevronDown, ChevronRight, Save, Home } from 'lucide-react'
 
 interface Banner {
   id: string
@@ -14,6 +14,7 @@ interface Banner {
   created_at: string
   is_active: boolean
   display_order: number
+  is_homepage_featured: boolean
 }
 
 interface Category {
@@ -280,6 +281,30 @@ export default function NewsBannerPage() {
     }
   }
 
+  const handleToggleHomepageFeatured = async (banner: Banner) => {
+    const newStatus = !banner.is_homepage_featured
+    
+    try {
+      const { error } = await supabase
+        .from('news_banners')
+        .update({ is_homepage_featured: newStatus })
+        .eq('id', banner.id)
+
+      if (error) throw error
+
+      // Update local state - if setting as featured, unfeature others
+      setBanners(prev => prev.map(b => ({
+        ...b,
+        is_homepage_featured: b.id === banner.id ? newStatus : (newStatus ? false : b.is_homepage_featured)
+      })))
+      
+      alert(newStatus ? 'ბანერი დაემატა მთავარ გვერდზე' : 'ბანერი წაიშალა მთავარი გვერდიდან')
+    } catch (error) {
+      console.error('Error toggling homepage featured:', error)
+      alert('შეცდომა სტატუსის შეცვლისას')
+    }
+  }
+
   const handleOrderChange = (bannerId: string, newOrder: number) => {
     if (newOrder < 1 || newOrder > 999) return
 
@@ -527,6 +552,25 @@ export default function NewsBannerPage() {
                     }`}>
                       {banner.is_active ? 'Active' : 'Inactive'}
                     </div>
+
+                    {/* Homepage Featured Toggle */}
+                    <button
+                      onClick={() => handleToggleHomepageFeatured(banner)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                        banner.is_homepage_featured
+                          ? isDark
+                            ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
+                            : 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20'
+                          : isDark
+                          ? 'bg-white/10 text-white/40 hover:bg-white/20 hover:text-white/60'
+                          : 'bg-black/5 text-black/40 hover:bg-black/10 hover:text-black/60'
+                      }`}
+                      title={banner.is_homepage_featured ? 'მთავარი გვერდიდან წაშლა' : 'მთავარ გვერდზე დამატება'}
+                    >
+                      <Home className="h-3.5 w-3.5" />
+                      {banner.is_homepage_featured ? 'მთავარზე' : 'მთავარი'}
+                    </button>
+
                     {banner.category_id && (
                       <div className={`px-3 py-1.5 rounded-full text-xs font-medium ${
                         isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-500/10 text-blue-600'
