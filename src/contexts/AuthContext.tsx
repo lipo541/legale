@@ -38,27 +38,9 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 // ==================== Constants ====================
 const SIGNOUT_DEBOUNCE_MS = 2000
 const SESSION_FETCH_DEBOUNCE_MS = 1000
-const TOKEN_REFRESH_ERROR_MESSAGES = [
-  'Invalid Refresh Token',
-  'Refresh Token Not Found',
-  'refresh_token_not_found',
-  'JWT expired',
-  'invalid_grant'
-]
 
 // Profile cache duration - 5 minutes
 const PROFILE_CACHE_DURATION_MS = 5 * 60 * 1000
-
-function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(() => reject(new Error(`${label} timeout after ${ms}ms`)), ms)
-  })
-
-  return Promise.race([promise, timeoutPromise]).finally(() => {
-    if (timeoutId) clearTimeout(timeoutId)
-  }) as Promise<T>
-}
 
 // ==================== Provider ====================
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -97,41 +79,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Get locale
   const currentLocale = pathname?.split('/')[1] || 'ka'
-
-  // ==================== Helper Functions ====================
-  const isTokenError = (error: Error | string | null): boolean => {
-    if (!error) return false
-    const message = typeof error === 'string' ? error : error.message
-    return TOKEN_REFRESH_ERROR_MESSAGES.some(msg => message?.includes(msg))
-  }
-
-  const clearAllSupabaseData = () => {
-    if (typeof window === 'undefined') return
-    
-    // Clear cookies
-    const cookies = document.cookie.split(';')
-    cookies.forEach(cookie => {
-      const cookieName = cookie.split('=')[0].trim()
-      if (cookieName.includes('supabase') || cookieName.includes('sb-')) {
-        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
-        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`
-      }
-    })
-    
-    // Clear localStorage
-    Object.keys(localStorage).forEach(key => {
-      if (key.includes('supabase') || key.includes('sb-')) {
-        localStorage.removeItem(key)
-      }
-    })
-    
-    // Clear sessionStorage
-    Object.keys(sessionStorage).forEach(key => {
-      if (key.includes('supabase') || key.includes('sb-')) {
-        sessionStorage.removeItem(key)
-      }
-    })
-  }
 
   const clearAuthState = () => {
     // Clear profile cache
@@ -193,12 +140,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [supabase])
 
-  // ==================== Sign Out (defined FIRST) ====================
+  // ==================== Sign Out ====================
   const performSignOut = useCallback(async (options?: { 
     redirect?: boolean
-    reason?: 'user_action' | 'token_error' | 'session_expired'
   }) => {
-    const { redirect = true, reason = 'user_action' } = options || {}
+    const { redirect = true } = options || {}
     const now = Date.now()
 
     // Debounce
@@ -217,25 +163,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Clear state first
       clearAuthState()
 
-      // Server-side logout
+      // Server-side logout (optional but good for cleanup)
       try {
         await fetch('/api/auth/logout', { method: 'POST' })
       } catch {
-        // Silent fail - continue with client-side signout
+        // Silent fail
       }
 
-      // Client-side signOut
+      // Client-side signOut - this is the source of truth
       await supabase.auth.signOut({ scope: 'global' })
-
-      // Clear all data
-      clearAllSupabaseData()
 
       // Redirect
       if (redirect && typeof window !== 'undefined') {
         window.location.href = `/${currentLocale}`
       }
-    } catch {
-      clearAllSupabaseData()
+    } catch (error) {
+      console.error('Sign out error:', error)
+      // Force redirect even if error
       if (redirect && typeof window !== 'undefined') {
         window.location.href = `/${currentLocale}`
       }
@@ -244,7 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [supabase, currentLocale])
 
-  // ==================== Fetch Session (uses performSignOut) ====================
+  // ==================== Fetch Session ====================
   const fetchSession = useCallback(async (options?: { force?: boolean }) => {
     const now = Date.now()
     
@@ -260,59 +204,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isFetching.current = true
 
     try {
-      // In production we have a rare case where getSession() can hang (UI stuck on Loading...).
-      // Ensure we never keep loading=true indefinitely.
-      let sessionResult: { data: { session: Session | null }; error: Error | null }
-
-      try {
-        sessionResult = await withTimeout(
-          supabase.auth.getSession() as unknown as Promise<{ data: { session: Session | null }; error: Error | null }>,
-          2500,
-          'supabase.auth.getSession'
-        )
-      } catch (err) {
-        // Attempt server-side refresh (reads cookies) then retry getSession once.
-        try {
-          await fetch('/api/auth/refresh', {
-            method: 'POST',
-            credentials: 'include',
-          })
-        } catch {
-          // ignore
-        }
-
-        try {
-          sessionResult = await withTimeout(
-            supabase.auth.getSession() as unknown as Promise<{ data: { session: Session | null }; error: Error | null }>,
-            2500,
-            'supabase.auth.getSession (retry)'
-          )
-        } catch (retryErr) {
-          if (!mountedRef.current) return
-          setAuthState(prev => ({
-            ...prev,
-            user: null,
-            session: null,
-            role: null,
-            hasPendingRequest: false,
-            loading: false,
-            initialized: true,
-            error: retryErr instanceof Error ? retryErr.message : 'getSession timeout',
-          }))
-          return
-        }
-      }
-
-      const { data: { session }, error: sessionError } = sessionResult
+      // Standard Supabase getSession call - no timeouts, no race conditions
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
       if (!mountedRef.current) return
 
       if (sessionError) {
-        if (isTokenError(sessionError.message)) {
-          await performSignOut({ redirect: false, reason: 'token_error' })
-          return
-        }
-
+        console.error('Session error:', sessionError)
         setAuthState(prev => ({
           ...prev,
           user: null,
@@ -331,12 +229,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return
       }
 
-      let profile: AuthProfile
-      try {
-        profile = await withTimeout(fetchProfile(session.user.id), 5000, 'fetchProfile')
-      } catch {
-        profile = { role: null, hasPendingRequest: false }
-      }
+      // Fetch profile for the session
+      const profile = await fetchProfile(session.user.id)
 
       if (!mountedRef.current) return
 
@@ -350,6 +244,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         error: null,
       })
     } catch (err) {
+      console.error('Auth context error:', err)
       if (mountedRef.current) {
         setAuthState(prev => ({
           ...prev,
@@ -361,11 +256,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       isFetching.current = false
     }
-  }, [supabase, fetchProfile, performSignOut])
+  }, [supabase, fetchProfile])
 
   // ==================== Public Methods ====================
   const signOut = useCallback(async () => {
-    await performSignOut({ redirect: true, reason: 'user_action' })
+    await performSignOut({ redirect: true })
   }, [performSignOut])
 
   const refreshSession = useCallback(async () => {
@@ -385,11 +280,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, session: Session | null) => {
-
-        if (event === 'TOKEN_REFRESHED' && !session) {
-          await performSignOut({ redirect: true, reason: 'token_error' })
-          return
-        }
+        // console.log('Auth state change:', event, session?.user?.id)
 
         if (event === 'SIGNED_OUT') {
           clearAuthState()
@@ -445,50 +336,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       mountedRef.current = false
       subscription?.unsubscribe()
     }
-  }, [supabase, fetchSession, fetchProfile, performSignOut])
-
-  // ==================== Visibility Change Handler ====================
-  useEffect(() => {
-    let isRefreshing = false
-
-    const handleVisibilityChange = async () => {
-      if (document.visibilityState === 'visible' && !isRefreshing) {
-        const currentAuthState = authStateRef.current
-        
-        if (!mountedRef.current || !currentAuthState.user) {
-          return
-        }
-
-        isRefreshing = true
-        
-        try {
-          const response = await fetch('/api/auth/refresh', { 
-            method: 'POST',
-            credentials: 'include'
-          })
-          
-          const data = await response.json()
-          
-          if (!mountedRef.current) return
-          
-          if (data.success) {
-            if (data.refreshed) {
-              setAuthState(prev => ({ ...prev, error: null }))
-            }
-          } else if (data.shouldLogout) {
-            await performSignOut({ redirect: false, reason: 'session_expired' })
-          }
-        } catch {
-          // Silent fail - session will be checked on next interaction
-        } finally {
-          isRefreshing = false
-        }
-      }
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [performSignOut])
+  }, [supabase, fetchSession, fetchProfile])
 
   // ==================== Context Value ====================
   const value: AuthContextValue = {
