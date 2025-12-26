@@ -642,7 +642,8 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
                 const translation = specialist.specialist_translations?.find(t => t.language === locale)
                 const displayName = (locale !== 'ka' && translation?.full_name) || specialist.full_name
                 const displayRoleTitle = (locale !== 'ka' && translation?.role_title) || specialist.role_title
-                const displaySlug = (locale !== 'ka' && translation?.slug) || specialist.slug
+                // Always prefer translation slug, fallback to profile slug only if translation doesn't exist
+                const displaySlug = translation?.slug || specialist.slug
                 
                 return (
                   <button

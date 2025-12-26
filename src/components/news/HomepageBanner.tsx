@@ -14,16 +14,23 @@ interface BannerData {
   category_slug?: string | null
 }
 
-export default function HomepageBanner() {
+interface HomepageBannerProps {
+  initialBanner?: BannerData | null
+}
+
+export default function HomepageBanner({ initialBanner }: HomepageBannerProps) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
   const params = useParams()
   const router = useRouter()
   const locale = (params?.locale as string) || 'ka'
-  const [banner, setBanner] = useState<BannerData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [banner, setBanner] = useState<BannerData | null>(initialBanner || null)
+  const [loading, setLoading] = useState(!initialBanner)
 
   useEffect(() => {
+    // Skip fetching if we have initial data from SSR
+    if (initialBanner) return
+    
     const fetchBanner = async () => {
       try {
         setLoading(true)
@@ -69,7 +76,7 @@ export default function HomepageBanner() {
     }
 
     fetchBanner()
-  }, [locale])
+  }, [locale, initialBanner])
 
   // Don't render if no banner or loading
   if (loading || !banner) {

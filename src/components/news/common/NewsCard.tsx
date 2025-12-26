@@ -39,14 +39,25 @@ export default function NewsCard({
   
   const translation = translations.find(t => t.language === locale) || translations[0]
   
+  // Format date manually to avoid SSR hydration mismatch
+  // Node.js and browser have different Intl data, causing inconsistent formatting
   const formatDate = (dateString: string) => {
     if (!dateString) return ''
     const date = new Date(dateString)
     if (isNaN(date.getTime()) || date.getTime() === 0) return ''
-    return new Intl.DateTimeFormat(locale, {
-      day: 'numeric',
-      month: 'short'
-    }).format(date)
+    
+    const day = date.getDate()
+    const monthIndex = date.getMonth()
+    
+    // Month names for each locale
+    const months: Record<string, string[]> = {
+      'ka': ['იან', 'თებ', 'მარ', 'აპრ', 'მაი', 'ივნ', 'ივლ', 'აგვ', 'სექ', 'ოქტ', 'ნოე', 'დეკ'],
+      'en': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      'ru': ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек']
+    }
+    
+    const monthNames = months[locale] || months['ka']
+    return `${day} ${monthNames[monthIndex]}`
   }
 
   return (

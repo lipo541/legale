@@ -68,7 +68,8 @@ export default function Position9({ posts }: Position9Props) {
             const translation = post.post_translations[0]
             const publishedTime = post.published_at ? new Date(post.published_at).toLocaleTimeString(locale, { 
               hour: '2-digit', 
-              minute: '2-digit' 
+              minute: '2-digit',
+              hour12: false 
             }) : ''
             return (
               <Link 
@@ -133,7 +134,8 @@ export default function Position9({ posts }: Position9Props) {
               const translation = post.post_translations[0]
               const publishedTime = post.published_at ? new Date(post.published_at).toLocaleTimeString(locale, { 
                 hour: '2-digit', 
-                minute: '2-digit' 
+                minute: '2-digit',
+                hour12: false 
               }) : ''
 
               return (

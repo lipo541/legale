@@ -1,9 +1,7 @@
 'use client'
 
 import { useTheme } from '@/contexts/ThemeContext'
-import { useParams } from 'next/navigation'
-import { useNewsPosts, getPostsByPosition } from '@/hooks/useNewsPosts'
-import { useReducedMotion } from '@/hooks/useReducedMotion'
+import { useNewsData, getPostsByPosition } from './hooks/useNewsData'
 import SkipLink from '@/components/common/SkipLink'
 import Position1 from './positions/Position1'
 import Position2 from './positions/Position2'
@@ -18,48 +16,20 @@ import AllPostsSection from './AllPostsSection'
 import NewsBanner from './newsbanner/NewsBanner'
 import TeamBannerSlider from './TeamBannerSlider'
 import { newsTranslations } from '@/translations/news'
+import type { NewsLayoutProps } from './types'
 
-export default function NewsLayout() {
+export default function NewsLayout({ locale, initialData }: NewsLayoutProps) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
-  const params = useParams()
-  const locale = (params?.locale as string) || 'ka'
   const t = newsTranslations[locale as keyof typeof newsTranslations]
-  // const prefersReducedMotion = useReducedMotion() // TODO: Use for animations in future
   
-  // Single API call for all posts - PERFORMANCE OPTIMIZATION
-  const { posts, loading, error } = useNewsPosts(locale)
-  
-  // Loading state
-  if (loading) {
-    return (
-      <div className={`min-h-screen py-4 md:py-8 lg:py-12 transition-colors duration-300 ${
-        isDark ? 'bg-black' : 'bg-white'
-      }`}>
-        <div className="mx-auto max-w-[1200px] px-6 sm:px-8 lg:px-10">
-          <div className={`flex items-center justify-center py-20 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            <span className="ml-3 text-lg">{t.loading}</span>
-          </div>
-        </div>
-      </div>
-    )
-  }
-  
-  // Error state
-  if (error) {
-    return (
-      <div className={`min-h-screen py-4 md:py-8 lg:py-12 transition-colors duration-300 ${
-        isDark ? 'bg-black' : 'bg-white'
-      }`}>
-        <div className="mx-auto max-w-[1200px] px-6 sm:px-8 lg:px-10">
-          <div className={`py-20 text-center ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-            <p className="text-lg">{t.error || 'Error loading posts'}</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  // Use SSR data - no client-side fetching needed
+  const { posts, loading } = useNewsData({
+    initialPosts: initialData.posts,
+    categories: initialData.categories,
+    locale,
+    uncategorizedLabel: t.uncategorized
+  })
   
   // Filter posts by position for each component
   const position1Posts = getPostsByPosition(posts, 1, 5)
@@ -175,7 +145,11 @@ export default function NewsLayout() {
         </div>
 
         {/* ALL POSTS SECTION - Authors' uploaded news before Admin assigns positions */}
-        <AllPostsSection />
+        <AllPostsSection 
+          initialPosts={initialData.posts}
+          categories={initialData.categories}
+          locale={locale}
+        />
       </main>
       </div>
     </div>

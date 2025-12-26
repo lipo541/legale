@@ -252,16 +252,25 @@ export default function ArchivePage({ locale }: ArchivePageProps) {
     setExpandedCategories(newExpanded)
   }
 
+  // Format date manually to avoid SSR hydration mismatch
+  // Node.js and browser have different Intl data
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return ''
     const date = new Date(dateString)
-    // Check if date is valid and not Unix epoch (January 1, 1970)
     if (isNaN(date.getTime()) || date.getTime() === 0) return ''
-    return new Intl.DateTimeFormat(locale, {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    }).format(date)
+    
+    const day = date.getDate()
+    const monthIndex = date.getMonth()
+    const year = date.getFullYear()
+    
+    const monthsFull: Record<string, string[]> = {
+      'ka': ['იანვარი', 'თებერვალი', 'მარტი', 'აპრილი', 'მაისი', 'ივნისი', 'ივლისი', 'აგვისტო', 'სექტემბერი', 'ოქტომბერი', 'ნოემბერი', 'დეკემბერი'],
+      'en': ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+      'ru': ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря']
+    }
+    
+    const monthNames = monthsFull[locale] || monthsFull['ka']
+    return `${day} ${monthNames[monthIndex]} ${year}`
   }
 
   const renderCategory = (category: Category, level = 0) => {

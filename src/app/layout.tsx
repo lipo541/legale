@@ -32,14 +32,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fbxooowagcadiqpppniy.supabase.co" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
         <link rel="dns-prefetch" href="https://fbxooowagcadiqpppniy.supabase.co" />
-        {/* Preload LCP hero image */}
-        <link
-          rel="preload"
-          as="image"
-          type="image/webp"
-          href="https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=30&w=1200&auto=format&fit=crop&fm=webp"
-          fetchPriority="high"
-        />
+        {/* Hero images are now loaded via SSR data - no static preload needed */}
       </head>
       <body
         className={`${geistSans.variable} antialiased flex flex-col min-h-screen`}

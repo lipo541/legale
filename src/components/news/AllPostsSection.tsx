@@ -1,9 +1,7 @@
 'use client'
 
 import { useTheme } from '@/contexts/ThemeContext'
-import { useState, useEffect, useMemo, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { useParams } from 'next/navigation'
+import { useState, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import NewsSearch from './common/NewsSearch'
@@ -11,52 +9,16 @@ import NewsFilter from './common/NewsFilter'
 import NewsSort, { SortOption } from './common/NewsSort'
 import ViewModeToggle from '@/components/common/ViewModeToggle'
 import { newsTranslations } from '@/translations/news'
+import type { Post, Category, AllPostsSectionProps, GroupedPosts } from './types'
 
-interface PostTranslation {
-  language: string
-  title: string
-  excerpt?: string
-  slug: string
-  reading_time?: number
-}
-
-interface Post {
-  id: string
-  category_id?: string
-  featured_image_url?: string
-  published_at: string
-  post_translations: PostTranslation[]
-  author?: {
-    id: string
-    email: string
-    full_name?: string
-    role?: string
-    company_id?: string
-    company?: {
-      full_name?: string
-      company_slug?: string
-    }
-  }
-}
-
-interface GroupedPosts {
-  [categoryId: string]: {
-    name: string
-    slug: string
-    posts: Post[]
-  }
-}
-
-export default function AllPostsSection() {
+export default function AllPostsSection({ initialPosts, categories, locale }: AllPostsSectionProps) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
-  const params = useParams()
-  const locale = (params?.locale as string) || 'ka'
   const t = newsTranslations[locale as keyof typeof newsTranslations]
   
-  const [groupedPosts, setGroupedPosts] = useState<GroupedPosts>({})
-  const [loading, setLoading] = useState(true)
-  const [totalCount, setTotalCount] = useState(0)
+  // Use SSR data directly - no loading needed
+  const loading = false
+  const totalCount = initialPosts.length
   
   // Search, Filter, Sort states
   const [searchQuery, setSearchQuery] = useState('')
@@ -64,178 +26,35 @@ export default function AllPostsSection() {
   const [sortBy, setSortBy] = useState<SortOption>('newest')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
-  // Load posts function with useCallback
-  const loadPosts = useCallback(async () => {
-    const supabase = createClient()
-    setLoading(true)
+  // Create category map for grouping
+  const categoryMap = useMemo(() => {
+    return new Map(categories.map(cat => [cat.id, cat]))
+  }, [categories])
 
-    try {
-      // Fetch posts
-      const { data: postsData, error: postsError } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          post_translations!inner (*),
-          author:profiles!posts_author_id_fkey(
-            id, 
-            email, 
-            full_name,
-            role,
-            company_id
-          )
-        `)
-        .eq('status', 'published')
-        .eq('post_translations.language', locale)
-        .not('category_id', 'is', null)
-        .order('published_at', { ascending: false })
-
-      if (postsError) {
-        console.error('Posts query error:', postsError)
-        throw postsError
-      }
-
-      // Deduplicate posts by ID
-      const uniquePosts = postsData ? Array.from(
-        new Map(postsData.map(post => [post.id, post])).values()
-      ) : []
-
-      // Fetch company info for authors who are specialists
-      const companyIds = uniquePosts
-        .filter(post => post.author?.role === 'SPECIALIST' && post.author?.company_id)
-        .map(post => post.author!.company_id!)
-      
-      const companyMap = new Map<string, { full_name: string; company_slug: string }>()
-      
-      if (companyIds.length > 0) {
-        const { data: companiesData } = await supabase
-          .from('profiles')
-          .select('id, full_name, company_slug')
-          .in('id', [...new Set(companyIds)])
+  // Group posts by category from SSR data
+  const groupedPosts = useMemo(() => {
+    const grouped: GroupedPosts = {}
+    
+    // Filter to only posts with category_id
+    const postsWithCategory = initialPosts.filter(post => post.category_id)
+    
+    postsWithCategory.forEach((post) => {
+      if (post.category_id) {
+        const category = categoryMap.get(post.category_id)
         
-        companiesData?.forEach((company: { id: string; full_name: string | null; company_slug: string | null }) => {
-          if (company.id) {
-            companyMap.set(company.id, {
-              full_name: company.full_name || '',
-              company_slug: company.company_slug || ''
-            })
+        if (!grouped[post.category_id]) {
+          grouped[post.category_id] = {
+            name: category?.name || t.uncategorized,
+            slug: category?.slug || 'uncategorized',
+            posts: []
           }
-        })
-      }
-
-      // Attach company info to posts
-      uniquePosts.forEach((post: Post) => {
-        if (post.author?.company_id && companyMap.has(post.author.company_id)) {
-          post.author.company = companyMap.get(post.author.company_id)
         }
-      })
-
-      // Get unique category IDs
-      const categoryIds = [...new Set(uniquePosts.map(post => post.category_id).filter(Boolean))]
-
-      // Only fetch categories if we have category IDs
-      if (categoryIds.length === 0) {
-        setGroupedPosts({})
-        setTotalCount(0)
-        setLoading(false)
-        return
+        grouped[post.category_id].posts.push(post)
       }
-
-      // Fetch ALL categories with parent info (to build complete hierarchy)
-      const { data: allCategoriesData, error: allCategoriesError } = await supabase
-        .from('post_categories')
-        .select('id, parent_id')
-
-      if (allCategoriesError) {
-        console.error('All categories query error:', allCategoriesError)
-        throw allCategoriesError
-      }
-
-      // Create parent hierarchy map
-      interface CategoryHierarchy {
-        id: string
-        parent_id: string | null
-      }
-
-      const categoryHierarchyMap = new Map<string, string | null>()
-      allCategoriesData?.forEach((cat: CategoryHierarchy) => {
-        categoryHierarchyMap.set(cat.id, cat.parent_id)
-      })
-
-      // Function to find root parent category recursively
-      const findRootCategory = (categoryId: string): string => {
-        const parentId = categoryHierarchyMap.get(categoryId)
-        if (!parentId) {
-          // No parent, this is the root
-          return categoryId
-        }
-        // Recursively find the root
-        return findRootCategory(parentId)
-      }
-
-      // Get all unique root category IDs
-      const rootCategoryIds = [...new Set(
-        categoryIds.map(catId => findRootCategory(catId))
-      )]
-
-      // Fetch root category translations
-      const { data: rootCategoriesData, error: rootCategoriesError } = await supabase
-        .from('post_category_translations')
-        .select('category_id, name, slug, language')
-        .in('category_id', rootCategoryIds)
-        .eq('language', locale)
-
-      if (rootCategoriesError) {
-        console.error('Root categories query error:', rootCategoriesError)
-        throw rootCategoriesError
-      }
-
-      // Create root category map
-      interface RootCategoryData {
-        category_id: string
-        name: string
-        slug: string
-      }
-
-      const rootCategoryMap = new Map<string, RootCategoryData>()
-      rootCategoriesData?.forEach((cat: RootCategoryData) => {
-        rootCategoryMap.set(cat.category_id, {
-          category_id: cat.category_id,
-          name: cat.name,
-          slug: cat.slug
-        })
-      })
-
-      // Group posts by ROOT category
-      const grouped: GroupedPosts = {}
-      uniquePosts.forEach((post) => {
-        if (post.category_id) {
-          // Find the root category for this post's category
-          const rootCategoryId = findRootCategory(post.category_id)
-          const rootCategoryInfo = rootCategoryMap.get(rootCategoryId)
-          
-          if (!grouped[rootCategoryId]) {
-            grouped[rootCategoryId] = {
-              name: rootCategoryInfo?.name || t.uncategorized,
-              slug: rootCategoryInfo?.slug || 'uncategorized',
-              posts: []
-            }
-          }
-          grouped[rootCategoryId].posts.push(post)
-        }
-      })
-
-      setGroupedPosts(grouped)
-      setTotalCount(uniquePosts.length)
-    } catch (error) {
-      console.error('Error fetching posts:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [locale, t.uncategorized])
-
-  useEffect(() => {
-    loadPosts()
-  }, [locale, loadPosts])
+    })
+    
+    return grouped
+  }, [initialPosts, categoryMap, t.uncategorized])
 
   // Filtered and sorted posts using useMemo for performance
   const filteredAndSortedPosts = useMemo(() => {
@@ -344,16 +163,25 @@ export default function AllPostsSection() {
     setSortBy(sort)
   }, [])
 
+  // Format date manually to avoid SSR hydration mismatch
+  // Node.js and browser have different Intl data
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return ''
     const date = new Date(dateString)
-    // Check if date is valid and not Unix epoch (January 1, 1970)
     if (isNaN(date.getTime()) || date.getTime() === 0) return ''
-    return new Intl.DateTimeFormat(locale, {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    }).format(date)
+    
+    const day = date.getDate()
+    const monthIndex = date.getMonth()
+    const year = date.getFullYear()
+    
+    const months: Record<string, string[]> = {
+      'ka': ['იან', 'თებ', 'მარ', 'აპრ', 'მაი', 'ივნ', 'ივლ', 'აგვ', 'სექ', 'ოქტ', 'ნოე', 'დეკ'],
+      'en': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      'ru': ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек']
+    }
+    
+    const monthNames = months[locale] || months['ka']
+    return `${day} ${monthNames[monthIndex]} ${year}`
   }
 
   if (loading) {
@@ -367,9 +195,9 @@ export default function AllPostsSection() {
     )
   }
 
-  const categories = Object.keys(groupedPosts)
+  const categoryKeys = Object.keys(groupedPosts)
 
-  if (categories.length === 0) {
+  if (categoryKeys.length === 0) {
     return (
       <div className="mt-16">
         <div className={`py-16 text-center ${isDark ? 'text-white/40' : 'text-black/40'}`}>

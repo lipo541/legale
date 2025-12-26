@@ -1,0 +1,105 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - link "LegalGE LegalGE" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img "LegalGE" [ref=e7]
+        - generic [ref=e8]: LegalGE
+      - navigation [ref=e9]:
+        - link "პრაქტიკა" [ref=e10] [cursor=pointer]:
+          - /url: /ka/practices
+        - link "სპეციალისტები" [ref=e11] [cursor=pointer]:
+          - /url: /ka/specialists
+        - link "კომპანიები" [ref=e12] [cursor=pointer]:
+          - /url: /ka/companies
+        - link "ბლოგი" [ref=e13] [cursor=pointer]:
+          - /url: /ka/news
+        - link "კონტაქტი" [ref=e14] [cursor=pointer]:
+          - /url: /ka/contact
+      - generic [ref=e15]:
+        - generic [ref=e16]:
+          - button "Switch to Light theme" [ref=e17]:
+            - img [ref=e18]
+          - button "Switch to Dark theme" [ref=e24]:
+            - img [ref=e25]
+        - button "Change language" [ref=e28]:
+          - generic [ref=e29]: KA
+          - img [ref=e30]
+        - generic [ref=e32]:
+          - link "შესვლა" [ref=e33] [cursor=pointer]:
+            - /url: /ka/login
+          - link "რეგისტრაცია" [ref=e34] [cursor=pointer]:
+            - /url: /ka/register
+  - main [ref=e35]:
+    - generic [ref=e38]:
+      - heading "კომპანიები" [level=1] [ref=e39]
+      - paragraph [ref=e40]: იტვირთება...
+  - contentinfo [ref=e270]:
+    - generic [ref=e271]:
+      - generic [ref=e272]:
+        - generic [ref=e273]:
+          - link "LegalGE LegalGE" [ref=e274] [cursor=pointer]:
+            - /url: /ka
+            - img "LegalGE" [ref=e275]
+            - generic [ref=e276]: LegalGE
+          - paragraph [ref=e277]: იურიდიული სერვისების პლატფორმა
+          - generic [ref=e278]:
+            - link "Visit our Facebook page" [ref=e279] [cursor=pointer]:
+              - /url: https://facebook.com
+              - img [ref=e280]
+            - link "Visit our LinkedIn page" [ref=e282] [cursor=pointer]:
+              - /url: https://linkedin.com
+              - img [ref=e283]
+            - link "Visit our Twitter page" [ref=e287] [cursor=pointer]:
+              - /url: https://twitter.com
+              - img [ref=e288]
+            - link "Visit our Instagram page" [ref=e290] [cursor=pointer]:
+              - /url: https://instagram.com
+              - img [ref=e291]
+        - generic [ref=e294]:
+          - heading "სწრაფი ბმულები" [level=3] [ref=e295]
+          - list [ref=e296]:
+            - listitem [ref=e297]:
+              - link "პრაქტიკა" [ref=e298] [cursor=pointer]:
+                - /url: /ka/practices
+            - listitem [ref=e299]:
+              - link "სპეციალისტები" [ref=e300] [cursor=pointer]:
+                - /url: /ka/specialists
+            - listitem [ref=e301]:
+              - link "კომპანიები" [ref=e302] [cursor=pointer]:
+                - /url: /ka/companies
+            - listitem [ref=e303]:
+              - link "ბლოგი" [ref=e304] [cursor=pointer]:
+                - /url: /ka/news
+            - listitem [ref=e305]:
+              - link "კონტაქტი" [ref=e306] [cursor=pointer]:
+                - /url: /ka/contact
+        - generic [ref=e307]:
+          - heading "სამართლებრივი" [level=3] [ref=e308]
+          - list [ref=e309]:
+            - listitem [ref=e310]:
+              - link "კონფიდენციალურობა" [ref=e311] [cursor=pointer]:
+                - /url: /ka/privacy
+            - listitem [ref=e312]:
+              - link "წესები და პირობები" [ref=e313] [cursor=pointer]:
+                - /url: /ka/terms
+            - listitem [ref=e314]:
+              - link "ქუქი-ფაილების პოლიტიკა" [ref=e315] [cursor=pointer]:
+                - /url: /ka/cookies
+        - generic [ref=e316]:
+          - heading "კონტაქტი" [level=3] [ref=e317]
+          - generic [ref=e318]:
+            - paragraph [ref=e319]: contact@legal.ge
+            - paragraph [ref=e320]: +995 551 911 961
+            - paragraph [ref=e321]: თბილისი, საქართველო
+      - generic [ref=e323]:
+        - paragraph [ref=e324]: © 2025 LegalGE. ყველა უფლება დაცულია.
+        - paragraph [ref=e325]:
+          - text: შექმნილია
+          - img [ref=e326]
+          - text: "-ში საქართველო"
+  - alert [ref=e328]
+```

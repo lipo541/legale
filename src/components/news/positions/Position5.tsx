@@ -78,7 +78,8 @@ export default function Position5({ posts }: Position5Props) {
               const translation = post.post_translations[0]
               const publishedTime = post.published_at ? new Date(post.published_at).toLocaleTimeString(locale, { 
                 hour: '2-digit', 
-                minute: '2-digit' 
+                minute: '2-digit',
+                hour12: false 
               }) : ''
               return (
                 <SwiperSlide key={post.id}>
@@ -123,7 +124,8 @@ export default function Position5({ posts }: Position5Props) {
               const translation = post.post_translations[0]
               const publishedTime = post.published_at ? new Date(post.published_at).toLocaleTimeString(locale, { 
                 hour: '2-digit', 
-                minute: '2-digit' 
+                minute: '2-digit',
+                hour12: false 
               }) : ''
               return (
                 <SwiperSlide key={post.id} className="!h-auto">
