@@ -49,6 +49,17 @@ const TOKEN_REFRESH_ERROR_MESSAGES = [
 // Profile cache duration - 5 minutes
 const PROFILE_CACHE_DURATION_MS = 5 * 60 * 1000
 
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(`${label} timeout after ${ms}ms`)), ms)
+  })
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timeoutId) clearTimeout(timeoutId)
+  }) as Promise<T>
+}
+
 // ==================== Provider ====================
 export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname()
@@ -249,7 +260,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isFetching.current = true
 
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      // In production we have a rare case where getSession() can hang (UI stuck on Loading...).
+      // Ensure we never keep loading=true indefinitely.
+      let sessionResult: { data: { session: Session | null }; error: Error | null }
+
+      try {
+        sessionResult = await withTimeout(
+          supabase.auth.getSession() as unknown as Promise<{ data: { session: Session | null }; error: Error | null }>,
+          2500,
+          'supabase.auth.getSession'
+        )
+      } catch (err) {
+        // Attempt server-side refresh (reads cookies) then retry getSession once.
+        try {
+          await fetch('/api/auth/refresh', {
+            method: 'POST',
+            credentials: 'include',
+          })
+        } catch {
+          // ignore
+        }
+
+        try {
+          sessionResult = await withTimeout(
+            supabase.auth.getSession() as unknown as Promise<{ data: { session: Session | null }; error: Error | null }>,
+            2500,
+            'supabase.auth.getSession (retry)'
+          )
+        } catch (retryErr) {
+          if (!mountedRef.current) return
+          setAuthState(prev => ({
+            ...prev,
+            user: null,
+            session: null,
+            role: null,
+            hasPendingRequest: false,
+            loading: false,
+            initialized: true,
+            error: retryErr instanceof Error ? retryErr.message : 'getSession timeout',
+          }))
+          return
+        }
+      }
+
+      const { data: { session }, error: sessionError } = sessionResult
 
       if (!mountedRef.current) return
 
@@ -277,7 +331,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return
       }
 
-      const profile = await fetchProfile(session.user.id)
+      let profile: AuthProfile
+      try {
+        profile = await withTimeout(fetchProfile(session.user.id), 5000, 'fetchProfile')
+      } catch {
+        profile = { role: null, hasPendingRequest: false }
+      }
 
       if (!mountedRef.current) return
 
