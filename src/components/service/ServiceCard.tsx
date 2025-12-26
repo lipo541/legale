@@ -42,10 +42,10 @@ export default function ServiceCard({
     return (
       <Link
         href={`/${locale}/practices/${translation.practice_slug}/${translation.slug}`}
-        className={`group flex flex-col h-full rounded-lg overflow-hidden transition-all duration-300 hover:scale-[1.005] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+        className={`group flex flex-col h-full rounded-lg overflow-hidden backdrop-blur-md transition-all duration-300 hover:scale-[1.005] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
           isDark
-            ? 'bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 hover:shadow-2xl focus-visible:ring-white/50'
-            : 'bg-white hover:bg-gray-50 border border-black/10 hover:border-black/20 shadow-sm hover:shadow-xl focus-visible:ring-black/50'
+            ? 'bg-black/40 hover:bg-black/50 border border-white/10 hover:border-white/20 hover:shadow-2xl focus-visible:ring-white/50'
+            : 'bg-white/20 hover:bg-white/30 border border-white/30 hover:border-white/50 shadow-xl hover:shadow-2xl focus-visible:ring-black/50'
         }`}
         aria-label={ariaLabel}
         role="article"
@@ -86,7 +86,7 @@ export default function ServiceCard({
 
         {/* Service Badge - Top */}
         <div className="absolute top-3 left-3 z-10">
-          <div className="flex items-center gap-1 rounded-full bg-blue-500/90 backdrop-blur-sm px-2.5 py-1 text-white">
+          <div className="flex items-center gap-1 rounded-full bg-blue-500/20 backdrop-blur-md border border-blue-400/30 px-2.5 py-1 text-white shadow-lg">
             <FileText className="h-3 w-3" />
             <span className="text-[10px] md:text-xs font-medium">
               {locale === 'ka' ? 'სერვისი' : locale === 'en' ? 'Service' : 'Услуга'}
@@ -108,10 +108,10 @@ export default function ServiceCard({
   return (
     <Link
       href={`/${locale}/practices/${translation.practice_slug}/${translation.slug}`}
-      className={`group flex items-center gap-3 md:gap-4 rounded-lg overflow-hidden transition-all duration-300 hover:scale-[1.005] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+      className={`group flex items-center gap-3 md:gap-4 rounded-lg overflow-hidden backdrop-blur-md transition-all duration-300 hover:scale-[1.005] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
         isDark
-          ? 'bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 hover:shadow-xl focus-visible:ring-white/50'
-          : 'bg-white hover:bg-gray-50 border border-black/10 hover:border-black/20 shadow-sm hover:shadow-lg focus-visible:ring-black/50'
+          ? 'bg-black/40 hover:bg-black/50 border border-white/10 hover:border-white/20 hover:shadow-xl focus-visible:ring-white/50'
+          : 'bg-white/20 hover:bg-white/30 border border-white/30 hover:border-white/50 shadow-xl hover:shadow-2xl focus-visible:ring-black/50'
       }`}
       aria-label={ariaLabel}
       role="article"
@@ -129,7 +129,7 @@ export default function ServiceCard({
         
         {/* Service Badge */}
         <div className="absolute top-2 left-2">
-          <div className="flex items-center gap-1 rounded-full bg-blue-500/90 backdrop-blur-sm px-2 py-0.5 text-white">
+          <div className="flex items-center gap-1 rounded-full bg-blue-500/20 backdrop-blur-md border border-blue-400/30 px-2 py-0.5 text-white shadow-lg">
             <FileText className="h-2.5 w-2.5" />
             <span className="text-[9px] md:text-[10px] font-medium">
               {locale === 'ka' ? 'სერვისი' : locale === 'en' ? 'Service' : 'Услуга'}

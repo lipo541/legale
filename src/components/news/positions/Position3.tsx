@@ -49,8 +49,8 @@ export default function Position3({ posts }: Position3Props) {
   }
 
   return (
-    <div className={`relative h-full overflow-hidden rounded-2xl ${
-      isDark ? 'bg-white/5' : 'bg-black'
+    <div className={`relative h-full overflow-hidden rounded-2xl border backdrop-blur-md ${
+      isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
     }`}>
       <Swiper
         modules={[Autoplay, EffectFade]}

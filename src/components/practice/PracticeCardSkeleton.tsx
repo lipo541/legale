@@ -15,10 +15,10 @@ export default function PracticeCardSkeleton({ viewMode = 'grid' }: PracticeCard
   if (viewMode === 'list') {
     return (
       <div
-        className={`flex items-center gap-3 md:gap-4 rounded-lg overflow-hidden border animate-pulse ${
+        className={`flex items-center gap-3 md:gap-4 rounded-lg overflow-hidden border backdrop-blur-md animate-pulse ${
           isDark
-            ? 'bg-white/5 border-white/10'
-            : 'bg-white border-black/10 shadow-sm'
+            ? 'bg-white/10 border-white/20'
+            : 'bg-white/20 border-white/30 shadow-xl'
         }`}
       >
         {/* Image Skeleton */}
@@ -39,10 +39,10 @@ export default function PracticeCardSkeleton({ viewMode = 'grid' }: PracticeCard
   // Grid View Skeleton (default)
   return (
     <div
-      className={`rounded-lg overflow-hidden border animate-pulse ${
+      className={`rounded-lg overflow-hidden border backdrop-blur-md animate-pulse ${
         isDark
-          ? 'bg-white/5 border-white/10'
-          : 'bg-white border-black/10 shadow-sm'
+          ? 'bg-white/10 border-white/20'
+          : 'bg-white/20 border-white/30 shadow-xl'
       }`}
     >
       {/* Image Skeleton */}

@@ -42,8 +42,8 @@ export default function Footer() {
 
   return (
     <footer
-      className={`mt-auto border-t transition-colors duration-150 ${
-        isDark ? 'bg-black border-white/10' : 'bg-white border-black/10'
+      className={`mt-auto border-t transition-colors duration-150 backdrop-blur-md ${
+        isDark ? 'bg-black/30 border-white/10' : 'bg-white/30 border-black/10'
       }`}
     >
       <div className="mx-auto w-full max-w-[1200px] px-6 sm:px-8 lg:px-10">

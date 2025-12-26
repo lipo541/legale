@@ -84,14 +84,14 @@ export default function NewsSearch({
     <div className="relative">
       {/* Search Input */}
       <div
-        className={`relative flex items-center rounded-xl border transition-all duration-200 ${
+        className={`relative flex items-center rounded-xl border backdrop-blur-md transition-all duration-200 ${
           isFocused
             ? isDark
-              ? 'border-blue-500 bg-white/10 shadow-lg shadow-blue-500/20'
-              : 'border-blue-500 bg-white shadow-lg shadow-blue-500/10'
+              ? 'border-blue-500 bg-black/40 shadow-lg shadow-blue-500/20'
+              : 'border-blue-500 bg-white/20 shadow-lg shadow-blue-500/10'
             : isDark
-            ? 'border-white/10 bg-white/5 hover:border-white/20'
-            : 'border-black/10 bg-black/5 hover:border-black/20'
+            ? 'border-white/10 bg-black/40 hover:border-white/20'
+            : 'border-white/30 bg-white/20 hover:border-white/50 shadow-xl'
         }`}
       >
         {/* Search Icon */}

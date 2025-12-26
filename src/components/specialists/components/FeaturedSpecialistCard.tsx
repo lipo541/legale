@@ -59,9 +59,10 @@ export default function FeaturedSpecialistCard({
         snap-center
         rounded-xl overflow-hidden
         transition-all duration-300
+        backdrop-blur-md
         ${isDark 
-          ? 'bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20' 
-          : 'bg-white hover:bg-gray-50 border border-black/10 hover:border-black/20 shadow-sm hover:shadow-md'
+          ? 'bg-black/40 hover:bg-black/50 border border-white/10 hover:border-white/20' 
+          : 'bg-white/20 hover:bg-white/30 border border-white/30 hover:border-white/50 shadow-xl hover:shadow-2xl'
         }
       `}
     >

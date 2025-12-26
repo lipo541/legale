@@ -6,6 +6,7 @@ import DashboardSidebar from '@/components/sidebar/DashboardSidebar'
 import { Providers } from '@/components/providers/Providers'
 import { siteConfig, getLanguageAlternates } from '@/lib/config'
 import { locales } from '@/lib/i18n/config'
+import SnowfallEffect from '@/components/effects/Snowfall'
 
 interface LocaleLayoutProps {
   children: ReactNode
@@ -118,6 +119,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
           __html: JSON.stringify(websiteSchema),
         }}
       />
+      <SnowfallEffect />
       <Providers>
         <Header />
         <DashboardSidebar />

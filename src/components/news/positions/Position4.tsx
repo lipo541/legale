@@ -64,10 +64,10 @@ export default function Position4() {
   return (
     <Link href={`/${locale}/news/archive`} className="block h-full overflow-hidden">
       {/* Mobile: Clean, minimal stats bar */}
-      <div className={`md:hidden group h-full rounded-xl overflow-hidden transition-all duration-200 active:scale-[0.98] ${
+      <div className={`md:hidden group h-full rounded-xl border backdrop-blur-md overflow-hidden transition-all duration-200 active:scale-[0.98] ${
         isDark 
-          ? 'bg-white/5 border border-white/10' 
-          : 'bg-black/5 border border-black/10'
+          ? 'bg-black/40 border-white/10' 
+          : 'bg-white/20 border-white/30 shadow-xl'
       }`}>
         <div className="flex h-full items-center justify-between px-4 py-3">
           {/* Left: Icon + Number */}
@@ -104,10 +104,10 @@ export default function Position4() {
       </div>
 
       {/* Desktop: Original card design */}
-      <div className={`hidden md:block group relative h-full overflow-hidden rounded-xl transition-all duration-300 hover:shadow-lg ${
+      <div className={`hidden md:block group relative h-full overflow-hidden rounded-xl border backdrop-blur-md transition-all duration-300 hover:shadow-lg ${
         isDark 
-          ? 'bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/10 hover:border-white/20' 
-          : 'bg-gradient-to-br from-white to-gray-50 border border-black/10 hover:border-black/20'
+          ? 'bg-black/40 border-white/10 hover:bg-black/50 hover:border-white/20' 
+          : 'bg-white/20 border-white/30 hover:bg-white/30 hover:border-white/50 shadow-xl'
       }`}>
         {/* Decorative accent line */}
         <div className={`absolute top-0 left-0 right-0 h-1 ${

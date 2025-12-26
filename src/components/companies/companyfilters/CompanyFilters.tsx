@@ -54,10 +54,10 @@ export default function CompanyFilters({
       id="company-filters"
       role="region"
       aria-label={t.filterTitle}
-      className={`rounded-lg border p-3 transition-all duration-300 ${
+      className={`rounded-lg border backdrop-blur-md p-3 transition-all duration-300 ${
         isDark
-          ? 'border-white/10 bg-white/5'
-          : 'border-black/10 bg-white shadow-sm'
+          ? 'border-white/10 bg-black/40'
+          : 'border-white/30 bg-white/20 shadow-xl'
       }`}
     >
       <div className="mb-2 flex items-center justify-between">

@@ -24,10 +24,10 @@ export default function ServiceSpecialistCard({ serviceId, locale }: ServiceSpec
   }
 
   return (
-    <div className={`rounded-2xl p-6 md:p-8 border ${
+    <div className={`rounded-2xl p-6 md:p-8 border backdrop-blur-md ${
       isDark 
-        ? 'border-white/10' 
-        : 'border-gray-200'
+        ? 'bg-black/40 border-white/10' 
+        : 'bg-white/20 border-white/30 shadow-xl'
     }`}>
       {/* Section Title */}
       <h2 className="text-xl md:text-2xl font-bold mb-6">
@@ -53,7 +53,7 @@ export default function ServiceSpecialistCard({ serviceId, locale }: ServiceSpec
               } ${
                 isDark
                   ? 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
-                  : 'bg-black/5 border-gray-200 hover:bg-black/10 hover:border-gray-300'
+                  : 'bg-white/40 border-white/30 hover:bg-white/50 hover:border-white/50 shadow-sm'
               }`}
             >
               {/* Profile Image - Wider aspect ratio */}

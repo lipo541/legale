@@ -47,10 +47,10 @@ export default function CompanyCard({
     return (
       <Link
         href={`/${locale}/companies/${company_slug}`}
-        className={`group relative flex overflow-hidden rounded-xl border transition-all duration-300 hover:scale-[1.01] ${
+        className={`group relative flex overflow-hidden rounded-xl border backdrop-blur-md transition-all duration-300 hover:scale-[1.01] ${
           isDark
-            ? 'border-white/10 bg-white/5 hover:border-white/20 hover:shadow-2xl'
-            : 'border-black/10 bg-white hover:border-black/20 shadow-sm hover:shadow-xl'
+            ? 'border-white/10 bg-black/40 hover:border-white/20 hover:bg-black/50 hover:shadow-2xl'
+            : 'border-white/30 bg-white/20 hover:border-white/50 hover:bg-white/30 shadow-xl hover:shadow-2xl'
         }`}
       >
         {/* Compact mobile layout, full desktop layout */}
@@ -138,10 +138,10 @@ export default function CompanyCard({
             isDark ? 'sm:border-white/10' : 'sm:border-black/10'
           }`}>
             <div
-              className={`rounded-lg px-2 py-1.5 sm:px-4 sm:py-2 text-[10px] sm:text-sm font-medium transition-all text-center leading-tight ${
+              className={`rounded-lg px-2 py-1.5 sm:px-4 sm:py-2 text-[10px] sm:text-sm font-medium transition-all text-center leading-tight border backdrop-blur-md ${
                 isDark
-                  ? 'bg-white/10 text-white group-hover:bg-white group-hover:text-black'
-                  : 'bg-black/10 text-black group-hover:bg-black group-hover:text-white'
+                  ? 'bg-white/5 border-white/10 text-white group-hover:bg-white/10'
+                  : 'bg-white/40 border-white/30 text-black shadow-sm group-hover:bg-white/60'
               }`}
             >
               <span className="hidden sm:inline">{t.viewProfile}</span>
@@ -158,10 +158,10 @@ export default function CompanyCard({
   return (
     <Link
       href={`/${locale}/companies/${company_slug}`}
-      className={`group relative block overflow-hidden rounded-lg border transition-all duration-300 ${
+      className={`group relative block overflow-hidden rounded-lg border backdrop-blur-md transition-all duration-300 ${
         isDark
-          ? 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
-          : 'border-black/10 bg-white hover:border-black/20 hover:bg-gray-50 shadow-sm hover:shadow-md'
+          ? 'border-white/10 bg-black/40 hover:border-white/20 hover:bg-black/50'
+          : 'border-white/30 bg-white/20 hover:border-white/50 hover:bg-white/30 shadow-xl hover:shadow-2xl'
       }`}
     >
       {/* Logo Section */}
@@ -270,10 +270,10 @@ export default function CompanyCard({
 
         {/* View Button - stays at bottom */}
         <div
-          className={`flex items-center justify-center rounded py-2 text-xs font-medium transition-all ${
+          className={`flex items-center justify-center rounded py-2 text-xs font-medium transition-all border backdrop-blur-md ${
             isDark
-              ? 'bg-white/10 text-white group-hover:bg-white group-hover:text-black'
-              : 'bg-black/10 text-black group-hover:bg-black group-hover:text-white'
+              ? 'bg-white/5 border-white/10 text-white group-hover:bg-white/10'
+              : 'bg-white/40 border-white/30 text-black shadow-sm group-hover:bg-white/60'
           }`}
         >
           {t.viewProfile}

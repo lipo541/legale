@@ -137,10 +137,10 @@ export default function CompaniesPageClient({
                 placeholder={t.searchPlaceholder}
                 aria-label={t.searchAriaLabelFull}
                 aria-describedby="search-description"
-                className={`w-full rounded-xl border py-2 pl-9 pr-3 text-sm transition-all duration-300 placeholder:text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                className={`w-full rounded-xl border backdrop-blur-md py-2 pl-9 pr-3 text-sm transition-all duration-300 placeholder:text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                   isDark
-                    ? 'border-white/10 bg-white/5 text-white placeholder:text-white/40 hover:border-white/20 focus:border-white/30 focus:bg-white/10 focus:ring-white/50'
-                    : 'border-black/10 bg-white text-black placeholder:text-black/40 hover:border-black/20 focus:border-black/30 focus:bg-gray-50 shadow-sm focus:ring-black/50'
+                    ? 'border-white/10 bg-black/40 text-white placeholder:text-white/40 hover:border-white/20 focus:border-white/30 focus:bg-black/50 focus:ring-white/50'
+                    : 'border-white/30 bg-white/20 text-black placeholder:text-black/40 hover:border-white/50 focus:border-white/50 focus:bg-white/30 shadow-xl focus:ring-black/50'
                 }`}
               />
               <span id="search-description" className="sr-only">
@@ -210,10 +210,10 @@ export default function CompaniesPageClient({
                 placeholder={t.searchPlaceholder}
                 aria-label={t.searchAriaLabelFull}
                 aria-describedby="search-description-desktop"
-                className={`w-full rounded-xl border py-2 pl-9 pr-3 text-sm transition-all duration-300 placeholder:text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                className={`w-full rounded-xl border backdrop-blur-md py-2 pl-9 pr-3 text-sm transition-all duration-300 placeholder:text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                   isDark
-                    ? 'border-white/10 bg-white/5 text-white placeholder:text-white/40 hover:border-white/20 focus:border-white/30 focus:bg-white/10 focus:ring-white/50'
-                    : 'border-black/10 bg-white text-black placeholder:text-black/40 hover:border-black/20 focus:border-black/30 focus:bg-gray-50 shadow-sm focus:ring-black/50'
+                    ? 'border-white/10 bg-black/40 text-white placeholder:text-white/40 hover:border-white/20 focus:border-white/30 focus:bg-black/50 focus:ring-white/50'
+                    : 'border-white/30 bg-white/20 text-black placeholder:text-black/40 hover:border-white/50 focus:border-white/50 focus:bg-white/30 shadow-xl focus:ring-black/50'
                 }`}
               />
               <span id="search-description-desktop" className="sr-only">
@@ -251,7 +251,7 @@ export default function CompaniesPageClient({
                     ? 'border-white bg-white text-black scale-[0.98] focus-visible:ring-white/50'
                     : 'border-black bg-black text-white scale-[0.98] focus-visible:ring-black/50'
                   : isDark
-                  ? 'border-white/10 bg-white/5 text-white hover:border-white/20 hover:bg-white/10 hover:scale-[1.02] focus-visible:ring-white/50'
+                  ? 'border-white/10 bg-black/40 text-white hover:border-white/20 hover:bg-black/550 hover:scale-[1.02] focus-visible:ring-white/50'
                   : 'border-black/10 bg-white text-black hover:border-black/20 hover:bg-gray-50 shadow-sm hover:shadow-md hover:scale-[1.02] focus-visible:ring-black/50'
               }`}
             >

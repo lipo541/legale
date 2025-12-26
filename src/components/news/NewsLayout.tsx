@@ -56,9 +56,7 @@ export default function NewsLayout({ locale, initialData }: NewsLayoutProps) {
         {t.postsLoaded?.replace('{count}', posts.length.toString()) || `${posts.length} posts loaded`}
       </div>
 
-      <div className={`min-h-screen pt-2 pb-4 md:pt-3 md:pb-8 lg:pt-4 lg:pb-12 transition-colors duration-300 ${
-        isDark ? 'bg-black' : 'bg-white'
-      }`}>
+      <div className="min-h-screen pt-2 pb-4 md:pt-3 md:pb-8 lg:pt-4 lg:pb-12 transition-colors duration-300">
         {/* Container - Max Width 1200px (Apple style) */}
         <div className="mx-auto max-w-[1200px] px-6 sm:px-8 lg:px-10">
           {/* Main content area */}

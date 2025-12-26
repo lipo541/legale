@@ -69,8 +69,8 @@ export default function NewsCard({
         w-[calc(20%-13px)] min-w-[180px] max-w-[230px]
         flex-shrink-0 snap-start
         ${isDark 
-          ? 'bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/10' 
-          : 'bg-black/[0.02] hover:bg-black/[0.05] border border-black/5 hover:border-black/10'
+          ? 'bg-black/40 hover:bg-black/50 border border-white/10 hover:border-white/20 backdrop-blur-md' 
+          : 'bg-white/20 hover:bg-white/30 border border-white/30 hover:border-white/50 backdrop-blur-md shadow-xl'
         }
       `}
     >

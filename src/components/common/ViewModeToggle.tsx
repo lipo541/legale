@@ -37,10 +37,10 @@ export default function ViewModeToggle({ view, onChange }: ViewModeToggleProps) 
 
   return (
     <div
-      className={`flex items-center gap-0.5 p-1 rounded-lg border ${
+      className={`flex items-center gap-0.5 p-1 rounded-lg border backdrop-blur-md ${
         isDark
-          ? 'bg-white/5 border-white/10'
-          : 'bg-white border-black/10'
+          ? 'bg-black/40 border-white/10'
+          : 'bg-white/20 border-white/30 shadow-xl'
       }`}
       role="group"
       aria-label={t.current}

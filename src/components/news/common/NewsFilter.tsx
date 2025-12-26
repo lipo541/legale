@@ -148,14 +148,14 @@ export default function NewsFilter({
             setIsOpen(!isOpen)
           }
         }}
-        className={`flex items-center gap-1.5 sm:gap-2 px-2 py-1.5 sm:px-4 sm:py-2.5 rounded-lg border transition-all duration-300 hover:scale-[1.01] ${
+        className={`flex items-center gap-1.5 sm:gap-2 px-2 py-1.5 sm:px-4 sm:py-2.5 rounded-lg border backdrop-blur-md transition-all duration-300 hover:scale-[1.01] ${
           activeCount > 0
             ? isDark
               ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
               : 'bg-blue-500/10 border-blue-500/30 text-blue-600'
             : isDark
-            ? 'bg-white/5 border-white/10 hover:border-white/20 text-white'
-            : 'bg-white border-black/10 hover:border-black/20 text-black'
+            ? 'bg-black/40 border-white/10 hover:border-white/20 text-white'
+            : 'bg-white/20 border-white/30 hover:border-white/50 shadow-xl text-black'
         }`}
         aria-label={`${t.filterButton}. ${displayText}`}
         aria-expanded={isOpen}
@@ -197,10 +197,10 @@ export default function NewsFilter({
               role="listbox"
               aria-label={t.filterTitle}
               aria-multiselectable="true"
-              className={`absolute top-full left-0 mt-2 w-72 rounded-lg border shadow-xl z-20 overflow-hidden ${
+              className={`absolute top-full left-0 mt-2 w-72 rounded-lg border backdrop-blur-md shadow-xl z-20 overflow-hidden ${
                 isDark
-                  ? 'bg-black border-white/10'
-                  : 'bg-white border-black/10'
+                  ? 'bg-black/90 border-white/10'
+                  : 'bg-white/90 border-white/30'
               }`}
             >
               {/* Header with Clear Button */}

@@ -46,8 +46,8 @@ export default function Position5({ posts }: Position5Props) {
   }
 
   return (
-    <div className={`relative h-full overflow-hidden rounded-2xl ${
-      isDark ? 'bg-white/5' : 'bg-black/5'
+    <div className={`relative h-full overflow-hidden rounded-2xl border backdrop-blur-md ${
+      isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
     }`}>
       {/* Header */}
       <div className="border-b p-3" style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>

@@ -242,9 +242,7 @@ export default function PracticePageClient({ initialData, locale }: PracticePage
 
   return (
     <div
-      className={`min-h-screen py-8 md:py-12 lg:py-16 ${
-        isDark ? 'bg-black' : 'bg-white'
-      }`}
+      className="min-h-screen py-8 md:py-12 lg:py-16"
     >
       {/* Skip to Main Content Link */}
       <SkipLink target="#main-content" />
@@ -275,8 +273,8 @@ export default function PracticePageClient({ initialData, locale }: PracticePage
             
             {/* Stats Badge */}
             <div
-              className={`hidden md:flex items-center gap-2 px-4 py-2 rounded-lg ${
-                isDark ? 'bg-white/5 border border-white/10' : 'bg-black/5 border border-black/10'
+              className={`hidden md:flex items-center gap-2 px-4 py-2 rounded-lg border backdrop-blur-md ${
+                isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
               }`}
             >
               <Sparkles
@@ -299,10 +297,10 @@ export default function PracticePageClient({ initialData, locale }: PracticePage
           {/* Search Bar */}
           <div className="relative w-full">
             <div
-              className={`relative flex items-center rounded-lg border transition-colors duration-300 focus-within:ring-2 focus-within:ring-offset-2 ${
+              className={`relative flex items-center rounded-lg border backdrop-blur-md transition-colors duration-300 focus-within:ring-2 focus-within:ring-offset-2 ${
                 isDark
-                  ? 'bg-white/5 border-white/10 focus-within:border-white/20 focus-within:ring-white/20'
-                  : 'bg-white border-black/10 focus-within:border-black/20 focus-within:ring-black/20'
+                  ? 'bg-black/40 border-white/10 focus-within:border-white/20 focus-within:ring-white/20'
+                  : 'bg-white/20 border-white/30 focus-within:border-white/50 focus-within:ring-black/20 shadow-xl'
               }`}
             >
               <Search
@@ -375,22 +373,20 @@ export default function PracticePageClient({ initialData, locale }: PracticePage
               }
             </div>
 
-            <div className={`flex items-center gap-2 pb-4 border-b ${
-              isDark ? 'border-white/10' : 'border-black/10'
-            }`} role="tablist" aria-label={locale === 'ka' ? 'შედეგების ტიპი' : locale === 'en' ? 'Results type' : 'Тип результатов'}>
+            <div className="flex items-center gap-2 pb-4" role="tablist" aria-label={locale === 'ka' ? 'შედეგების ტიპი' : locale === 'en' ? 'Results type' : 'Тип результатов'}>
               <button
                 onClick={() => setActiveTab('practices')}
                 role="tab"
                 aria-selected={activeTab === 'practices'}
                 aria-controls="practices-panel"
-                className={`relative px-4 py-2 text-sm md:text-base font-medium transition-all duration-300 ${
+                className={`relative px-4 py-2 text-sm md:text-base font-medium rounded-lg transition-all duration-300 ${
                   activeTab === 'practices'
                     ? isDark
-                      ? 'text-white'
-                      : 'text-black'
+                      ? 'bg-black/40 text-white backdrop-blur-md border border-white/10 shadow-lg'
+                      : 'bg-white/20 text-black backdrop-blur-md border border-white/30 shadow-xl'
                     : isDark
-                    ? 'text-white/50 hover:text-white/70'
-                    : 'text-black/50 hover:text-black/70'
+                    ? 'text-white/50 hover:text-white/70 hover:bg-white/5'
+                    : 'text-black/50 hover:text-black/70 hover:bg-black/5'
                 }`}
               >
               {t.practices}
@@ -399,8 +395,8 @@ export default function PracticePageClient({ initialData, locale }: PracticePage
                   className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
                     activeTab === 'practices'
                       ? isDark
-                        ? 'bg-white text-black'
-                        : 'bg-black text-white'
+                        ? 'bg-white/20 text-white'
+                        : 'bg-black/10 text-black'
                       : isDark
                       ? 'bg-white/10 text-white/70'
                       : 'bg-black/10 text-black/70'
@@ -409,13 +405,6 @@ export default function PracticePageClient({ initialData, locale }: PracticePage
                   {filteredPractices.length}
                 </span>
               )}
-              {activeTab === 'practices' && (
-                <div
-                  className={`absolute bottom-0 left-0 right-0 h-0.5 ${
-                    isDark ? 'bg-white' : 'bg-black'
-                  }`}
-                />
-              )}
             </button>
 
             <button
@@ -423,14 +412,14 @@ export default function PracticePageClient({ initialData, locale }: PracticePage
               role="tab"
               aria-selected={activeTab === 'services'}
               aria-controls="services-panel"
-              className={`relative px-4 py-2 text-sm md:text-base font-medium transition-all duration-300 ${
+              className={`relative px-4 py-2 text-sm md:text-base font-medium rounded-lg transition-all duration-300 ${
                 activeTab === 'services'
                   ? isDark
-                    ? 'text-white'
-                    : 'text-black'
+                    ? 'bg-black/40 text-white backdrop-blur-md border border-white/10 shadow-lg'
+                    : 'bg-white/20 text-black backdrop-blur-md border border-white/30 shadow-xl'
                   : isDark
-                  ? 'text-white/50 hover:text-white/70'
-                  : 'text-black/50 hover:text-black/70'
+                  ? 'text-white/50 hover:text-white/70 hover:bg-white/5'
+                  : 'text-black/50 hover:text-black/70 hover:bg-black/5'
               }`}
             >
               {t.services}
@@ -439,8 +428,8 @@ export default function PracticePageClient({ initialData, locale }: PracticePage
                   className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
                     activeTab === 'services'
                       ? isDark
-                        ? 'bg-white text-black'
-                        : 'bg-black text-white'
+                        ? 'bg-white/20 text-white'
+                        : 'bg-black/10 text-black'
                       : isDark
                       ? 'bg-white/10 text-white/70'
                       : 'bg-black/10 text-black/70'
@@ -448,13 +437,6 @@ export default function PracticePageClient({ initialData, locale }: PracticePage
                 >
                   {filteredServices.length}
                 </span>
-              )}
-              {activeTab === 'services' && (
-                <div
-                  className={`absolute bottom-0 left-0 right-0 h-0.5 ${
-                    isDark ? 'bg-white' : 'bg-black'
-                  }`}
-                />
               )}
             </button>
           </div>
@@ -555,10 +537,10 @@ export default function PracticePageClient({ initialData, locale }: PracticePage
               <div className="flex justify-center mt-12">
                 <button
                   onClick={handleLoadMore}
-                  className={`px-8 py-3 rounded-lg font-medium text-sm transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${
+                  className={`px-8 py-3 rounded-lg font-medium text-sm backdrop-blur-md transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${
                     isDark
-                      ? 'bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white'
-                      : 'bg-white hover:bg-gray-50 border border-black/10 hover:border-black/20 text-black shadow-sm hover:shadow-md'
+                      ? 'bg-black/40 hover:bg-black/50 border border-white/10 hover:border-white/20 text-white'
+                      : 'bg-white/20 hover:bg-white/30 border border-white/30 hover:border-white/50 text-black shadow-xl hover:shadow-2xl'
                   }`}
                   aria-label={
                     activeTab === 'practices'

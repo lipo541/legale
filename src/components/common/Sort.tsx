@@ -86,10 +86,10 @@ export default function Sort({ options, value, onChange }: SortProps) {
             setIsOpen(!isOpen)
           }
         }}
-        className={`w-full flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 rounded-lg border transition-all duration-300 hover:scale-[1.01] ${
+        className={`w-full flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 rounded-lg border backdrop-blur-md transition-all duration-300 hover:scale-[1.02] ${
           isDark
-            ? 'bg-white/5 border-white/10 hover:border-white/20 text-white'
-            : 'bg-white border-black/10 hover:border-black/20 text-black'
+            ? 'bg-black/40 border-white/10 hover:border-white/20 hover:bg-black/50 text-white'
+            : 'bg-white/20 border-white/30 hover:border-white/50 hover:bg-white/30 shadow-xl text-black'
         }`}
         aria-label={`Sort options. Current: ${selectedOption?.label}`}
         aria-expanded={isOpen}
@@ -132,10 +132,10 @@ export default function Sort({ options, value, onChange }: SortProps) {
             id="sort-menu"
             role="listbox"
             aria-label="Sort options"
-            className={`absolute top-full left-0 mt-2 w-48 rounded-lg border shadow-xl z-20 overflow-hidden max-h-48 sm:max-h-64 overflow-y-auto ${
+            className={`absolute top-full left-0 mt-2 w-48 rounded-lg border backdrop-blur-md shadow-xl z-20 overflow-hidden max-h-48 sm:max-h-64 overflow-y-auto ${
               isDark
-                ? 'bg-black border-white/10'
-                : 'bg-white border-black/10'
+                ? 'bg-black/80 border-white/20'
+                : 'bg-white/80 border-white/30'
             }`}
           >
             {options.map((option, index) => (

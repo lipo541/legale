@@ -50,8 +50,8 @@ export default function Position1({ posts }: Position1Props) {
   }
 
   return (
-    <div className={`relative h-full overflow-hidden rounded-2xl ${
-      isDark ? 'bg-white/5' : 'bg-black/5'
+    <div className={`relative h-full overflow-hidden rounded-2xl border backdrop-blur-md ${
+      isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
     }`}>
       <Swiper
         modules={[Autoplay, Pagination]}

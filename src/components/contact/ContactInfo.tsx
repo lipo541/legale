@@ -42,12 +42,12 @@ export default function ContactInfo({ locale }: ContactInfoProps) {
   ]
 
   return (
-    <div className={`min-h-screen py-20 transition-colors duration-150 ${
-      isDark ? 'bg-black' : 'bg-white'
-    }`}>
+    <div className="min-h-screen py-20 transition-colors duration-150">
       <div className="mx-auto w-full max-w-[1200px] px-6 sm:px-8 lg:px-10">
         {/* Header */}
-        <div className="text-center mb-16">
+        <div className={`text-center mb-16 rounded-2xl border backdrop-blur-md p-8 ${
+          isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
+        }`}>
           <h1 className={`text-4xl md:text-5xl font-bold mb-4 ${
             isDark ? 'text-white' : 'text-black'
           }`}>
@@ -86,10 +86,10 @@ export default function ContactInfo({ locale }: ContactInfoProps) {
             return (
               <div
                 key={index}
-                className={`p-6 rounded-2xl border transition-all duration-300 hover:scale-105 ${
+                className={`p-6 rounded-2xl border backdrop-blur-md transition-all duration-300 hover:scale-105 ${
                   isDark
-                    ? 'bg-white/5 border-white/10 hover:bg-white/10'
-                    : 'bg-black/5 border-black/10 hover:bg-black/10'
+                    ? 'bg-black/40 border-white/10 hover:bg-black/50 hover:border-white/20'
+                    : 'bg-white/20 border-white/30 hover:bg-white/30 hover:border-white/50 shadow-xl'
                 }`}
               >
                 <div className={`inline-flex p-3 rounded-lg mb-4 ${
@@ -118,20 +118,22 @@ export default function ContactInfo({ locale }: ContactInfoProps) {
             {t.location.title}
           </h2>
 
-          <div className={`rounded-2xl overflow-hidden border ${
-            isDark ? 'border-white/10' : 'border-black/10'
+          <div className={`rounded-2xl overflow-hidden border backdrop-blur-md p-2 ${
+            isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
           }`}>
-            <iframe
-              src="https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d1068.6113442117846!2d44.767480613641645!3d41.80566085451169!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zNDHCsDQ4JzIxLjEiTiA0NMKwNDYnMDQuMCJF!5e0!3m2!1sen!2sge!4v1762118334580!5m2!1sen!2sge"
-              width="100%"
-              height="450"
-              style={{ border: 0 }}
-              allowFullScreen
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              className={isDark ? 'grayscale invert' : ''}
-              title="LegalGE Location"
-            />
+            <div className="rounded-xl overflow-hidden">
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d1068.6113442117846!2d44.767480613641645!3d41.80566085451169!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zNDHCsDQ4JzIxLjEiTiA0NMKwNDYnMDQuMCJF!5e0!3m2!1sen!2sge!4v1762118334580!5m2!1sen!2sge"
+                width="100%"
+                height="450"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className={isDark ? 'grayscale invert' : ''}
+                title="LegalGE Location"
+              />
+            </div>
           </div>
 
           <a

@@ -325,12 +325,14 @@ export default function AllPostsSection({ initialPosts, categories, locale }: Al
                     <Link
                       key={post.id}
                       href={`/${locale}/news/${translation.slug}`}
-                      className={`group cursor-pointer overflow-hidden rounded-2xl transition-all duration-300 hover:scale-[0.98] ${
+                      className={`group cursor-pointer overflow-hidden rounded-2xl border backdrop-blur-md transition-all duration-300 hover:scale-[0.98] ${
                         viewMode === 'grid' 
                           ? 'flex flex-col flex-shrink-0 w-72 md:w-80 snap-start' 
                           : 'flex flex-row'
                       } ${
-                        isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'
+                        isDark 
+                          ? 'bg-black/40 border-white/10 hover:bg-black/50 hover:border-white/20' 
+                          : 'bg-white/20 border-white/30 hover:bg-white/30 hover:border-white/50 shadow-xl'
                       }`}
                     >
                       {/* Image */}

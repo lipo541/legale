@@ -125,7 +125,7 @@ export default function PostPageClient({ post, author, category, relatedPosts, l
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${
-      isDark ? 'bg-black text-white' : 'bg-white text-black'
+      isDark ? 'text-white' : 'text-black'
     }`}>
       <div className="mx-auto max-w-[1200px] px-6 sm:px-8 lg:px-10 py-12 sm:py-16">
         {/* Back Button */}
@@ -140,8 +140,8 @@ export default function PostPageClient({ post, author, category, relatedPosts, l
         </Link>
 
         {/* Main Article Card */}
-        <article className={`p-4 sm:p-6 md:p-8 lg:p-10 rounded-2xl ring-1 mb-12 ${
-          isDark ? 'bg-white/[0.02] ring-white/[0.08]' : 'bg-black/[0.02] ring-black/[0.08]'
+        <article className={`p-4 sm:p-6 md:p-8 lg:p-10 rounded-2xl border backdrop-blur-md mb-12 ${
+          isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
         }`}>
           {/* Category Badge */}
           {category && (
@@ -297,8 +297,8 @@ export default function PostPageClient({ post, author, category, relatedPosts, l
 
         {/* Related Posts */}
         {relatedPosts.length > 0 && (
-          <section className={`p-4 sm:p-6 md:p-8 lg:p-10 rounded-2xl ring-1 ${
-            isDark ? 'bg-white/[0.02] ring-white/[0.08]' : 'bg-black/[0.02] ring-black/[0.08]'
+          <section className={`p-4 sm:p-6 md:p-8 lg:p-10 rounded-2xl border backdrop-blur-md ${
+            isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
           }`}>
             <h2 className="text-xl sm:text-2xl font-extralight tracking-tight mb-6">
               მსგავსი სტატიები
@@ -312,10 +312,10 @@ export default function PostPageClient({ post, author, category, relatedPosts, l
                   <Link
                     key={relatedPost.id}
                     href={`/${locale}/news/${translation.slug}`}
-                    className={`group overflow-hidden rounded-xl transition-all ring-1 ${
+                    className={`group overflow-hidden rounded-xl border backdrop-blur-md transition-all ${
                       isDark 
-                        ? 'bg-white/[0.02] ring-white/[0.08] hover:bg-white/[0.05]' 
-                        : 'bg-black/[0.02] ring-black/[0.08] hover:bg-black/[0.05]'
+                        ? 'bg-black/40 border-white/10 hover:bg-black/50 hover:border-white/20' 
+                        : 'bg-white/20 border-white/30 hover:bg-white/30 hover:border-white/50 shadow-xl'
                     }`}
                   >
                     {relatedPost.featured_image_url && (

@@ -58,10 +58,10 @@ export default function Position2({ posts }: Position2Props) {
             href={`/${locale}/news/${translation.slug}`}
             onMouseEnter={() => setHoveredId(post.id)}
             onMouseLeave={() => setHoveredId(null)}
-            className={`group relative block flex-1 min-h-0 cursor-pointer rounded-xl p-2.5 sm:p-3 md:p-2.5 lg:p-4 transition-all duration-300 overflow-hidden ${
+            className={`group relative block flex-1 min-h-0 cursor-pointer rounded-xl border backdrop-blur-md p-2.5 sm:p-3 md:p-2.5 lg:p-4 transition-all duration-300 overflow-hidden ${
               isDark 
-                ? 'bg-white/5 hover:bg-white/10' 
-                : 'bg-black hover:bg-gray-900'
+                ? 'bg-black/40 border-white/10 hover:bg-black/50 hover:border-white/20' 
+                : 'bg-white/20 border-white/30 hover:bg-white/30 hover:border-white/50 shadow-xl'
             }`}
           >
             {/* Animated border */}
@@ -75,7 +75,7 @@ export default function Position2({ posts }: Position2Props) {
             
             <div className="relative space-y-1.5 sm:space-y-2">
               <div className="flex items-center justify-between">
-                <span className={`text-[10px] ${isDark ? 'text-white/40' : 'text-white/60'}`}>
+                <span className={`text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
                   {publishedDate}
                 </span>
                 <span className="rounded-full px-2 py-0.5 text-[10px] bg-red-600 text-white">
@@ -84,20 +84,20 @@ export default function Position2({ posts }: Position2Props) {
               </div>
               
               <h3 className={`text-[11px] sm:text-xs md:text-[10px] lg:text-xs font-medium leading-snug line-clamp-2 transition-opacity ${
-                isDark ? 'text-white' : 'text-white'
+                isDark ? 'text-white' : 'text-black'
               } ${hoveredId === post.id ? 'opacity-60' : 'opacity-100'}`}>
                 {translation.title}
               </h3>
               
               {translation.excerpt && (
-                <p className={`hidden sm:block text-[10px] leading-relaxed line-clamp-2 ${isDark ? 'text-white/50' : 'text-white/70'}`}>
+                <p className={`hidden sm:block text-[10px] leading-relaxed line-clamp-2 ${isDark ? 'text-white/50' : 'text-black/70'}`}>
                   {translation.excerpt.slice(0, 60)}...
                 </p>
               )}
               
               {/* Arrow indicator */}
               <div className={`flex items-center gap-1 text-[10px] font-medium transition-all duration-300 ${
-                isDark ? 'text-white/60' : 'text-white/80'
+                isDark ? 'text-white/60' : 'text-black/60'
               } ${hoveredId === post.id ? 'translate-x-1' : 'translate-x-0'}`}>
                 <span>წაიკითხე</span>
                 <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">

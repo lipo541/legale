@@ -7,6 +7,7 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { useParams, useRouter } from 'next/navigation'
 import { getClientSingleton } from '@/lib/supabase/client'
 import { HeroSlide, HeroSlideButton } from '@/lib/types/hero'
+import Snowfall from 'react-snowfall'
 
 interface HeroProps {
   initialSlides?: HeroSlide[]
@@ -218,6 +219,22 @@ export default function Hero({ initialSlides }: HeroProps) {
             ? 'bg-gradient-to-r from-black/80 via-black/60 to-transparent' 
             : 'bg-gradient-to-r from-white/80 via-white/60 to-transparent'
         }`} />
+
+        {/* Snowfall Effect - Only in Hero */}
+        <div className="absolute inset-0 z-[1] pointer-events-none">
+          <Snowfall
+            color={isDark ? "#ffffff" : "#000000"}
+            snowflakeCount={100}
+            speed={[0.5, 1.5]}
+            wind={[-0.5, 1.0]}
+            radius={[0.5, 2.0]}
+            style={{
+              position: 'absolute',
+              width: '100%',
+              height: '100%',
+            }}
+          />
+        </div>
 
         {/* Wave ripple effect on swipe */}
         {isDragging && swipeDirection && (

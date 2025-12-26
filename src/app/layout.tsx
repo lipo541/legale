@@ -35,7 +35,7 @@ export default function RootLayout({
         {/* Hero images are now loaded via SSR data - no static preload needed */}
       </head>
       <body
-        className={`${geistSans.variable} antialiased flex flex-col min-h-screen`}
+        className={`${geistSans.variable} antialiased flex flex-col min-h-screen overflow-x-hidden`}
       >
         {children}
         <Analytics />

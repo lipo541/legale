@@ -385,10 +385,10 @@ export default function ArchivePage({ locale }: ArchivePageProps) {
               {/* Mobile Filter Button */}
               <button
                 onClick={() => setShowMobileFilters(true)}
-                className={`lg:hidden flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`lg:hidden flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border backdrop-blur-md transition-colors ${
                   isDark
-                    ? 'bg-white/5 hover:bg-white/10 text-white border border-white/10'
-                    : 'bg-black/5 hover:bg-black/10 text-black border border-black/10'
+                    ? 'bg-black/40 border-white/10 hover:bg-black/50 text-white'
+                    : 'bg-white/20 border-white/30 hover:bg-white/30 text-black shadow-xl'
                 }`}
               >
                 <Filter className="h-4 w-4" />
@@ -431,12 +431,12 @@ export default function ArchivePage({ locale }: ArchivePageProps) {
             />
             
             {/* Drawer */}
-            <div className={`absolute inset-y-0 left-0 w-80 max-w-[85vw] ${
-              isDark ? 'bg-[#0a0a0a]' : 'bg-white'
-            } shadow-2xl overflow-y-auto animate-in slide-in-from-left duration-300`}>
+            <div className={`absolute inset-y-0 left-0 w-80 max-w-[85vw] backdrop-blur-xl shadow-2xl overflow-y-auto animate-in slide-in-from-left duration-300 ${
+              isDark ? 'bg-black/80 border-r border-white/10' : 'bg-white/80 border-r border-white/30'
+            }`}>
               {/* Header */}
-              <div className={`sticky top-0 z-10 flex items-center justify-between p-4 border-b ${
-                isDark ? 'bg-[#0a0a0a] border-white/10' : 'bg-white border-black/10'
+              <div className={`sticky top-0 z-10 flex items-center justify-between p-4 border-b backdrop-blur-md ${
+                isDark ? 'bg-black/40 border-white/10' : 'bg-white/40 border-white/30'
               }`}>
                 <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
                   {t?.categories || 'კატეგორიები'}
@@ -513,8 +513,8 @@ export default function ArchivePage({ locale }: ArchivePageProps) {
         <div className="flex gap-8">
           {/* Left Sidebar - Categories (Desktop Only) */}
           <div className="w-64 flex-shrink-0 hidden lg:block">
-            <div className={`sticky top-8 rounded-xl p-4 ${
-              isDark ? 'bg-white/5' : 'bg-black/5'
+            <div className={`sticky top-8 rounded-xl border backdrop-blur-md p-4 ${
+              isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
             }`}>
               <h2 className={`text-sm font-semibold mb-4 ${isDark ? 'text-white' : 'text-black'}`}>
                 {t?.categories || 'კატეგორიები'}
@@ -598,8 +598,10 @@ export default function ArchivePage({ locale }: ArchivePageProps) {
                       <Link
                         key={post.id}
                         href={`/${locale}/news/${translation.slug}`}
-                        className={`group block rounded-xl transition-all hover:scale-[0.99] overflow-hidden ${
-                          isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'
+                        className={`group block rounded-xl border backdrop-blur-md transition-all hover:scale-[0.99] overflow-hidden ${
+                          isDark 
+                            ? 'bg-black/40 border-white/10 hover:bg-black/50 hover:border-white/20' 
+                            : 'bg-white/20 border-white/30 hover:bg-white/30 hover:border-white/50 shadow-xl'
                         }`}
                       >
                         {/* Image */}
@@ -663,8 +665,10 @@ export default function ArchivePage({ locale }: ArchivePageProps) {
                       <Link
                         key={post.id}
                         href={`/${locale}/news/${translation.slug}`}
-                        className={`group flex gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl transition-all hover:scale-[0.99] ${
-                          isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'
+                        className={`group flex gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border backdrop-blur-md transition-all hover:scale-[0.99] ${
+                          isDark 
+                            ? 'bg-black/40 border-white/10 hover:bg-black/50 hover:border-white/20' 
+                            : 'bg-white/20 border-white/30 hover:bg-white/30 hover:border-white/50 shadow-xl'
                         }`}
                       >
                         {/* Image - Smaller on mobile */}
@@ -735,10 +739,10 @@ export default function ArchivePage({ locale }: ArchivePageProps) {
                   <div className="mt-8 text-center">
                     <button
                       onClick={handleLoadMore}
-                      className={`group inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
+                      className={`group inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium border backdrop-blur-md transition-all duration-300 ${
                         isDark 
-                          ? 'bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-white/20' 
-                          : 'bg-black/5 hover:bg-black/10 text-black border border-black/10 hover:border-black/20'
+                          ? 'bg-black/40 border-white/10 hover:bg-black/50 hover:border-white/20 text-white' 
+                          : 'bg-white/20 border-white/30 hover:bg-white/30 hover:border-white/50 shadow-xl text-black'
                       }`}
                     >
                       <span>{t?.loadMore || 'მეტის ნახვა'}</span>

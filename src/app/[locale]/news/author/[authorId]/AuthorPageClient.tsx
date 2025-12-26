@@ -217,14 +217,14 @@ export default function AuthorPageClient({ author, posts, locale }: AuthorPageCl
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setSelectedCategory(null)}
-              className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+              className={`rounded-full px-4 py-2 text-sm font-medium transition-all border backdrop-blur-md ${
                 selectedCategory === null
                   ? isDark
-                    ? 'bg-white text-black'
-                    : 'bg-black text-white'
+                    ? 'bg-white text-black border-white'
+                    : 'bg-black text-white border-black'
                   : isDark
-                  ? 'bg-white/10 text-white hover:bg-white/20'
-                  : 'bg-black/10 text-black hover:bg-black/20'
+                  ? 'bg-white/5 text-white border-white/10 hover:bg-white/10'
+                  : 'bg-white/20 text-black border-white/30 shadow-sm hover:bg-white/30'
               }`}
             >
               ყველა ({posts.length})
@@ -233,14 +233,14 @@ export default function AuthorPageClient({ author, posts, locale }: AuthorPageCl
               <button
                 key={categoryId}
                 onClick={() => setSelectedCategory(categoryId)}
-                className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                className={`rounded-full px-4 py-2 text-sm font-medium transition-all border backdrop-blur-md ${
                   selectedCategory === categoryId
                     ? isDark
-                      ? 'bg-white text-black'
-                      : 'bg-black text-white'
+                      ? 'bg-white text-black border-white'
+                      : 'bg-black text-white border-black'
                     : isDark
-                    ? 'bg-white/10 text-white hover:bg-white/20'
-                    : 'bg-black/10 text-black hover:bg-black/20'
+                    ? 'bg-white/5 text-white border-white/10 hover:bg-white/10'
+                    : 'bg-white/20 text-black border-white/30 shadow-sm hover:bg-white/30'
                 }`}
               >
                 {categoryName} ({categoryPosts.length})
@@ -272,8 +272,10 @@ export default function AuthorPageClient({ author, posts, locale }: AuthorPageCl
                 <Link
                   key={post.id}
                   href={`/${locale}/news/${translation?.slug || post.id}`}
-                  className={`group overflow-hidden rounded-2xl transition-all duration-300 hover:scale-[0.98] ${
-                    isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'
+                  className={`group overflow-hidden rounded-2xl transition-all duration-300 hover:scale-[0.98] border backdrop-blur-md ${
+                    isDark 
+                      ? 'bg-black/40 border-white/10 hover:bg-black/50' 
+                      : 'bg-white/20 border-white/30 shadow-xl hover:bg-white/30'
                   }`}
                 >
                   {/* Image */}

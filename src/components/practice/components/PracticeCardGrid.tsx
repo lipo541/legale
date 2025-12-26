@@ -22,10 +22,10 @@ export default function PracticeCardGrid({
   return (
     <Link
       href={`/${locale}/practices/${translation.slug}`}
-      className={`group flex flex-col h-full rounded-lg overflow-hidden transition-all duration-300 hover:scale-[1.005] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+      className={`group flex flex-col h-full rounded-lg overflow-hidden backdrop-blur-md transition-all duration-300 hover:scale-[1.005] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
         isDark
-          ? 'bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 hover:shadow-2xl focus-visible:ring-white/50'
-          : 'bg-white hover:bg-gray-50 border border-black/10 hover:border-black/20 shadow-sm hover:shadow-xl focus-visible:ring-black/50'
+          ? 'bg-black/40 hover:bg-black/50 border border-white/10 hover:border-white/20 hover:shadow-2xl focus-visible:ring-white/50'
+          : 'bg-white/20 hover:bg-white/30 border border-white/30 hover:border-white/50 shadow-xl hover:shadow-2xl focus-visible:ring-black/50'
       }`}
       aria-label={ariaLabel}
       role="article"
@@ -65,7 +65,7 @@ export default function PracticeCardGrid({
         {/* Category Badge - Top */}
         {translation.category && (
           <div className="absolute top-3 left-3 z-10">
-            <div className="flex items-center gap-1 rounded-full bg-white/90 backdrop-blur-sm px-2.5 py-1 text-black">
+            <div className="flex items-center gap-1 rounded-full bg-white/20 backdrop-blur-md border border-white/30 px-2.5 py-1 text-white shadow-lg">
               <Tag className="h-3 w-3" />
               <span className="text-[10px] md:text-xs font-medium">
                 {translation.category}

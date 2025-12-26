@@ -46,10 +46,10 @@ export default function SoloSpecialistCard({ specialist, viewMode = 'grid' }: So
   if (viewMode === 'list') {
     return (
       <div 
-        className={`group relative flex overflow-hidden rounded-xl border transition-all duration-300 hover:scale-[1.01] ${
+        className={`group relative flex overflow-hidden rounded-xl border backdrop-blur-md transition-all duration-300 hover:scale-[1.01] ${
           isDark
-            ? 'border-white/10 bg-white/5 hover:border-white/20 hover:shadow-2xl'
-            : 'border-black/10 bg-white hover:border-black/20 shadow-sm hover:shadow-xl'
+            ? 'border-white/10 bg-black/40 hover:border-white/20 hover:bg-black/50 hover:shadow-2xl'
+            : 'border-white/30 bg-white/20 hover:border-white/50 hover:bg-white/30 shadow-xl hover:shadow-2xl'
         }`}
       >
         {/* Compact mobile layout, full desktop layout */}
@@ -172,10 +172,10 @@ export default function SoloSpecialistCard({ specialist, viewMode = 'grid' }: So
   // Grid view layout (default)
   return (
     <div 
-      className={`group relative flex flex-col overflow-hidden rounded-2xl border transition-all duration-300 hover:scale-[1.02] ${
+      className={`group relative flex flex-col overflow-hidden rounded-2xl border backdrop-blur-md transition-all duration-300 hover:scale-[1.02] ${
         isDark
-          ? 'border-white/10 bg-white/5 hover:border-white/20 hover:shadow-2xl'
-          : 'border-black/10 bg-white hover:border-black/20 shadow-sm hover:shadow-xl'
+          ? 'border-white/10 bg-black/40 hover:border-white/20 hover:bg-black/50 hover:shadow-2xl'
+          : 'border-white/30 bg-white/20 hover:border-white/50 hover:bg-white/30 shadow-xl hover:shadow-2xl'
       }`}
     >
       {/* Card Content */}

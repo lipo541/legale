@@ -306,10 +306,10 @@ export default function SpecialistsStatistics({
           return (
             <div
               key={card.label}
-              className={`group flex items-center gap-2 rounded-xl border px-3 py-2 transition-all duration-300 md:px-4 md:py-3 ${
+              className={`group flex items-center gap-2 rounded-xl border backdrop-blur-md px-3 py-2 transition-all duration-300 md:px-4 md:py-3 ${
                 isDark
-                  ? 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10 hover:scale-[1.02]'
-                  : 'border-black/10 bg-white hover:border-black/20 hover:bg-gray-50 shadow-sm hover:shadow-md hover:scale-[1.02]'
+                  ? 'bg-black/40 border-white/10 hover:bg-black/50 hover:border-white/20 hover:scale-[1.02]'
+                  : 'bg-white/20 border-white/30 hover:bg-white/30 hover:border-white/50 shadow-xl hover:shadow-2xl hover:scale-[1.02]'
               }`}
             >
               {/* Icon */}
@@ -371,10 +371,10 @@ export default function SpecialistsStatistics({
               placeholder={t.searchPlaceholder}
               aria-label={t.searchAriaLabel}
               aria-describedby="search-description"
-              className={`w-full rounded-xl border py-2 pl-9 pr-3 text-sm transition-all duration-300 placeholder:text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+              className={`w-full rounded-xl border backdrop-blur-md py-2 pl-9 pr-3 text-sm transition-all duration-300 placeholder:text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                 isDark
-                  ? 'border-white/10 bg-white/5 text-white placeholder:text-white/40 hover:border-white/20 focus:border-white/30 focus:bg-white/10 focus:ring-white/50'
-                  : 'border-black/10 bg-white text-black placeholder:text-black/40 hover:border-black/20 focus:border-black/30 focus:bg-gray-50 shadow-sm focus:ring-black/50'
+                  ? 'bg-black/40 border-white/10 text-white placeholder:text-white/40 hover:border-white/20 focus:border-white/20 focus:bg-black/50 focus:ring-white/50'
+                  : 'border-white/30 bg-white/20 text-black placeholder:text-black/40 hover:border-white/50 focus:border-white/50 focus:bg-white/30 shadow-xl focus:ring-black/50'
               }`}
             />
             <span id="search-description" className="sr-only">
@@ -408,14 +408,14 @@ export default function SpecialistsStatistics({
               aria-label={t.filterButton}
               aria-expanded={isFilterOpen}
               aria-controls="filter-dropdown"
-              className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg border px-2 py-1.5 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+              className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg border backdrop-blur-md px-2 py-1.5 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
                 isFilterOpen
                   ? isDark
                     ? 'border-white bg-white text-black scale-[0.98] focus-visible:ring-white/50'
                     : 'border-black bg-black text-white scale-[0.98] focus-visible:ring-black/50'
                   : isDark
-                  ? 'border-white/10 bg-white/5 text-white hover:border-white/20 hover:bg-white/10 hover:scale-[1.02] focus-visible:ring-white/50'
-                  : 'border-black/10 bg-white text-black hover:border-black/20 hover:bg-gray-50 shadow-sm hover:shadow-md hover:scale-[1.02] focus-visible:ring-black/50'
+                  ? 'border-white/10 bg-black/40 text-white hover:border-white/20 hover:bg-black/50 hover:scale-[1.02] focus-visible:ring-white/50'
+                  : 'border-white/30 bg-white/20 text-black hover:border-white/50 hover:bg-white/30 shadow-xl hover:shadow-2xl hover:scale-[1.02] focus-visible:ring-black/50'
               }`}
             >
               <SlidersHorizontal className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" strokeWidth={1.5} aria-hidden="true" />
@@ -446,10 +446,10 @@ export default function SpecialistsStatistics({
               placeholder={t.searchPlaceholder}
               aria-label={t.searchAriaLabel}
               aria-describedby="search-description-desktop"
-              className={`w-full rounded-xl border py-2 pl-9 pr-3 text-sm transition-all duration-300 placeholder:text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+              className={`w-full rounded-xl border backdrop-blur-md py-2 pl-9 pr-3 text-sm transition-all duration-300 placeholder:text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                 isDark
-                  ? 'border-white/10 bg-white/5 text-white placeholder:text-white/40 hover:border-white/20 focus:border-white/30 focus:bg-white/10 focus:ring-white/50'
-                  : 'border-black/10 bg-white text-black placeholder:text-black/40 hover:border-black/20 focus:border-black/30 focus:bg-gray-50 shadow-sm focus:ring-black/50'
+                  ? 'border-white/10 bg-black/40 text-white placeholder:text-white/40 hover:border-white/20 focus:border-white/20 focus:bg-black/50 focus:ring-white/50'
+                  : 'border-white/30 bg-white/20 text-black placeholder:text-black/40 hover:border-white/50 focus:border-white/50 focus:bg-white/30 shadow-xl focus:ring-black/50'
               }`}
             />
             <span id="search-description-desktop" className="sr-only">
@@ -480,14 +480,14 @@ export default function SpecialistsStatistics({
             aria-label={t.filterButton}
             aria-expanded={isFilterOpen}
             aria-controls="filter-dropdown"
-            className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-all duration-300 md:px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+            className={`flex items-center gap-2 rounded-xl border backdrop-blur-md px-3 py-2 text-sm font-medium transition-all duration-300 md:px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
               isFilterOpen
                 ? isDark
                   ? 'border-white bg-white text-black scale-[0.98] focus-visible:ring-white/50'
                   : 'border-black bg-black text-white scale-[0.98] focus-visible:ring-black/50'
                 : isDark
-                ? 'border-white/10 bg-white/5 text-white hover:border-white/20 hover:bg-white/10 hover:scale-[1.02] focus-visible:ring-white/50'
-                : 'border-black/10 bg-white text-black hover:border-black/20 hover:bg-gray-50 shadow-sm hover:shadow-md hover:scale-[1.02] focus-visible:ring-black/50'
+                ? 'border-white/10 bg-black/40 text-white hover:border-white/20 hover:bg-black/50 hover:scale-[1.02] focus-visible:ring-white/50'
+                : 'border-white/30 bg-white/20 text-black hover:border-white/50 hover:bg-white/30 shadow-xl hover:shadow-2xl hover:scale-[1.02] focus-visible:ring-black/50'
             }`}
           >
             <SlidersHorizontal size={16} strokeWidth={1.5} aria-hidden="true" />
@@ -502,10 +502,10 @@ export default function SpecialistsStatistics({
           id="filter-dropdown"
           role="region"
           aria-label={t.filterMenuAriaLabel}
-          className={`rounded-xl border p-3 transition-all duration-300 ${
+          className={`rounded-xl border backdrop-blur-md p-3 transition-all duration-300 ${
             isDark
-              ? 'border-white/10 bg-white/5'
-              : 'border-black/10 bg-white shadow-lg'
+              ? 'border-white/10 bg-black/40'
+              : 'border-white/30 bg-white/20 shadow-xl'
           }`}
         >
           <div className="mb-3 flex items-center justify-between">
@@ -540,7 +540,7 @@ export default function SpecialistsStatistics({
                       : 'border-black bg-black text-white'
                     : isDark
                     ? 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
-                    : 'border-black/10 bg-gray-50 hover:border-black/20 hover:bg-gray-100'
+                    : 'border-white/30 bg-white/20 backdrop-blur-md hover:border-white/50 hover:bg-white/30'
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -561,8 +561,8 @@ export default function SpecialistsStatistics({
                 <div
                   className={`absolute left-0 right-0 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-lg border ${
                     isDark
-                      ? 'border-white/10 bg-black'
-                      : 'border-black/10 bg-white shadow-md'
+                      ? 'border-white/20 bg-black/80 backdrop-blur-md'
+                      : 'border-white/30 bg-white/80 backdrop-blur-md shadow-xl'
                   }`}
                 >
                   {specialistTypes.map((type) => (
@@ -579,7 +579,7 @@ export default function SpecialistsStatistics({
                             : 'bg-black text-white font-medium'
                           : isDark
                           ? 'text-white/70 hover:bg-white/10 hover:text-white'
-                          : 'text-black/70 hover:bg-gray-100 hover:text-black'
+                          : 'text-black/70 hover:bg-white/30 hover:text-black'
                       }`}
                     >
                       {type.name}
@@ -600,7 +600,7 @@ export default function SpecialistsStatistics({
                       : 'border-black bg-black text-white'
                     : isDark
                     ? 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
-                    : 'border-black/10 bg-gray-50 hover:border-black/20 hover:bg-gray-100'
+                    : 'border-white/30 bg-white/20 backdrop-blur-md hover:border-white/50 hover:bg-white/30'
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -621,8 +621,8 @@ export default function SpecialistsStatistics({
                 <div
                   className={`absolute left-0 right-0 top-full z-10 mt-1 rounded-lg border ${
                     isDark
-                      ? 'border-white/10 bg-black'
-                      : 'border-black/10 bg-white shadow-md'
+                      ? 'border-white/20 bg-black/80 backdrop-blur-md'
+                      : 'border-white/30 bg-white/80 backdrop-blur-md shadow-xl'
                   }`}
                 >
                   {/* Search input */}
@@ -635,7 +635,7 @@ export default function SpecialistsStatistics({
                       className={`w-full px-3 py-2 text-sm rounded-lg border ${
                         isDark
                           ? 'bg-white/5 border-white/10 text-white placeholder:text-white/40'
-                          : 'bg-gray-50 border-black/10 text-black placeholder:text-black/40'
+                          : 'bg-white/20 backdrop-blur-md border-white/30 text-black placeholder:text-black/40'
                       }`}
                       onClick={(e) => e.stopPropagation()}
                     />
@@ -654,7 +654,7 @@ export default function SpecialistsStatistics({
                           className={`flex items-center gap-2.5 px-3 py-2.5 cursor-pointer transition-colors ${
                             isDark
                               ? 'hover:bg-white/10'
-                              : 'hover:bg-gray-100'
+                              : 'hover:bg-white/30'
                           }`}
                           onClick={(e) => e.stopPropagation()}
                         >
@@ -688,7 +688,7 @@ export default function SpecialistsStatistics({
                       : 'border-black bg-black text-white'
                     : isDark
                     ? 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
-                    : 'border-black/10 bg-gray-50 hover:border-black/20 hover:bg-gray-100'
+                    : 'border-white/30 bg-white/20 backdrop-blur-md hover:border-white/50 hover:bg-white/30'
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -709,8 +709,8 @@ export default function SpecialistsStatistics({
                 <div
                   className={`absolute left-0 right-0 top-full z-10 mt-1 max-h-64 overflow-y-auto rounded-lg border ${
                     isDark
-                      ? 'border-white/10 bg-black'
-                      : 'border-black/10 bg-white shadow-md'
+                      ? 'border-white/20 bg-black/80 backdrop-blur-md'
+                      : 'border-white/30 bg-white/80 backdrop-blur-md shadow-xl'
                   }`}
                 >
                   {loadingCities ? (
@@ -732,7 +732,7 @@ export default function SpecialistsStatistics({
                               : 'bg-black text-white font-medium'
                             : isDark
                             ? 'text-white/70 hover:bg-white/10 hover:text-white'
-                            : 'text-black/70 hover:bg-gray-100 hover:text-black'
+                            : 'text-black/70 hover:bg-white/30 hover:text-black'
                         }`}
                       >
                         <span className="text-sm">{city.name}</span>
@@ -757,7 +757,7 @@ export default function SpecialistsStatistics({
                       : 'border-black bg-black text-white'
                     : isDark
                     ? 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
-                    : 'border-black/10 bg-gray-50 hover:border-black/20 hover:bg-gray-100'
+                    : 'border-white/30 bg-white/20 backdrop-blur-md hover:border-white/50 hover:bg-white/30'
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -778,8 +778,8 @@ export default function SpecialistsStatistics({
                 <div
                   className={`absolute left-0 right-0 top-full z-10 mt-1 max-h-64 overflow-y-auto rounded-lg border ${
                     isDark
-                      ? 'border-white/10 bg-black'
-                      : 'border-black/10 bg-white shadow-md'
+                      ? 'border-white/20 bg-black/80 backdrop-blur-md'
+                      : 'border-white/30 bg-white/80 backdrop-blur-md shadow-xl'
                   }`}
                 >
                   {AVAILABLE_LANGUAGES.map((lang) => (
@@ -788,7 +788,7 @@ export default function SpecialistsStatistics({
                       className={`flex items-center gap-2.5 px-3 py-2.5 cursor-pointer transition-colors ${
                         isDark
                           ? 'hover:bg-white/10'
-                          : 'hover:bg-gray-100'
+                          : 'hover:bg-white/30'
                       }`}
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -823,7 +823,7 @@ export default function SpecialistsStatistics({
                       : 'border-black bg-black text-white'
                     : isDark
                     ? 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
-                    : 'border-black/10 bg-gray-50 hover:border-black/20 hover:bg-gray-100'
+                    : 'border-white/30 bg-white/20 backdrop-blur-md hover:border-white/50 hover:bg-white/30'
                 }`}
               >
                 <div className="flex items-center gap-1 min-w-0 flex-1">
@@ -844,8 +844,8 @@ export default function SpecialistsStatistics({
                 <div
                   className={`absolute left-0 right-0 top-full z-10 mt-1 max-h-40 overflow-y-auto rounded border ${
                     isDark
-                      ? 'border-white/10 bg-black'
-                      : 'border-black/10 bg-white shadow-md'
+                      ? 'border-white/20 bg-black/80 backdrop-blur-md'
+                      : 'border-white/30 bg-white/80 backdrop-blur-md shadow-xl'
                   }`}
                 >
                   {specialistTypes.map((type) => (
@@ -862,7 +862,7 @@ export default function SpecialistsStatistics({
                             : 'bg-black text-white'
                           : isDark
                           ? 'text-white/70 hover:bg-white/10 hover:text-white'
-                          : 'text-black/70 hover:bg-gray-100 hover:text-black'
+                          : 'text-black/70 hover:bg-white/30 hover:text-black'
                       }`}
                     >
                       {type.name}
@@ -883,7 +883,7 @@ export default function SpecialistsStatistics({
                       : 'border-black bg-black text-white'
                     : isDark
                     ? 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
-                    : 'border-black/10 bg-gray-50 hover:border-black/20 hover:bg-gray-100'
+                    : 'border-white/30 bg-white/20 backdrop-blur-md hover:border-white/50 hover:bg-white/30'
                 }`}
               >
                 <div className="flex items-center gap-1 min-w-0 flex-1">
@@ -904,8 +904,8 @@ export default function SpecialistsStatistics({
                 <div
                   className={`absolute left-0 right-0 top-full z-10 mt-1 rounded border ${
                     isDark
-                      ? 'border-white/10 bg-black'
-                      : 'border-black/10 bg-white shadow-md'
+                      ? 'border-white/20 bg-black/80 backdrop-blur-md'
+                      : 'border-white/30 bg-white/80 backdrop-blur-md shadow-xl'
                   }`}
                 >
                   {/* Search input */}
@@ -918,7 +918,7 @@ export default function SpecialistsStatistics({
                       className={`w-full px-2 py-1 text-xs rounded border ${
                         isDark
                           ? 'bg-white/5 border-white/10 text-white placeholder:text-white/40'
-                          : 'bg-gray-50 border-black/10 text-black placeholder:text-black/40'
+                          : 'bg-white/20 backdrop-blur-md border-white/30 text-black placeholder:text-black/40'
                       }`}
                       onClick={(e) => e.stopPropagation()}
                     />
@@ -937,7 +937,7 @@ export default function SpecialistsStatistics({
                           className={`flex items-center gap-2 px-2 py-1.5 cursor-pointer transition-colors ${
                             isDark
                               ? 'hover:bg-white/10'
-                              : 'hover:bg-gray-100'
+                              : 'hover:bg-white/30'
                           }`}
                           onClick={(e) => e.stopPropagation()}
                         >
@@ -971,7 +971,7 @@ export default function SpecialistsStatistics({
                       : 'border-black bg-black text-white'
                     : isDark
                     ? 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
-                    : 'border-black/10 bg-gray-50 hover:border-black/20 hover:bg-gray-100'
+                    : 'border-white/30 bg-white/20 backdrop-blur-md hover:border-white/50 hover:bg-white/30'
                 }`}
               >
                 <div className="flex items-center gap-1 min-w-0 flex-1">
@@ -992,8 +992,8 @@ export default function SpecialistsStatistics({
                 <div
                   className={`absolute left-0 right-0 top-full z-10 mt-1 max-h-40 overflow-y-auto rounded border ${
                     isDark
-                      ? 'border-white/10 bg-black'
-                      : 'border-black/10 bg-white shadow-md'
+                      ? 'border-white/20 bg-black/80 backdrop-blur-md'
+                      : 'border-white/30 bg-white/80 backdrop-blur-md shadow-xl'
                   }`}
                 >
                   {loadingCities ? (
@@ -1015,7 +1015,7 @@ export default function SpecialistsStatistics({
                               : 'bg-black text-white'
                             : isDark
                             ? 'text-white/70 hover:bg-white/10 hover:text-white'
-                            : 'text-black/70 hover:bg-gray-100 hover:text-black'
+                            : 'text-black/70 hover:bg-white/30 hover:text-black'
                         }`}
                       >
                         <span>{city.name}</span>
@@ -1044,7 +1044,7 @@ export default function SpecialistsStatistics({
                       : 'border-black bg-black text-white'
                     : isDark
                     ? 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
-                    : 'border-black/10 bg-gray-50 hover:border-black/20 hover:bg-gray-100'
+                    : 'border-white/30 bg-white/20 backdrop-blur-md hover:border-white/50 hover:bg-white/30'
                 }`}
               >
                 <div className="flex items-center gap-1 min-w-0 flex-1">
@@ -1065,8 +1065,8 @@ export default function SpecialistsStatistics({
                 <div
                   className={`absolute left-0 right-0 top-full z-10 mt-1 max-h-40 overflow-y-auto rounded border ${
                     isDark
-                      ? 'border-white/10 bg-black'
-                      : 'border-black/10 bg-white shadow-md'
+                      ? 'border-white/20 bg-black/80 backdrop-blur-md'
+                      : 'border-white/30 bg-white/80 backdrop-blur-md shadow-xl'
                   }`}
                 >
                   {AVAILABLE_LANGUAGES.map((lang) => (
@@ -1075,7 +1075,7 @@ export default function SpecialistsStatistics({
                       className={`flex items-center gap-2 px-2 py-1.5 cursor-pointer transition-colors ${
                         isDark
                           ? 'hover:bg-white/10'
-                          : 'hover:bg-gray-100'
+                          : 'hover:bg-white/30'
                       }`}
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -1101,3 +1101,7 @@ export default function SpecialistsStatistics({
     </div>
   );
 }
+
+
+
+

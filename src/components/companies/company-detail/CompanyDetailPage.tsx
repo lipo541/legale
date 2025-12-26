@@ -314,10 +314,10 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${
-      isDark ? 'bg-black text-white' : 'bg-white text-black'
+      isDark ? 'text-white' : 'text-black'
     }`}>
       {/* Header Section - Clean & Minimal */}
-      <div className={`border-b ${isDark ? 'border-white/[0.08]' : 'border-black/[0.08]'}`}>
+      <div className={`border-b ${isDark ? 'border-white/10' : 'border-black/10'}`}>
         <div className="mx-auto max-w-[1200px] px-6 sm:px-8 lg:px-10 py-8 sm:py-12">
           {/* Back Button */}
           <button
@@ -369,10 +369,10 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
               {company.email && (
                 <a
                   href={`mailto:${company.email}`}
-                  className={`group flex items-center gap-2 px-4 py-2 rounded-full text-sm font-light transition-all ${
+                  className={`group flex items-center gap-2 px-4 py-2 rounded-full text-sm font-light transition-all backdrop-blur-md ${
                     isDark 
-                      ? 'bg-white/5 hover:bg-white/10 ring-1 ring-white/10' 
-                      : 'bg-black/5 hover:bg-black/10 ring-1 ring-black/10'
+                      ? 'bg-black/40 border border-white/10 hover:bg-black/50' 
+                      : 'bg-white/20 border border-white/30 hover:bg-white/30 shadow-sm'
                   }`}
                 >
                   <Mail className="h-4 w-4 opacity-50" />
@@ -382,10 +382,10 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
               {company.phone_number && cleanPhone(company.phone_number) && (
                 <a
                   href={`tel:${cleanPhone(company.phone_number)}`}
-                  className={`group flex items-center gap-2 px-4 py-2 rounded-full text-sm font-light transition-all ${
+                  className={`group flex items-center gap-2 px-4 py-2 rounded-full text-sm font-light transition-all backdrop-blur-md ${
                     isDark 
-                      ? 'bg-white/5 hover:bg-white/10 ring-1 ring-white/10' 
-                      : 'bg-black/5 hover:bg-black/10 ring-1 ring-black/10'
+                      ? 'bg-black/40 border border-white/10 hover:bg-black/50' 
+                      : 'bg-white/20 border border-white/30 hover:bg-white/30 shadow-sm'
                   }`}
                 >
                   <Phone className="h-4 w-4 opacity-50" />
@@ -397,10 +397,10 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
                   href={company.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`group flex items-center gap-2 px-4 py-2 rounded-full text-sm font-light transition-all ${
+                  className={`group flex items-center gap-2 px-4 py-2 rounded-full text-sm font-light transition-all backdrop-blur-md ${
                     isDark 
-                      ? 'bg-white/5 hover:bg-white/10 ring-1 ring-white/10' 
-                      : 'bg-black/5 hover:bg-black/10 ring-1 ring-black/10'
+                      ? 'bg-black/40 border border-white/10 hover:bg-black/50' 
+                      : 'bg-white/20 border border-white/30 hover:bg-white/30 shadow-sm'
                   }`}
                 >
                   <Globe className="h-4 w-4 opacity-50" />
@@ -425,10 +425,10 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
                     {cities.map(city => (
                       <span
                         key={city.id}
-                        className={`px-3 py-1 rounded-full text-xs font-light ${
+                        className={`px-3 py-1 rounded-full text-xs font-light backdrop-blur-md ${
                           isDark 
-                            ? 'bg-white/5 ring-1 ring-white/10' 
-                            : 'bg-black/5 ring-1 ring-black/10'
+                            ? 'bg-black/40 border border-white/10' 
+                            : 'bg-white/20 border border-white/30 shadow-sm'
                         }`}
                       >
                         {locale === 'ka' ? city.name_ka : locale === 'en' ? city.name_en : city.name_ru}
@@ -447,10 +447,10 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
                     href={company.facebook_link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`p-2 rounded-full transition-all ${
+                    className={`p-2 rounded-full transition-all backdrop-blur-md ${
                       isDark 
-                        ? 'bg-white/5 hover:bg-white/10 ring-1 ring-white/10' 
-                        : 'bg-black/5 hover:bg-black/10 ring-1 ring-black/10'
+                        ? 'bg-black/40 border border-white/10 hover:bg-black/50' 
+                        : 'bg-white/20 border border-white/30 hover:bg-white/30 shadow-sm'
                     }`}
                   >
                     <Facebook className="h-4 w-4 opacity-50" />
@@ -461,10 +461,10 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
                     href={company.instagram_link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`p-2 rounded-full transition-all ${
+                    className={`p-2 rounded-full transition-all backdrop-blur-md ${
                       isDark 
-                        ? 'bg-white/5 hover:bg-white/10 ring-1 ring-white/10' 
-                        : 'bg-black/5 hover:bg-black/10 ring-1 ring-black/10'
+                        ? 'bg-black/40 border border-white/10 hover:bg-black/50' 
+                        : 'bg-white/20 border border-white/30 hover:bg-white/30 shadow-sm'
                     }`}
                   >
                     <Instagram className="h-4 w-4 opacity-50" />
@@ -475,10 +475,10 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
                     href={company.linkedin_link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`p-2 rounded-full transition-all ${
+                    className={`p-2 rounded-full transition-all backdrop-blur-md ${
                       isDark 
-                        ? 'bg-white/5 hover:bg-white/10 ring-1 ring-white/10' 
-                        : 'bg-black/5 hover:bg-black/10 ring-1 ring-black/10'
+                        ? 'bg-black/40 border border-white/10 hover:bg-black/50' 
+                        : 'bg-white/20 border border-white/30 hover:bg-white/30 shadow-sm'
                     }`}
                   >
                     <Linkedin className="h-4 w-4 opacity-50" />
@@ -489,10 +489,10 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
                     href={company.twitter_link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`p-2 rounded-full transition-all ${
+                    className={`p-2 rounded-full transition-all backdrop-blur-md ${
                       isDark 
-                        ? 'bg-white/5 hover:bg-white/10 ring-1 ring-white/10' 
-                        : 'bg-black/5 hover:bg-black/10 ring-1 ring-black/10'
+                        ? 'bg-black/40 border border-white/10 hover:bg-black/50' 
+                        : 'bg-white/20 border border-white/30 hover:bg-white/30 shadow-sm'
                     }`}
                   >
                     <Twitter className="h-4 w-4 opacity-50" />
@@ -508,8 +508,8 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
       <div className="mx-auto max-w-[1200px] px-6 sm:px-8 lg:px-10 py-12 sm:py-16 space-y-12">
         {/* Company Overview */}
         {translation?.company_overview && (
-          <section className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl ring-1 ${
-            isDark ? 'bg-white/[0.02] ring-white/[0.08]' : 'bg-black/[0.02] ring-black/[0.08]'
+          <section className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border backdrop-blur-md ${
+            isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
           }`}>
             <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-6">
               <div className={`p-2 rounded-xl ${
@@ -531,8 +531,8 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
 
         {/* Mission Statement */}
         {translation?.mission_statement && (
-          <section className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl ring-1 ${
-            isDark ? 'bg-white/[0.02] ring-white/[0.08]' : 'bg-black/[0.02] ring-black/[0.08]'
+          <section className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border backdrop-blur-md ${
+            isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
           }`}>
             <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-6">
               <div className={`p-2 rounded-xl ${
@@ -554,8 +554,8 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
 
         {/* Vision & Values */}
         {translation?.vision_values && (
-          <section className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl ring-1 ${
-            isDark ? 'bg-white/[0.02] ring-white/[0.08]' : 'bg-black/[0.02] ring-black/[0.08]'
+          <section className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border backdrop-blur-md ${
+            isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
           }`}>
             <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-6">
               <div className={`p-2 rounded-xl ${
@@ -577,8 +577,8 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
 
         {/* History */}
         {translation?.history && (
-          <section className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl ring-1 ${
-            isDark ? 'bg-white/[0.02] ring-white/[0.08]' : 'bg-black/[0.02] ring-black/[0.08]'
+          <section className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border backdrop-blur-md ${
+            isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
           }`}>
             <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-6">
               <div className={`p-2 rounded-xl ${
@@ -600,8 +600,8 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
 
         {/* How We Work */}
         {translation?.how_we_work && (
-          <section className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl ring-1 ${
-            isDark ? 'bg-white/[0.02] ring-white/[0.08]' : 'bg-black/[0.02] ring-black/[0.08]'
+          <section className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border backdrop-blur-md ${
+            isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
           }`}>
             <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-6">
               <div className={`p-2 rounded-xl ${
@@ -623,8 +623,8 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
 
         {/* Company Specialists */}
         {company.specialists && company.specialists.length > 0 && (
-          <section className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl ring-1 ${
-            isDark ? 'bg-white/[0.02] ring-white/[0.08]' : 'bg-black/[0.02] ring-black/[0.08]'
+          <section className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border backdrop-blur-md ${
+            isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
           }`}>
             <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-6">
               <div className={`p-2 rounded-xl ${
@@ -649,10 +649,10 @@ export default function CompanyDetailPage({ slug, locale }: CompanyDetailPagePro
                   <button
                     key={specialist.id}
                     onClick={() => router.push(`/${locale}/specialists/${displaySlug}`)}
-                    className={`group flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl transition-all text-left ring-1 ${
+                    className={`group flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl transition-all duration-300 text-left border backdrop-blur-md hover:scale-[1.02] cursor-pointer ${
                       isDark 
-                        ? 'bg-white/[0.02] hover:bg-white/[0.05] ring-white/[0.08]' 
-                        : 'bg-black/[0.02] hover:bg-black/[0.05] ring-black/[0.08]'
+                        ? 'bg-black/40 border-white/10 hover:bg-black/50' 
+                        : 'bg-white/20 border-white/30 hover:bg-white/30 shadow-sm'
                     }`}
                   >
                     {specialist.avatar_url ? (

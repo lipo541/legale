@@ -15,10 +15,10 @@ export default function SpecialistCardSkeleton({ viewMode = 'grid' }: Specialist
   if (viewMode === 'list') {
     return (
       <div 
-        className={`relative flex overflow-hidden rounded-xl border animate-pulse ${
+        className={`relative flex overflow-hidden rounded-xl border backdrop-blur-md animate-pulse ${
           isDark
-            ? 'border-white/10 bg-white/5'
-            : 'border-black/10 bg-white shadow-sm'
+            ? 'border-white/20 bg-white/10'
+            : 'border-white/30 bg-white/20 shadow-xl'
         }`}
       >
         <div className="flex w-full items-center gap-3 p-3 sm:gap-0 sm:p-0">
@@ -76,10 +76,10 @@ export default function SpecialistCardSkeleton({ viewMode = 'grid' }: Specialist
   // Grid view skeleton
   return (
     <div 
-      className={`relative flex flex-col overflow-hidden rounded-2xl border animate-pulse ${
+      className={`relative flex flex-col overflow-hidden rounded-2xl border backdrop-blur-md animate-pulse ${
         isDark
-          ? 'border-white/10 bg-white/5'
-          : 'border-black/10 bg-white shadow-sm'
+          ? 'border-white/20 bg-white/10'
+          : 'border-white/30 bg-white/20 shadow-xl'
       }`}
     >
       {/* Card Content */}

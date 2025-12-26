@@ -8,10 +8,10 @@ export default function CompanyCardSkeleton() {
 
   return (
     <div
-      className={`group relative block overflow-hidden rounded-lg border ${
+      className={`group relative block overflow-hidden rounded-lg border backdrop-blur-md ${
         isDark
-          ? 'border-white/10 bg-white/5'
-          : 'border-black/10 bg-white shadow-sm'
+          ? 'border-white/20 bg-white/10'
+          : 'border-white/30 bg-white/20 shadow-xl'
       }`}
     >
       {/* Logo Section */}

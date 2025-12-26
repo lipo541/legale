@@ -50,10 +50,10 @@ export default function Position6({ posts }: Position6Props) {
   return (
     <Link href={`/${locale}/news/${translation.slug}`} className="block h-full overflow-hidden">
       {/* Mobile: Horizontal compact card */}
-      <div className={`md:hidden group flex h-full items-center gap-3 p-2 rounded-xl overflow-hidden transition-all duration-300 active:scale-[0.98] ${
+      <div className={`md:hidden group flex h-full items-center gap-3 p-2 rounded-xl border backdrop-blur-md overflow-hidden transition-all duration-300 active:scale-[0.98] ${
         isDark 
-          ? 'bg-white/5 border border-white/10' 
-          : 'bg-black/5 border border-black/10'
+          ? 'bg-black/40 border-white/10' 
+          : 'bg-white/20 border-white/30 shadow-xl'
       }`}>
         {/* Left: Square image */}
         <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg">
@@ -85,10 +85,10 @@ export default function Position6({ posts }: Position6Props) {
       </div>
 
       {/* Tablet: Horizontal card with image left, content right */}
-      <div className={`hidden md:flex lg:hidden group h-full items-center gap-3 p-3 rounded-xl overflow-hidden transition-all duration-300 hover:scale-[0.99] ${
+      <div className={`hidden md:flex lg:hidden group h-full items-center gap-3 p-3 rounded-xl border backdrop-blur-md overflow-hidden transition-all duration-300 hover:scale-[0.99] ${
         isDark 
-          ? 'bg-white/5 border border-white/10 hover:border-white/20' 
-          : 'bg-black/5 border border-black/10 hover:border-black/20'
+          ? 'bg-black/40 border-white/10 hover:bg-black/50 hover:border-white/20' 
+          : 'bg-white/20 border-white/30 hover:bg-white/30 hover:border-white/50 shadow-xl'
       }`}>
         {/* Left: Image */}
         <div className="relative h-full w-[40%] flex-shrink-0 overflow-hidden rounded-lg">
@@ -125,10 +125,10 @@ export default function Position6({ posts }: Position6Props) {
       </div>
 
       {/* Desktop: Original vertical card */}
-      <div className={`hidden lg:block group relative h-full overflow-hidden rounded-xl transition-all duration-300 hover:shadow-lg ${
+      <div className={`hidden lg:block group relative h-full overflow-hidden rounded-xl border backdrop-blur-md transition-all duration-300 hover:shadow-lg ${
         isDark 
-          ? 'bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/10 hover:border-white/20' 
-          : 'bg-black border border-gray-800 hover:border-gray-700'
+          ? 'bg-black/40 border-white/10 hover:bg-black/50 hover:border-white/20' 
+          : 'bg-white/20 border-white/30 hover:bg-white/30 hover:border-white/50 shadow-xl'
       }`}>
         {/* Image Section (Top Half) */}
         {post.featured_image_url && (
@@ -157,7 +157,7 @@ export default function Position6({ posts }: Position6Props) {
         {/* Content Section (Bottom Half) */}
         <div className="relative flex h-[30%] flex-col justify-center p-2">
           <h3 className={`text-xs font-semibold leading-snug line-clamp-2 ${
-            isDark ? 'text-white' : 'text-white'
+            isDark ? 'text-white' : 'text-black'
           }`}>
             {translation.title}
           </h3>

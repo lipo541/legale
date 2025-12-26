@@ -51,7 +51,7 @@ export default function PracticeDetail({
   }
 
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-black text-white' : 'bg-gray-50 text-black'}`}>
+    <div className={`min-h-screen ${isDark ? 'text-white' : 'text-black'}`}>
       {/* Main Content Container */}
       <div className="container mx-auto px-4 py-4 md:py-6 max-w-[1200px]">
         {/* Back Link - Above grid */}
@@ -73,10 +73,10 @@ export default function PracticeDetail({
           
           {/* LEFT SIDEBAR - Services */}
           <aside className="lg:col-span-4 xl:col-span-3">
-            <div id="services-sidebar" className={`sticky top-20 rounded-2xl border ${
+            <div id="services-sidebar" className={`sticky top-20 rounded-2xl border backdrop-blur-md ${
               isDark 
-                ? 'border-white/10' 
-                : 'border-gray-200'
+                ? 'bg-black/40 border-white/10' 
+                : 'bg-white/20 border-white/30 shadow-xl'
             }`}>
               {/* Services Header - Clickable on mobile */}
               <button
@@ -115,8 +115,10 @@ export default function PracticeDetail({
               >
                 {/* Search Bar */}
                 <div className="mb-6">
-                  <div className={`relative rounded-lg border ${
-                    isDark ? 'border-white/10' : 'border-gray-200'
+                  <div className={`relative rounded-lg border backdrop-blur-md ${
+                    isDark 
+                      ? 'bg-black/40 border-white/10' 
+                      : 'bg-white/20 border-white/30 shadow-xl'
                   }`}>
                     <input
                       type="text"
@@ -219,10 +221,10 @@ export default function PracticeDetail({
           {/* RIGHT CONTENT - Practice Details */}
           <main id="practice-content" className="lg:col-span-8 xl:col-span-9">
             {/* Title Card */}
-            <div className={`rounded-2xl p-4 md:p-6 mb-8 border ${
+            <div className={`rounded-2xl p-4 md:p-6 mb-8 border backdrop-blur-md ${
               isDark 
-                ? 'border-white/10' 
-                : 'border-gray-200'
+                ? 'bg-black/40 border-white/10' 
+                : 'bg-white/20 border-white/30 shadow-xl'
             }`}>
               <h1 className="text-xl md:text-2xl lg:text-3xl font-bold leading-tight">
                 {translation.title}
@@ -230,8 +232,8 @@ export default function PracticeDetail({
             </div>
 
             {/* Practice Image */}
-            <div className={`relative rounded-2xl overflow-hidden mb-8 ${
-              isDark ? 'border border-white/10' : 'border border-gray-200'
+            <div className={`relative rounded-2xl overflow-hidden mb-8 border backdrop-blur-md ${
+              isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
             }`}>
               <div className="relative w-full">
                 <img
@@ -248,10 +250,10 @@ export default function PracticeDetail({
             </div>
 
             {/* Meta Information */}
-            <div className={`rounded-2xl p-4 md:p-6 mb-8 border ${
+            <div className={`rounded-2xl p-4 md:p-6 mb-8 border backdrop-blur-md ${
               isDark 
-                ? 'border-white/10' 
-                : 'border-gray-200'
+                ? 'bg-black/40 border-white/10' 
+                : 'bg-white/20 border-white/30 shadow-xl'
             }`}>
               {/* Meta Info - Stacked on mobile, horizontal on desktop */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -327,10 +329,10 @@ export default function PracticeDetail({
             </div>
 
             {/* Main Content */}
-            <article className={`rounded-2xl p-6 md:p-8 lg:p-10 border ${
+            <article className={`rounded-2xl p-6 md:p-8 lg:p-10 border backdrop-blur-md ${
               isDark 
-                ? 'border-white/10' 
-                : 'border-gray-200'
+                ? 'bg-black/40 border-white/10' 
+                : 'bg-white/20 border-white/30 shadow-xl'
             }`}>
               <div 
                 className={`prose prose-lg md:prose-xl max-w-none ${

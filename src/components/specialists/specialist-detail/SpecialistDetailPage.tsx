@@ -364,10 +364,14 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${
-      isDark ? 'bg-black text-white' : 'bg-white text-black'
+      isDark ? 'text-white' : 'text-black'
     }`}>
       {/* Header Section - Clean & Minimal */}
-      <div className={`border-b ${isDark ? 'border-white/[0.08]' : 'border-black/[0.08]'}`}>
+      <div className={`border-b ${
+        isDark 
+          ? 'border-white/10' 
+          : 'border-black/10'
+      }`}>
         <div className="mx-auto max-w-[1200px] px-4 sm:px-8 lg:px-10 py-6 sm:py-12">
           {/* Back Button */}
           <button
@@ -392,8 +396,8 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
                   }`}
                 />
               ) : (
-                <div className={`w-24 h-24 sm:w-40 sm:h-40 rounded-full flex items-center justify-center ring-1 ${
-                  isDark ? 'bg-white/5 ring-white/10' : 'bg-black/5 ring-black/10'
+                <div className={`w-24 h-24 sm:w-40 sm:h-40 rounded-full flex items-center justify-center ring-1 backdrop-blur-md ${
+                  isDark ? 'bg-black/40 ring-white/10' : 'bg-white/20 ring-black/10'
                 }`}>
                   <Users className="h-12 w-12 sm:h-20 sm:w-20 opacity-20" />
                 </div>
@@ -418,10 +422,10 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
             {specialist.company_id && specialist.company && (
               <button
                 onClick={() => router.push(`/${locale}/companies/${specialist.company?.company_slug}`)}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-light transition-all border ${
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-light transition-all border backdrop-blur-md ${
                   isDark 
-                    ? 'border-white/10 hover:border-white/20 hover:bg-white/5' 
-                    : 'border-black/10 hover:border-black/20 hover:bg-black/5'
+                    ? 'bg-black/40 border-white/10 hover:bg-black/50 hover:border-white/20' 
+                    : 'bg-white/20 border-white/30 hover:bg-white/30 hover:border-white/50 shadow-sm'
                 }`}
               >
                 <Building2 className="h-4 w-4" />
@@ -545,8 +549,8 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
         <div className="space-y-4 sm:space-y-6">
           {/* Bio */}
           {displayTranslation.bio && (
-            <div className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border ${
-              isDark ? 'border-white/[0.08] bg-white/[0.02]' : 'border-black/[0.08] bg-black/[0.01]'
+            <div className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border backdrop-blur-md ${
+              isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
             }`}>
               <h2 className="text-xl sm:text-2xl font-extralight tracking-tight mb-3 sm:mb-4">{t.biography}</h2>
               <p className={`text-sm sm:text-[15px] leading-[1.8] sm:leading-relaxed font-light whitespace-pre-line ${
@@ -559,8 +563,8 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
 
           {/* Philosophy */}
           {displayTranslation.philosophy && (
-            <div className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border ${
-              isDark ? 'border-white/[0.08] bg-white/[0.02]' : 'border-black/[0.08] bg-black/[0.01]'
+            <div className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border backdrop-blur-md ${
+              isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
             }`}>
               <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                 <Target className="h-4 w-4 sm:h-5 sm:w-5 opacity-40" aria-hidden="true" />
@@ -576,8 +580,8 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
 
           {/* Focus Areas */}
           {displayTranslation.focus_areas && displayTranslation.focus_areas.length > 0 && (
-            <div className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border ${
-              isDark ? 'border-white/[0.08] bg-white/[0.02]' : 'border-black/[0.08] bg-black/[0.01]'
+            <div className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border backdrop-blur-md ${
+              isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
             }`}>
               <h2 className="text-xl sm:text-2xl font-extralight tracking-tight mb-4 sm:mb-6">{t.focusAreas}</h2>
               <ul className="space-y-4 sm:space-y-3">
@@ -597,8 +601,8 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
 
           {/* Representative Matters */}
           {displayTranslation.representative_matters && displayTranslation.representative_matters.length > 0 && (
-            <div className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border ${
-              isDark ? 'border-white/[0.08] bg-white/[0.02]' : 'border-black/[0.08] bg-black/[0.01]'
+            <div className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border backdrop-blur-md ${
+              isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
             }`}>
               <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
                 <Briefcase className="h-4 w-4 sm:h-5 sm:w-5 opacity-40" aria-hidden="true" />
@@ -621,8 +625,8 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
 
           {/* Teaching/Writing/Speaking */}
           {displayTranslation.teaching_writing_speaking && (
-            <div className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border ${
-              isDark ? 'border-white/[0.08] bg-white/[0.02]' : 'border-black/[0.08] bg-black/[0.01]'
+            <div className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border backdrop-blur-md ${
+              isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
             }`}>
               <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                 <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5 opacity-40" aria-hidden="true" />
@@ -638,8 +642,8 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
 
           {/* Values / How We Work */}
           {displayTranslation.values_how_we_work && Object.keys(displayTranslation.values_how_we_work).length > 0 && (
-            <div className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border ${
-              isDark ? 'border-white/[0.08] bg-white/[0.02]' : 'border-black/[0.08] bg-black/[0.01]'
+            <div className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border backdrop-blur-md ${
+              isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
             }`}>
               <h2 className="text-xl sm:text-2xl font-extralight tracking-tight mb-4 sm:mb-6">{t.valuesHowWeWork}</h2>
               <div className="space-y-5 sm:space-y-6">
@@ -657,8 +661,8 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
 
           {/* Services */}
           {specialist.services && specialist.services.length > 0 && (
-            <div className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border ${
-              isDark ? 'border-white/[0.08] bg-white/[0.02]' : 'border-black/[0.08] bg-black/[0.01]'
+            <div className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border backdrop-blur-md ${
+              isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
             }`}>
               <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
                 <Briefcase className="h-4 w-4 sm:h-5 sm:w-5 opacity-40" aria-hidden="true" />
@@ -679,10 +683,10 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
                     <Link
                       key={service.service_id}
                       href={serviceUrl}
-                      className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-light border transition-colors ${
+                      className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-light border backdrop-blur-md transition-colors ${
                         isDark 
-                          ? 'border-white/10 bg-white/5 hover:bg-white/10' 
-                          : 'border-black/10 bg-black/5 hover:bg-black/10'
+                          ? 'bg-black/40 border-white/10 hover:bg-black/50 hover:border-white/20' 
+                          : 'bg-white/20 border-white/30 hover:bg-white/30 hover:border-white/50 shadow-sm'
                       }`}
                     >
                       {serviceTranslation.title}
@@ -695,8 +699,8 @@ export default function SpecialistDetailPage({ slug, locale }: SpecialistDetailP
 
           {/* Credentials & Memberships */}
           {displayTranslation.credentials_memberships && displayTranslation.credentials_memberships.length > 0 && (
-            <div className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border ${
-              isDark ? 'border-white/[0.08] bg-white/[0.02]' : 'border-black/[0.08] bg-black/[0.01]'
+            <div className={`p-5 sm:p-8 rounded-xl sm:rounded-2xl border backdrop-blur-md ${
+              isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
             }`}>
               <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
                 <Award className="h-4 w-4 sm:h-5 sm:w-5 opacity-40" aria-hidden="true" />

@@ -47,8 +47,8 @@ export default function Position9({ posts }: Position9Props) {
   return (
     <>
       {/* Mobile: Apple-style compact list */}
-      <div className={`md:hidden rounded-xl overflow-hidden ${
-        isDark ? 'bg-white/5 border border-white/10' : 'bg-black/5 border border-black/10'
+      <div className={`md:hidden rounded-xl border backdrop-blur-md overflow-hidden ${
+        isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
       }`}>
         {/* Header */}
         <div className={`flex items-center gap-2 px-3 py-2 border-b ${
@@ -104,8 +104,8 @@ export default function Position9({ posts }: Position9Props) {
       </div>
 
       {/* Desktop: Original vertical ticker */}
-      <div className={`hidden md:block relative h-full overflow-hidden rounded-2xl ${
-        isDark ? 'bg-white/5' : 'bg-black/5'
+      <div className={`hidden md:block relative h-full overflow-hidden rounded-2xl border backdrop-blur-md ${
+        isDark ? 'bg-black/40 border-white/10' : 'bg-white/20 border-white/30 shadow-xl'
       }`}>
         {/* Header */}
         <div className="border-b p-2 md:p-2 lg:p-3" style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
