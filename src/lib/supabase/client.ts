@@ -25,7 +25,7 @@ export function getClientSingleton(): SupabaseClient {
       {
         auth: {
           // Disable automatic token refresh to prevent SIGNED_IN spam
-          autoRefreshToken: true,
+          autoRefreshToken: false,
           persistSession: true,
           // Don't detect session from URL (prevents re-auth on visibility)
           detectSessionInUrl: false,
