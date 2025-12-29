@@ -37,7 +37,6 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 
 // ==================== Constants ====================
 const SIGNOUT_DEBOUNCE_MS = 2000
-const SESSION_FETCH_DEBOUNCE_MS = 1000
 
 // Profile cache duration - 5 minutes
 const PROFILE_CACHE_DURATION_MS = 5 * 60 * 1000
@@ -60,9 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Refs
   const lastSignOutTime = useRef<number>(0)
-  const lastFetchTime = useRef<number>(0)
   const isSigningOut = useRef<boolean>(false)
-  const isFetching = useRef<boolean>(false)
   const mountedRef = useRef<boolean>(true)
   
   // Profile cache to avoid DB queries on every SIGNED_IN event
@@ -80,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Get locale
   const currentLocale = pathname?.split('/')[1] || 'ka'
 
-  const clearAuthState = () => {
+  const clearAuthState = useCallback(() => {
     // Clear profile cache
     profileCache.current = null
     
@@ -93,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       initialized: true,
       error: null,
     })
-  }
+  }, [])
 
   // ==================== Fetch Profile ====================
   const fetchProfile = useCallback(async (userId: string, options?: { skipCache?: boolean }): Promise<AuthProfile> => {
@@ -188,110 +185,103 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [supabase, currentLocale])
 
-  // ==================== Fetch Session ====================
-  const fetchSession = useCallback(async (options?: { force?: boolean }) => {
-    const now = Date.now()
-    
-    if (!options?.force && now - lastFetchTime.current < SESSION_FETCH_DEBOUNCE_MS) {
-      return
-    }
-
-    if (isFetching.current) {
-      return
-    }
-
-    lastFetchTime.current = now
-    isFetching.current = true
-
-    try {
-      // Standard Supabase getSession call - no timeouts, no race conditions
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-      if (!mountedRef.current) return
-
-      if (sessionError) {
-        console.error('Session error:', sessionError)
-        setAuthState(prev => ({
-          ...prev,
-          user: null,
-          session: null,
-          role: null,
-          hasPendingRequest: false,
-          loading: false,
-          initialized: true,
-          error: sessionError.message,
-        }))
-        return
-      }
-
-      if (!session) {
-        clearAuthState()
-        return
-      }
-
-      // Fetch profile for the session
-      const profile = await fetchProfile(session.user.id)
-
-      if (!mountedRef.current) return
-
-      setAuthState({
-        user: { id: session.user.id, email: session.user.email },
-        session,
-        role: profile.role,
-        hasPendingRequest: profile.hasPendingRequest,
-        loading: false,
-        initialized: true,
-        error: null,
-      })
-    } catch (err) {
-      console.error('Auth context error:', err)
-      if (mountedRef.current) {
-        setAuthState(prev => ({
-          ...prev,
-          loading: false,
-          initialized: true,
-          error: err instanceof Error ? err.message : 'Unknown error',
-        }))
-      }
-    } finally {
-      isFetching.current = false
-    }
-  }, [supabase, fetchProfile])
-
   // ==================== Public Methods ====================
   const signOut = useCallback(async () => {
     await performSignOut({ redirect: true })
   }, [performSignOut])
 
+  /**
+   * Refresh the session manually if needed.
+   * Note: With autoRefreshToken: true (default), this is usually not needed.
+   * The library handles token refresh automatically.
+   */
   const refreshSession = useCallback(async () => {
-    await fetchSession({ force: true })
-  }, [fetchSession])
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession()
+      if (error) {
+        console.error('Refresh session error:', error)
+        return
+      }
+      if (session && mountedRef.current) {
+        const profile = await fetchProfile(session.user.id)
+        setAuthState(prev => ({
+          ...prev,
+          session,
+          user: { id: session.user.id, email: session.user.email },
+          role: profile.role,
+          hasPendingRequest: profile.hasPendingRequest,
+          error: null,
+        }))
+      }
+    } catch (err) {
+      console.error('Refresh session error:', err)
+    }
+  }, [supabase, fetchProfile])
 
   const clearError = useCallback(() => {
     setAuthState(prev => ({ ...prev, error: null }))
   }, [])
 
   // ==================== Auth State Change Listener ====================
+  /**
+   * Official Supabase pattern for onAuthStateChange:
+   * 
+   * 1. INITIAL_SESSION: Fired immediately after client construction
+   * 2. SIGNED_IN: Fired on sign in AND when refocusing tabs (if session exists)
+   * 3. SIGNED_OUT: Fired on sign out
+   * 4. TOKEN_REFRESHED: Fired when tokens are refreshed
+   * 
+   * CRITICAL: Don't call other Supabase methods directly in the callback.
+   * Use setTimeout(..., 0) to defer any additional Supabase calls.
+   * 
+   * @see https://supabase.com/docs/reference/javascript/auth-onauthstatechange
+   */
   useEffect(() => {
     mountedRef.current = true
 
-    // Initial fetch
-    fetchSession()
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, session: Session | null) => {
-        // console.log('Auth state change:', event, session?.user?.id)
+      (event: AuthChangeEvent, session: Session | null) => {
+        // console.log('Auth event:', event, session?.user?.id)
 
         if (event === 'SIGNED_OUT') {
           clearAuthState()
           return
         }
 
+        if (event === 'INITIAL_SESSION') {
+          // Use setTimeout to defer profile fetch (official Supabase recommendation)
+          if (session) {
+            setTimeout(async () => {
+              if (!mountedRef.current) return
+              const profile = await fetchProfile(session.user.id)
+              if (mountedRef.current) {
+                setAuthState({
+                  user: { id: session.user.id, email: session.user.email },
+                  session,
+                  role: profile.role,
+                  hasPendingRequest: profile.hasPendingRequest,
+                  loading: false,
+                  initialized: true,
+                  error: null,
+                })
+              }
+            }, 0)
+          } else {
+            // No session on init
+            setAuthState(prev => ({
+              ...prev,
+              loading: false,
+              initialized: true,
+            }))
+          }
+          return
+        }
+
         if (event === 'SIGNED_IN' && session) {
-          // Check if this is the same user - if so, don't update state to prevent re-renders
+          // Check if this is the same user to prevent unnecessary re-renders
           const currentUser = authStateRef.current.user
           if (currentUser && currentUser.id === session.user.id) {
-            // Just update session without changing user reference
+            // Same user - just update session reference
             if (mountedRef.current) {
               setAuthState(prev => ({
                 ...prev,
@@ -302,20 +292,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return
           }
           
-          // New user - fetch profile and update state
-          const profile = await fetchProfile(session.user.id)
-          
-          if (mountedRef.current) {
-            setAuthState({
-              user: { id: session.user.id, email: session.user.email },
-              session,
-              role: profile.role,
-              hasPendingRequest: profile.hasPendingRequest,
-              loading: false,
-              initialized: true,
-              error: null,
-            })
-          }
+          // New user - defer profile fetch
+          setTimeout(async () => {
+            if (!mountedRef.current) return
+            const profile = await fetchProfile(session.user.id)
+            if (mountedRef.current) {
+              setAuthState({
+                user: { id: session.user.id, email: session.user.email },
+                session,
+                role: profile.role,
+                hasPendingRequest: profile.hasPendingRequest,
+                loading: false,
+                initialized: true,
+                error: null,
+              })
+            }
+          }, 0)
           return
         }
 
@@ -336,7 +328,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       mountedRef.current = false
       subscription?.unsubscribe()
     }
-  }, [supabase, fetchSession, fetchProfile])
+  }, [supabase, fetchProfile, clearAuthState])
 
   // ==================== Context Value ====================
   const value: AuthContextValue = {

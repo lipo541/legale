@@ -18,11 +18,24 @@ const publicRoutes = [
 
 test.describe('Public routes should render without hanging loaders', () => {
   for (const route of publicRoutes) {
-    test(`GET ${route}`, async ({ page }) => {
+    test(`GET ${route}`, async ({ page, baseURL }) => {
       const consoleErrors: string[] = [];
       page.on('console', (msg) => {
         if (msg.type() === 'error') consoleErrors.push(msg.text());
       });
+
+      // Track refresh-token storms (the original iOS/Safari issue).
+      // This is a lightweight smoke check for public pages; the dedicated auth test is stricter.
+      const refreshTokenRequests: Array<{ url: string; method: string }> = [];
+      page.on('request', (req) => {
+        const url = req.url();
+        if (url.includes('/auth/v1/token') && url.includes('grant_type=refresh_token')) {
+          refreshTokenRequests.push({ url, method: req.method() });
+        }
+      });
+
+      const resolvedUrl = baseURL ? new URL(route, baseURL).toString() : route;
+      console.log(`[e2e] route=${route} resolved=${resolvedUrl}`);
 
       const response = await page.goto(route, { waitUntil: 'domcontentloaded' });
       const status = response?.status();
@@ -39,13 +52,20 @@ test.describe('Public routes should render without hanging loaders', () => {
       }
       expect(status, `Unexpected HTTP status for ${route}`).toBeLessThan(400);
 
-      // Basic sanity: app chrome exists
-      await expect(page.locator('main')).toBeVisible();
+      // If we see a refresh-token storm even on public pages, fail fast.
+      // (Normal expected value is 0 with autoRefreshToken disabled.)
+      expect(
+        refreshTokenRequests.length,
+        `Unexpected refresh-token requests on ${route} (count=${refreshTokenRequests.length}). Example: ${refreshTokenRequests[0]?.url ?? 'n/a'}`
+      ).toBeLessThanOrEqual(2);
 
       // Some pages render multiple <main> tags (e.g. skip-link wrapper). Prefer the focused one.
       const main = (await page.locator('#main-content').count())
         ? page.locator('#main-content')
         : page.locator('main').first();
+
+      // Basic sanity: main content exists
+      await expect(main).toBeVisible();
 
       // Avoid getting stuck on any generic loader wording.
       // Exception: /news can legitimately show an infinite-scroll loader while still rendering posts.

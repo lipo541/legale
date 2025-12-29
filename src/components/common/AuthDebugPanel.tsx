@@ -18,6 +18,11 @@ interface LogEntry {
 }
 
 export default function AuthDebugPanel() {
+  // Never run debug instrumentation in production builds.
+  if (process.env.NODE_ENV === 'production') {
+    return null
+  }
+
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [isVisible, setIsVisible] = useState(true)
   const [sessionInfo, setSessionInfo] = useState<{
