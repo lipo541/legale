@@ -2,71 +2,63 @@
 
 import { useState } from 'react'
 import { Trash2, Loader2 } from 'lucide-react'
+import { revalidateGlobalCache } from '@/lib/actions/revalidate'
 import { useTheme } from '@/contexts/ThemeContext'
 
-export default function CacheClearButton() {
+interface Props {
+  isExpanded?: boolean
+}
+
+export default function CacheClearButton({ isExpanded = true }: Props) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
-  const [isClearing, setIsClearing] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   const handleClearCache = async () => {
-    if (!confirm('ნამდვილად გსურთ მთელი საიტის კეშის გასუფთავება?')) {
-      return
-    }
+    if (!confirm('ნამდვილად გსურთ მთელი საიტის კეშის განახლება?')) return
 
-    setIsClearing(true)
+    setLoading(true)
     try {
-      const response = await fetch('/api/revalidate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          secret: process.env.NEXT_PUBLIC_REVALIDATE_SECRET_TOKEN,
-          path: '/',
-        }),
-      })
-
-      const data = await response.json()
-
-      if (data.revalidated) {
-        alert('✅ კეში გასუფთავდა!')
-      } else {
-        throw new Error(data.message || 'Unknown error')
-      }
+      await revalidateGlobalCache()
+      alert('✅ საიტი წარმატებით განახლდა!')
     } catch (error) {
-      console.error('Error clearing cache:', error)
-      alert('❌ შეცდომა: ' + (error instanceof Error ? error.message : 'Unknown error'))
+      console.error('Cache clear failed:', error)
+      alert('❌ შეცდომა განახლებისას.')
     } finally {
-      setIsClearing(false)
+      setLoading(false)
     }
   }
 
   return (
     <button
       onClick={handleClearCache}
-      disabled={isClearing}
+      disabled={loading}
       className={`
-        w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2
-        text-[11px] font-medium transition-all duration-200
-        disabled:opacity-50 disabled:cursor-not-allowed
+        group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 mb-1
+        transition-all duration-300
         ${isDark 
-          ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20' 
-          : 'bg-red-500/10 text-red-600 hover:bg-red-500/20 border border-red-500/20'
+          ? 'text-orange-400 hover:bg-orange-500/10' 
+          : 'text-orange-600 hover:bg-orange-50'
         }
       `}
+      title="კეშის გასუფთავება"
     >
-      {isClearing ? (
-        <>
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          <span>იწმინდება...</span>
-        </>
+      {loading ? (
+        <Loader2 className="h-4 w-4 flex-shrink-0 animate-spin" />
       ) : (
-        <>
-          <Trash2 className="h-3.5 w-3.5" />
-          <span>გასუფთავება</span>
-        </>
+        <Trash2 className="h-4 w-4 flex-shrink-0 transition-transform duration-300 group-hover:scale-110" />
       )}
+      
+      <span className={`
+        font-medium text-xs whitespace-nowrap
+        transition-all duration-300 delay-100
+        ${isExpanded 
+          ? 'opacity-100 translate-x-0' 
+          : 'opacity-0 -translate-x-2 w-0 overflow-hidden'
+        }
+      `}>
+        {loading ? 'ახლდება...' : 'კეშის გასუფთავება'}
+      </span>
     </button>
   )
 }

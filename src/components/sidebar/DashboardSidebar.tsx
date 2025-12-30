@@ -6,6 +6,7 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePathname, useRouter } from 'next/navigation'
 import { getClientSingleton } from '@/lib/supabase/client'
+import CacheClearButton from '@/components/superadmindashboard/common/CacheClearButton'
 import { 
   LayoutDashboard,
   User,
@@ -684,6 +685,11 @@ export default function DashboardSidebar() {
           p-2 border-t
           ${isDark ? 'border-white/10' : 'border-black/10'}
         `}>
+          {/* Cache Clear Button - Only for Admins */}
+          {(userProfile?.role === 'ADMIN' || userProfile?.role === 'SUPER_ADMIN') && (
+            <CacheClearButton isExpanded={sidebarExpanded} />
+          )}
+
           <button
             onClick={handleLogout}
             className={`
