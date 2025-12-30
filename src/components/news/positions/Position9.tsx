@@ -24,6 +24,14 @@ interface Position9Props {
   posts: Post[]
 }
 
+// SSR-safe time formatter
+const formatTime = (dateStr: string): string => {
+  const date = new Date(dateStr)
+  const hours = date.getHours().toString().padStart(2, '0')
+  const minutes = date.getMinutes().toString().padStart(2, '0')
+  return `${hours}:${minutes}`
+}
+
 // Vertical Auto-scroll News Ticker
 export default function Position9({ posts }: Position9Props) {
   const { theme } = useTheme()
@@ -66,11 +74,7 @@ export default function Position9({ posts }: Position9Props) {
         <div className="divide-y" style={{ borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}>
           {posts.slice(0, 3).map((post) => {
             const translation = post.post_translations[0]
-            const publishedTime = post.published_at ? new Date(post.published_at).toLocaleTimeString(locale, { 
-              hour: '2-digit', 
-              minute: '2-digit',
-              hour12: false 
-            }) : ''
+            const publishedTime = post.published_at ? formatTime(post.published_at) : ''
             return (
               <Link 
                 key={post.id}
@@ -132,11 +136,7 @@ export default function Position9({ posts }: Position9Props) {
           >
             {posts.map((post) => {
               const translation = post.post_translations[0]
-              const publishedTime = post.published_at ? new Date(post.published_at).toLocaleTimeString(locale, { 
-                hour: '2-digit', 
-                minute: '2-digit',
-                hour12: false 
-              }) : ''
+              const publishedTime = post.published_at ? formatTime(post.published_at) : ''
 
               return (
                 <SwiperSlide key={post.id}>

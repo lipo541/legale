@@ -131,6 +131,29 @@ export function formatPostDate(
   }).format(date)
 }
 
+/**
+ * SSR-safe date formatter - returns consistent output on server and client
+ * Uses manual month names to avoid locale-dependent Date formatting issues
+ * 
+ * @param dateStr - Date string to format
+ * @param locale - Locale for month names ('ka', 'en', 'ru')
+ * @returns Formatted date string like "30 ნოე" or "30 Nov"
+ */
+export function formatDateSSR(dateStr: string, locale: string = 'ka'): string {
+  const date = new Date(dateStr)
+  if (isNaN(date.getTime())) return ''
+  
+  const day = date.getDate()
+  const monthNames: Record<string, string[]> = {
+    ka: ['იან', 'თებ', 'მარ', 'აპრ', 'მაი', 'ივნ', 'ივლ', 'აგვ', 'სექ', 'ოქტ', 'ნოე', 'დეკ'],
+    en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    ru: ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек']
+  }
+  const months = monthNames[locale] || monthNames.ka
+  const month = months[date.getMonth()]
+  return `${day} ${month}`
+}
+
 export function generateSlug(text: string): string {
   return text
     .toLowerCase()

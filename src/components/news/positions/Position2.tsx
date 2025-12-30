@@ -25,6 +25,20 @@ interface Position2Props {
   posts: Post[]
 }
 
+// Format date consistently for SSR/CSR
+const formatDate = (dateStr: string, locale: string): string => {
+  const date = new Date(dateStr)
+  const day = date.getDate()
+  const monthNames: Record<string, string[]> = {
+    ka: ['იან', 'თებ', 'მარ', 'აპრ', 'მაი', 'ივნ', 'ივლ', 'აგვ', 'სექ', 'ოქტ', 'ნოე', 'დეკ'],
+    en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    ru: ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек']
+  }
+  const months = monthNames[locale] || monthNames.ka
+  const month = months[date.getMonth()]
+  return `${day} ${month}`
+}
+
 // Vertical News Feed
 export default function Position2({ posts }: Position2Props) {
   const { theme } = useTheme()
@@ -49,8 +63,8 @@ export default function Position2({ posts }: Position2Props) {
         if (!translation) return null
         
         const publishedDate = post.published_at 
-          ? new Date(post.published_at).toLocaleDateString(locale, { day: 'numeric', month: 'short' })
-          : post.created_at ? new Date(post.created_at).toLocaleDateString(locale, { day: 'numeric', month: 'short' }) : ''
+          ? formatDate(post.published_at, locale)
+          : post.created_at ? formatDate(post.created_at, locale) : ''
 
         return (
           <Link

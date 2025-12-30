@@ -7,11 +7,12 @@ import { ArrowRight } from 'lucide-react'
 import NewsSearch from './common/NewsSearch'
 import NewsFilter from './common/NewsFilter'
 import NewsSort, { SortOption } from './common/NewsSort'
+import CategoryTabs from './common/CategoryTabs'
 import ViewModeToggle from '@/components/common/ViewModeToggle'
 import { newsTranslations } from '@/translations/news'
 import type { Post, Category, AllPostsSectionProps, GroupedPosts } from './types'
 
-export default function AllPostsSection({ initialPosts, categories, locale }: AllPostsSectionProps) {
+export default function AllPostsSection({ initialPosts, categories, rootCategories, locale }: AllPostsSectionProps) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
   const t = newsTranslations[locale as keyof typeof newsTranslations]
@@ -25,70 +26,222 @@ export default function AllPostsSection({ initialPosts, categories, locale }: Al
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [sortBy, setSortBy] = useState<SortOption>('newest')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  
+  // Active tab state for ROOT category filtering
+  const [activeRootCategory, setActiveRootCategory] = useState<string | null>(null)
+  
+  // Active subcategory filter (when ROOT is selected)
+  const [activeSubcategory, setActiveSubcategory] = useState<string | null>(null)
 
-  // Create category map for grouping
+  // Create category map for grouping (includes subcategories with parent_id)
   const categoryMap = useMemo(() => {
     return new Map(categories.map(cat => [cat.id, cat]))
   }, [categories])
 
-  // Group posts by category from SSR data
-  const groupedPosts = useMemo(() => {
-    const grouped: GroupedPosts = {}
+  // Create a map of root category ID -> root category info
+  const rootCategoryMap = useMemo(() => {
+    return new Map(rootCategories.map(cat => [cat.id, cat]))
+  }, [rootCategories])
+
+  // Helper function to find ROOT category by walking up the parent chain
+  const findRootCategoryId = useCallback((categoryId: string): string => {
+    const category = categoryMap.get(categoryId)
+    if (!category) return categoryId
+    
+    // If no parent_id, this is a root category
+    if (!category.parent_id) return categoryId
+    
+    // Walk up the tree to find the root
+    let currentId = category.parent_id
+    let visited = new Set<string>([categoryId]) // Prevent infinite loops
+    
+    while (currentId) {
+      if (visited.has(currentId)) break // Circular reference protection
+      visited.add(currentId)
+      
+      const parent = categoryMap.get(currentId)
+      if (!parent || !parent.parent_id) {
+        // Found root (no parent_id)
+        return currentId
+      }
+      currentId = parent.parent_id
+    }
+    
+    return currentId || categoryId
+  }, [categoryMap])
+
+  // Helper function to find ALL descendants of a category
+  const findAllDescendants = useCallback((categoryId: string): Set<string> => {
+    const descendants = new Set<string>()
+    
+    const collectDescendants = (parentId: string) => {
+      categoryMap.forEach((cat, id) => {
+        if (cat.parent_id === parentId && !descendants.has(id)) {
+          descendants.add(id)
+          collectDescendants(id) // Recursively find children's children
+        }
+      })
+    }
+    
+    collectDescendants(categoryId)
+    return descendants
+  }, [categoryMap])
+
+  // Group posts by ROOT category (using recursive parent lookup)
+  const groupedByRoot = useMemo(() => {
+    const grouped: { [rootId: string]: { name: string; slug: string; posts: Post[] } } = {}
     
     // Filter to only posts with category_id
     const postsWithCategory = initialPosts.filter(post => post.category_id)
     
     postsWithCategory.forEach((post) => {
       if (post.category_id) {
-        const category = categoryMap.get(post.category_id)
+        // Find the actual ROOT category by walking up the tree
+        const rootId = findRootCategoryId(post.category_id)
+        const rootCategory = rootCategoryMap.get(rootId) || categoryMap.get(rootId)
         
-        if (!grouped[post.category_id]) {
-          grouped[post.category_id] = {
-            name: category?.name || t.uncategorized,
-            slug: category?.slug || 'uncategorized',
+        if (!grouped[rootId]) {
+          grouped[rootId] = {
+            name: rootCategory?.name || t.uncategorized,
+            slug: rootCategory?.slug || 'uncategorized',
             posts: []
           }
         }
-        grouped[post.category_id].posts.push(post)
+        grouped[rootId].posts.push(post)
       }
     })
     
     return grouped
-  }, [initialPosts, categoryMap, t.uncategorized])
+  }, [initialPosts, categoryMap, rootCategoryMap, findRootCategoryId, t.uncategorized])
+
+  // Count posts per root category for tabs
+  const postCountsByRoot = useMemo(() => {
+    const counts = new Map<string, number>()
+    Object.entries(groupedByRoot).forEach(([rootId, data]) => {
+      counts.set(rootId, data.posts.length)
+    })
+    return counts
+  }, [groupedByRoot])
+
+  // Helper: Count posts in category + all its descendants
+  const getTotalPostsInCategory = useCallback((categoryId: string): number => {
+    // Count direct posts
+    let count = initialPosts.filter(p => p.category_id === categoryId).length
+    
+    // Add descendants' posts
+    const descendants = findAllDescendants(categoryId)
+    descendants.forEach(descId => {
+      count += initialPosts.filter(p => p.category_id === descId).length
+    })
+    
+    return count
+  }, [initialPosts, findAllDescendants])
+
+  // Filter ROOT categories to only those with posts (directly or in descendants)
+  const categoriesWithPosts = useMemo(() => {
+    return rootCategories
+      .filter(cat => getTotalPostsInCategory(cat.id) > 0)
+      .map(cat => ({ id: cat.id, name: cat.name }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+  }, [rootCategories, getTotalPostsInCategory])
+
+  // Get subcategories of active ROOT category (for pills filter)
+  const subcategoriesOfActiveRoot = useMemo(() => {
+    if (!activeRootCategory) return []
+    
+    // Find direct children and all descendants with posts
+    const subcats: Array<{ id: string; name: string; postCount: number }> = []
+    
+    categories.forEach(cat => {
+      // Check if this category is under the active root
+      const rootId = findRootCategoryId(cat.id)
+      if (rootId === activeRootCategory && cat.id !== activeRootCategory) {
+        const postCount = getTotalPostsInCategory(cat.id)
+        if (postCount > 0) {
+          subcats.push({ id: cat.id, name: cat.name, postCount })
+        }
+      }
+    })
+    
+    return subcats.sort((a, b) => a.name.localeCompare(b.name))
+  }, [activeRootCategory, categories, findRootCategoryId, getTotalPostsInCategory])
+
+  // Reset subcategory when ROOT changes
+  const handleRootCategoryChange = useCallback((rootId: string | null) => {
+    setActiveRootCategory(rootId)
+    setActiveSubcategory(null) // Reset subcategory filter
+  }, [])
 
   // Filtered and sorted posts using useMemo for performance
   const filteredAndSortedPosts = useMemo(() => {
     const allPosts: Post[] = []
     
-    // Flatten all posts from grouped structure
-    Object.values(groupedPosts).forEach(category => {
-      allPosts.push(...category.posts)
+    // Flatten all posts from grouped-by-root structure
+    Object.values(groupedByRoot).forEach(rootData => {
+      allPosts.push(...rootData.posts)
     })
     
-    // Apply search filter
+    // Apply ROOT category tab filter first (using recursive root lookup)
     let filtered = allPosts
+    if (activeRootCategory) {
+      filtered = filtered.filter(post => {
+        if (!post.category_id) return false
+        const rootId = findRootCategoryId(post.category_id)
+        return rootId === activeRootCategory
+      })
+    }
+    
+    // Apply subcategory pill filter (when a subcategory is selected)
+    if (activeSubcategory) {
+      filtered = filtered.filter(post => {
+        if (!post.category_id) return false
+        // Direct match or is descendant of selected subcategory
+        if (post.category_id === activeSubcategory) return true
+        const descendants = findAllDescendants(activeSubcategory)
+        return descendants.has(post.category_id)
+      })
+    }
+    
+    // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim()
-      filtered = allPosts.filter(post => {
+      filtered = filtered.filter(post => {
         const translation = post.post_translations?.find(t => t.language === locale) || post.post_translations?.[0]
         const title = translation?.title?.toLowerCase() || ''
         const excerpt = translation?.excerpt?.toLowerCase() || ''
-        const categoryName = groupedPosts[post.category_id || '']?.name?.toLowerCase() || ''
+        const category = categoryMap.get(post.category_id || '')
+        const categoryName = category?.name?.toLowerCase() || ''
         
         return title.includes(query) || excerpt.includes(query) || categoryName.includes(query)
       })
     }
     
-    // Apply category filter
+    // Apply subcategory filter (from NewsFilter dropdown) - includes all descendants
     if (selectedCategories.length > 0) {
       filtered = filtered.filter(post => {
         if (!post.category_id) return false
         
-        // Get category info to check parent
-        const categoryIds = Object.keys(groupedPosts)
         return selectedCategories.some(selectedCat => {
-          // Check if post's category matches or if post's parent category matches
-          return post.category_id === selectedCat || categoryIds.includes(selectedCat)
+          // Direct match: post is in the selected category
+          if (post.category_id === selectedCat) return true
+          
+          // Descendant match: selected category is an ancestor of post's category
+          // Walk up from post's category to see if we hit selectedCat
+          let currentId: string | undefined = post.category_id
+          const visited = new Set<string>()
+          
+          while (currentId) {
+            if (visited.has(currentId)) break
+            visited.add(currentId)
+            
+            const cat = categoryMap.get(currentId)
+            if (cat?.parent_id === selectedCat) return true
+            currentId = cat?.parent_id || undefined
+          }
+          
+          // Or: post is a descendant of selected category
+          const descendants = findAllDescendants(selectedCat)
+          return descendants.has(post.category_id!)
         })
       })
     }
@@ -115,40 +268,49 @@ export default function AllPostsSection({ initialPosts, categories, locale }: Al
       }
     })
     
-    // Re-group all sorted posts by category (no pagination limit)
-    const regrouped: GroupedPosts = {}
-    sorted.forEach(post => {
-      if (post.category_id) {
-        const categoryId = post.category_id
-        
-        // Find the parent category for grouping
-        let groupId = categoryId
-        let categoryInfo = groupedPosts[categoryId]
-        
-        if (!categoryInfo) {
-          // Search in all categories to find this post's category
-          for (const [catId, catData] of Object.entries(groupedPosts)) {
-            if (catData.posts.some(p => p.id === post.id)) {
-              groupId = catId
-              categoryInfo = catData
-              break
+    // When ROOT category is selected, group by subcategory instead of root
+    // This enables visual grouping headers for subcategories
+    type GroupedData = { [key: string]: { name: string; slug: string; posts: Post[] } }
+    const regrouped: GroupedData = {}
+    
+    if (activeRootCategory && !activeSubcategory) {
+      // Group by actual post category (subcategory level)
+      sorted.forEach(post => {
+        if (post.category_id) {
+          const category = categoryMap.get(post.category_id)
+          const groupKey = post.category_id
+          
+          if (!regrouped[groupKey]) {
+            regrouped[groupKey] = {
+              name: category?.name || t.uncategorized,
+              slug: category?.slug || 'uncategorized',
+              posts: []
             }
           }
+          regrouped[groupKey].posts.push(post)
         }
-        
-        if (!regrouped[groupId]) {
-          regrouped[groupId] = {
-            name: categoryInfo?.name || t.uncategorized,
-            slug: categoryInfo?.slug || 'uncategorized',
-            posts: []
+      })
+    } else {
+      // Default: group by ROOT category
+      sorted.forEach(post => {
+        if (post.category_id) {
+          const rootId = findRootCategoryId(post.category_id)
+          const rootCategory = rootCategoryMap.get(rootId) || categoryMap.get(rootId)
+          
+          if (!regrouped[rootId]) {
+            regrouped[rootId] = {
+              name: rootCategory?.name || t.uncategorized,
+              slug: rootCategory?.slug || 'uncategorized',
+              posts: []
+            }
           }
+          regrouped[rootId].posts.push(post)
         }
-        regrouped[groupId].posts.push(post)
-      }
-    })
+      })
+    }
     
     return { grouped: regrouped, total: sorted.length, displayed: sorted.length }
-  }, [groupedPosts, searchQuery, selectedCategories, sortBy, locale, t.uncategorized])
+  }, [groupedByRoot, activeRootCategory, activeSubcategory, searchQuery, selectedCategories, sortBy, locale, categoryMap, rootCategoryMap, findRootCategoryId, findAllDescendants, t.uncategorized])
 
   // Handlers with useCallback
   const handleSearch = useCallback((query: string) => {
@@ -195,7 +357,7 @@ export default function AllPostsSection({ initialPosts, categories, locale }: Al
     )
   }
 
-  const categoryKeys = Object.keys(groupedPosts)
+  const categoryKeys = Object.keys(groupedByRoot)
 
   if (categoryKeys.length === 0) {
     return (
@@ -213,7 +375,7 @@ export default function AllPostsSection({ initialPosts, categories, locale }: Al
 
   const displayedPosts = filteredAndSortedPosts.grouped
   const displayedCategories = Object.keys(displayedPosts)
-  const hasActiveFilters = searchQuery.trim() || selectedCategories.length > 0
+  const hasActiveFilters = searchQuery.trim() || selectedCategories.length > 0 || activeRootCategory !== null || activeSubcategory !== null
 
   return (
     <div className="mt-12 md:mt-20">
@@ -225,9 +387,93 @@ export default function AllPostsSection({ initialPosts, categories, locale }: Al
         <p className={`text-[10px] md:text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
           {t.allPostsStats
             .replace('{postsCount}', totalCount.toString())
-            .replace('{categoriesCount}', categories.length.toString())}
+            .replace('{categoriesCount}', rootCategories.length.toString())}
         </p>
       </div>
+
+      {/* Category Tabs - Mobile: horizontal scroll, Desktop: centered */}
+      <CategoryTabs
+        categories={rootCategories}
+        activeCategory={activeRootCategory}
+        onCategoryChange={handleRootCategoryChange}
+        locale={locale}
+        postCounts={postCountsByRoot}
+      />
+
+      {/* Subcategory Pills - Show when ROOT is selected */}
+      {activeRootCategory && subcategoriesOfActiveRoot.length > 0 && (
+        <div className="mb-6 md:mb-8">
+          <div className={`
+            flex gap-2 overflow-x-auto pb-2 snap-x snap-mandatory
+            scrollbar-thin
+            ${isDark 
+              ? 'scrollbar-thumb-white/20 scrollbar-track-transparent' 
+              : 'scrollbar-thumb-black/20 scrollbar-track-transparent'
+            }
+          `}>
+            {/* "All in category" pill */}
+            <button
+              onClick={() => setActiveSubcategory(null)}
+              className={`
+                flex-shrink-0 snap-start
+                flex items-center gap-1.5
+                px-3 py-1.5 md:px-4 md:py-2
+                rounded-full
+                text-[10px] md:text-xs font-medium
+                transition-all duration-200
+                border
+                ${activeSubcategory === null
+                  ? isDark
+                    ? 'bg-white/20 border-white/30 text-white'
+                    : 'bg-black/10 border-black/20 text-black'
+                  : isDark
+                    ? 'bg-transparent border-white/10 text-white/60 hover:border-white/20 hover:text-white/80'
+                    : 'bg-transparent border-black/10 text-black/60 hover:border-black/20 hover:text-black/80'
+                }
+              `}
+            >
+              <span>{t.allCategories || 'ყველა'}</span>
+            </button>
+
+            {/* Subcategory pills */}
+            {subcategoriesOfActiveRoot.map((subcat) => (
+              <button
+                key={subcat.id}
+                onClick={() => setActiveSubcategory(subcat.id === activeSubcategory ? null : subcat.id)}
+                className={`
+                  flex-shrink-0 snap-start
+                  flex items-center gap-1.5
+                  px-3 py-1.5 md:px-4 md:py-2
+                  rounded-full
+                  text-[10px] md:text-xs font-medium
+                  transition-all duration-200
+                  border
+                  whitespace-nowrap
+                  ${activeSubcategory === subcat.id
+                    ? isDark
+                      ? 'bg-white/20 border-white/30 text-white'
+                      : 'bg-black/10 border-black/20 text-black'
+                    : isDark
+                      ? 'bg-transparent border-white/10 text-white/60 hover:border-white/20 hover:text-white/80'
+                      : 'bg-transparent border-black/10 text-black/60 hover:border-black/20 hover:text-black/80'
+                  }
+                `}
+              >
+                <span className="max-w-[150px] truncate">{subcat.name}</span>
+                <span className={`
+                  rounded-full px-1.5 py-0.5 text-[9px] font-medium
+                  ${activeSubcategory === subcat.id
+                    ? isDark ? 'bg-white/20' : 'bg-black/10'
+                    : isDark ? 'bg-white/10' : 'bg-black/5'
+                  }
+                `}>
+                  {subcat.postCount}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Search, Filter, Sort Controls */}
       <div className="mb-6 md:mb-8 space-y-3 md:space-y-4">
@@ -243,6 +489,7 @@ export default function AllPostsSection({ initialPosts, categories, locale }: Al
             <NewsFilter 
               onFilterChange={handleFilterChange}
               selectedCategories={selectedCategories}
+              categories={categoriesWithPosts}
             />
             <NewsSort 
               onSortChange={handleSortChange}
@@ -265,6 +512,8 @@ export default function AllPostsSection({ initialPosts, categories, locale }: Al
             onClick={() => {
               setSearchQuery('')
               setSelectedCategories([])
+              setActiveRootCategory(null)
+              setActiveSubcategory(null)
             }}
             className={`mt-4 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
               isDark
@@ -277,14 +526,14 @@ export default function AllPostsSection({ initialPosts, categories, locale }: Al
         </div>
       )}
 
-      {/* Categories */}
+      {/* Categories grouped by ROOT */}
       <div className="space-y-10 md:space-y-16">
-        {displayedCategories.map((categoryId) => {
-          const categoryData = displayedPosts[categoryId]
+        {displayedCategories.map((rootCategoryId) => {
+          const categoryData = displayedPosts[rootCategoryId]
           const { name, slug, posts } = categoryData
           
           return (
-            <div key={categoryId}>
+            <div key={rootCategoryId}>
               {/* Category Header */}
               <div className="mb-4 md:mb-5 flex items-center justify-between">
                 <div className="flex items-center gap-2 md:gap-2.5">
@@ -319,6 +568,9 @@ export default function AllPostsSection({ initialPosts, categories, locale }: Al
                   : 'grid grid-cols-1 gap-3 md:gap-4'
               } ${isDark ? 'scrollbar-thumb-white/20 scrollbar-track-white/5' : 'scrollbar-thumb-black/20 scrollbar-track-black/5'}`}>
                 {posts.map((post) => {
+                  // Get subcategory info for badge display
+                  const postCategory = categoryMap.get(post.category_id || '')
+                  const isSubcategory = postCategory?.parent_id !== null && postCategory?.parent_id !== undefined
                   const translation = post.post_translations?.find((t) => t.language === locale) || post.post_translations?.[0]
                   
                   return (
@@ -355,6 +607,24 @@ export default function AllPostsSection({ initialPosts, categories, locale }: Al
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                               </svg>
                             </div>
+                          </div>
+                        )}
+                        
+                        {/* Subcategory Badge - clickable button that navigates to category page */}
+                        {isSubcategory && postCategory?.name && postCategory?.slug && (
+                          <div className="absolute top-2 left-2">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                window.location.href = `/${locale}/news/category/${postCategory.slug}`
+                              }}
+                              title={postCategory.name}
+                              className="block max-w-[120px] truncate rounded-full px-2.5 py-1 text-[10px] font-medium bg-red-600 text-white shadow-lg hover:bg-red-700 transition-colors cursor-pointer"
+                            >
+                              {postCategory.name}
+                            </button>
                           </div>
                         )}
                       </div>

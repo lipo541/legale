@@ -146,6 +146,7 @@ export default function NewsLayout({ locale, initialData }: NewsLayoutProps) {
         <AllPostsSection 
           initialPosts={initialData.posts}
           categories={initialData.categories}
+          rootCategories={initialData.rootCategories}
           locale={locale}
         />
       </main>

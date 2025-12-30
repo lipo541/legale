@@ -92,6 +92,7 @@ export interface NewsStats {
 export interface NewsPageInitialData {
   posts: Post[]
   categories: Category[]
+  rootCategories: Category[]
   stats: NewsStats
 }
 
@@ -107,6 +108,7 @@ export interface NewsLayoutProps {
 export interface AllPostsSectionProps {
   initialPosts: Post[]
   categories: Category[]
+  rootCategories: Category[]
   locale: string
 }
 

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTheme } from '@/contexts/ThemeContext'
 import CreatePostPage from './createpost/CreatePostPage'
 import FocalPointSelector from '@/components/moderatordashboard/FocalPointSelector'
+import FeaturedOrderSelector from './FeaturedOrderSelector'
 import Modal from '@/components/common/Modal'
 import { 
   FileText, 
@@ -277,6 +278,10 @@ export default function PostsPage() {
     message: '',
     onConfirm: undefined
   })
+
+  // Featured Order Selector State
+  const [isOrderSelectorOpen, setIsOrderSelectorOpen] = useState(false)
+  const [selectedPostForOrder, setSelectedPostForOrder] = useState<Post | null>(null)
 
   // Helper to show modal
   const showModal = useCallback((
@@ -557,6 +562,23 @@ export default function PostsPage() {
     return result
   }, [posts, searchTerm, statusFilter, categoryFilter, authorFilter, positionFilter, dateFrom, dateTo, sortBy, sortOrder, categories, findCategoryById])
 
+  // Featured Slots for Order Selector
+  const featuredSlots = useMemo(() => {
+    const slots = []
+    for (let i = 1; i <= 8; i++) {
+      const post = posts.find(p => p.is_homepage_featured && p.homepage_featured_order === i)
+      slots.push({
+        order: i,
+        post: post ? {
+          id: post.id,
+          title: post.post_translations?.find(t => t.language === 'ka')?.title || post.post_translations?.[0]?.title || 'უსათაურო',
+          imageUrl: post.featured_image_url
+        } : null
+      })
+    }
+    return slots
+  }, [posts])
+
   // Pagination
   const paginatedPosts = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage
@@ -794,22 +816,93 @@ export default function PostsPage() {
     })
   }, [])
 
+  // Open Featured Order Selector
+  const handleOpenOrderSelector = useCallback((post: Post) => {
+    setSelectedPostForOrder(post)
+    setIsOrderSelectorOpen(true)
+  }, [])
+
+  // Handle Order Selection from Modal
+  const handleOrderSelect = useCallback(async (newOrder: number) => {
+    if (!selectedPostForOrder) return
+
+    const currentPost = selectedPostForOrder
+    const targetPost = posts.find(p => p.homepage_featured_order === newOrder && p.is_homepage_featured)
+    
+    try {
+      if (targetPost && targetPost.id !== currentPost.id) {
+        if (currentPost.is_homepage_featured && currentPost.homepage_featured_order) {
+          // SWAP: Both are featured - exchange their orders
+          const oldOrder = currentPost.homepage_featured_order
+          
+          // Update target to oldOrder
+          const { error: e1 } = await supabase
+            .from('posts')
+            .update({ homepage_featured_order: oldOrder })
+            .eq('id', targetPost.id)
+          if (e1) throw e1
+          
+          // Update current to newOrder
+          const { error: e2 } = await supabase
+            .from('posts')
+            .update({ homepage_featured_order: newOrder })
+            .eq('id', currentPost.id)
+          if (e2) throw e2
+          
+          showModal('success', `პოზიციები გაიცვალა: #${oldOrder} ↔ #${newOrder}`)
+        } else {
+          // REPLACE: Current is new, Target gets kicked out
+          const { error: e1 } = await supabase
+            .from('posts')
+            .update({ is_homepage_featured: false, homepage_featured_order: null })
+            .eq('id', targetPost.id)
+          if (e1) throw e1
+          
+          // Current becomes featured at newOrder
+          const { error: e2 } = await supabase
+            .from('posts')
+            .update({ is_homepage_featured: true, homepage_featured_order: newOrder })
+            .eq('id', currentPost.id)
+          if (e2) throw e2
+          
+          showModal('success', `პოსტი დაემატა პოზიციაზე #${newOrder}`)
+        }
+      } else if (!targetPost || targetPost.id === currentPost.id) {
+        // Slot is empty or same post -> Just assign
+        const { error } = await supabase
+          .from('posts')
+          .update({ is_homepage_featured: true, homepage_featured_order: newOrder })
+          .eq('id', currentPost.id)
+        if (error) throw error
+        
+        showModal('success', `პოსტი დაემატა პოზიციაზე #${newOrder}`)
+      }
+
+      fetchPosts()
+      setIsOrderSelectorOpen(false)
+      setSelectedPostForOrder(null)
+    } catch (error) {
+      console.error('Error updating order:', error)
+      showModal('error', 'შეცდომა პოზიციის განახლებისას')
+    }
+  }, [selectedPostForOrder, posts, supabase, fetchPosts, showModal])
+
   // Homepage Featured Toggle Handler
   const handleToggleHomepageFeatured = useCallback(async (postId: string, currentStatus: boolean) => {
     try {
-      // Check current featured count if trying to add
+      // If enabling, open selector instead of auto-assigning
       if (!currentStatus) {
-        const featuredCount = posts.filter(p => p.is_homepage_featured).length
-        if (featuredCount >= 8) {
-          showModal('error', 'მაქსიმუმ 8 Featured პოსტი შესაძლებელია')
-          return
+        const post = posts.find(p => p.id === postId)
+        if (post) {
+          handleOpenOrderSelector(post)
         }
+        return
       }
 
-      const newStatus = !currentStatus
+      // If disabling, just disable immediately
       const { error } = await supabase
         .from('posts')
-        .update({ is_homepage_featured: newStatus })
+        .update({ is_homepage_featured: false, homepage_featured_order: null })
         .eq('id', postId)
 
       if (error) throw error
@@ -819,22 +912,20 @@ export default function PostsPage() {
         if (p.id === postId) {
           return { 
             ...p, 
-            is_homepage_featured: newStatus,
-            homepage_featured_order: newStatus 
-              ? Math.max(...posts.filter(x => x.is_homepage_featured).map(x => x.homepage_featured_order || 0), 0) + 1 
-              : null
+            is_homepage_featured: false,
+            homepage_featured_order: null
           }
         }
         return p
       }))
       
-      showModal('success', newStatus ? 'პოსტი დაემატა მთავარ გვერდზე' : 'პოსტი წაიშალა მთავარი გვერდიდან')
+      showModal('success', 'პოსტი წაიშალა მთავარი გვერდიდან')
       fetchPosts()
     } catch (error) {
       console.error('Error toggling homepage featured:', error)
       showModal('error', 'შეცდომა Featured სტატუსის შეცვლისას')
     }
-  }, [posts, supabase, fetchPosts, showModal])
+  }, [posts, supabase, fetchPosts, showModal, handleOpenOrderSelector])
 
   const clearFilters = useCallback(() => {
     setSearchTerm('')
@@ -1456,33 +1547,39 @@ export default function PostsPage() {
                               </div>
                             </td>
                             <td className="px-2 py-2">
-                              <button
-                                onClick={() => handleToggleHomepageFeatured(post.id, post.is_homepage_featured)}
-                                className={`
-                                  relative w-8 h-4 rounded-full transition-colors
-                                  ${post.is_homepage_featured 
-                                    ? 'bg-yellow-500' 
-                                    : isDark ? 'bg-white/20' : 'bg-black/20'
+                              <div className="flex items-center">
+                                <button
+                                  onClick={() => handleToggleHomepageFeatured(post.id, post.is_homepage_featured)}
+                                  className={`
+                                    relative w-8 h-4 rounded-full transition-colors
+                                    ${post.is_homepage_featured 
+                                      ? 'bg-yellow-500' 
+                                      : isDark ? 'bg-white/20' : 'bg-black/20'
+                                    }
+                                  `}
+                                  title={post.is_homepage_featured 
+                                    ? `Featured #${post.homepage_featured_order} - დააჭირე გამოსართველად` 
+                                    : 'დააჭირე პოზიციის ასარჩევად'
                                   }
-                                `}
-                                title={post.is_homepage_featured 
-                                  ? `Featured #${post.homepage_featured_order}` 
-                                  : 'Not featured'
-                                }
-                              >
-                                <div className={`
-                                  absolute top-0.5 w-3 h-3 rounded-full transition-transform
-                                  ${post.is_homepage_featured 
-                                    ? 'translate-x-4 bg-white' 
-                                    : 'translate-x-0.5 bg-white'
-                                  }
-                                `} />
-                              </button>
-                              {post.is_homepage_featured && post.homepage_featured_order && (
-                                <span className="ml-1 text-[9px] font-bold text-yellow-500">
-                                  #{post.homepage_featured_order}
-                                </span>
-                              )}
+                                >
+                                  <div className={`
+                                    absolute top-0.5 w-3 h-3 rounded-full transition-transform
+                                    ${post.is_homepage_featured 
+                                      ? 'translate-x-4 bg-white' 
+                                      : 'translate-x-0.5 bg-white'
+                                    }
+                                  `} />
+                                </button>
+                                {post.is_homepage_featured && post.homepage_featured_order && (
+                                  <button 
+                                    onClick={() => handleOpenOrderSelector(post)}
+                                    className="ml-1 text-[9px] font-bold text-yellow-500 hover:text-yellow-400 hover:underline"
+                                    title="დააჭირე პოზიციის შესაცვლელად"
+                                  >
+                                    #{post.homepage_featured_order}
+                                  </button>
+                                )}
+                              </div>
                             </td>
                             <td className="px-2 py-2">
                               <span className={`text-[10px] ${isDark ? 'text-white/70' : 'text-black/70'}`}>
@@ -1634,6 +1731,19 @@ export default function PostsPage() {
         showCancel={modalConfig.type === 'confirm'}
         confirmText={modalConfig.type === 'confirm' ? 'დიახ' : 'კარგი'}
         cancelText="გაუქმება"
+      />
+
+      {/* Featured Order Selector Modal */}
+      <FeaturedOrderSelector
+        isOpen={isOrderSelectorOpen}
+        onClose={() => {
+          setIsOrderSelectorOpen(false)
+          setSelectedPostForOrder(null)
+        }}
+        onSelect={handleOrderSelect}
+        slots={featuredSlots}
+        currentPostId={selectedPostForOrder?.id || ''}
+        currentPostTitle={selectedPostForOrder?.post_translations?.find(t => t.language === 'ka')?.title || selectedPostForOrder?.post_translations?.[0]?.title || 'უსათაურო'}
       />
     </div>
   )

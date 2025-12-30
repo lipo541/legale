@@ -68,12 +68,12 @@ export default async function CategoryPage({ params }: PageProps) {
     permanentRedirect(`/${redirectLocale}/news/category/${encodeURIComponent(redirectSlug)}`)
   }
 
-  // Fetch category by slug
+  // Fetch category by slug with parent_id
   const { data: categoryData, error: categoryError } = await supabase
     .from('post_category_translations')
     .select(`
       *,
-      category:post_categories!inner(id)
+      category:post_categories!inner(id, parent_id)
     `)
     .eq('slug', slug)
     .eq('language', locale)
@@ -89,10 +89,75 @@ export default async function CategoryPage({ params }: PageProps) {
     .select('*')
     .eq('category_id', categoryData.category.id)
 
-  // Fetch ALL categories to build hierarchy
+  // Fetch ALL categories with translations to build hierarchy and breadcrumbs
   const { data: allCategories } = await supabase
     .from('post_categories')
     .select('id, parent_id')
+    
+  // Fetch all category translations for breadcrumb names
+  const { data: allCategoryTranslations } = await supabase
+    .from('post_category_translations')
+    .select('category_id, name, slug')
+    .eq('language', locale)
+
+  // Build parent hierarchy (breadcrumbs)
+  const buildBreadcrumbs = (categoryId: string): Array<{ id: string; name: string; slug: string }> => {
+    const breadcrumbs: Array<{ id: string; name: string; slug: string }> = []
+    let currentId: string | null = categoryId
+    
+    // Find the parent_id for current category
+    const categoryMap = new Map<string, string | null>()
+    allCategories?.forEach(cat => categoryMap.set(cat.id, cat.parent_id))
+    
+    // Translation map for names/slugs
+    const translationMap = new Map<string, { name: string; slug: string }>()
+    allCategoryTranslations?.forEach(t => {
+      translationMap.set(t.category_id, { name: t.name, slug: t.slug })
+    })
+    
+    // Walk up the hierarchy
+    while (currentId) {
+      const parentId = categoryMap.get(currentId)
+      if (parentId) {
+        const parentTranslation = translationMap.get(parentId)
+        if (parentTranslation) {
+          breadcrumbs.unshift({
+            id: parentId,
+            name: parentTranslation.name,
+            slug: parentTranslation.slug
+          })
+        }
+        currentId = parentId
+      } else {
+        break
+      }
+    }
+    
+    return breadcrumbs
+  }
+
+  const parentBreadcrumbs = buildBreadcrumbs(categoryData.category.id)
+
+  // Fetch ALL published posts with their category_id to count posts per category
+  const { data: allPublishedPosts } = await supabase
+    .from('posts')
+    .select('category_id')
+    .eq('status', 'published')
+    .not('category_id', 'is', null)
+
+  // Build post counts per category (direct posts only)
+  const postCountsByCategory = new Map<string, number>()
+  allPublishedPosts?.forEach(post => {
+    if (post.category_id) {
+      postCountsByCategory.set(post.category_id, (postCountsByCategory.get(post.category_id) || 0) + 1)
+    }
+  })
+
+  // Build category hierarchy map (needed for recursive post counting)
+  const categoryHierarchyMap = new Map<string, string | null>()
+  allCategories?.forEach((cat) => {
+    categoryHierarchyMap.set(cat.id, cat.parent_id)
+  })
 
   // Recursive function to find all descendant categories
   const findAllDescendants = (parentId: string, categoriesMap: Map<string, string | null>): string[] => {
@@ -110,14 +175,84 @@ export default async function CategoryPage({ params }: PageProps) {
     return descendants
   }
 
-  // Build category hierarchy map
-  const categoryHierarchyMap = new Map<string, string | null>()
-  allCategories?.forEach((cat) => {
-    categoryHierarchyMap.set(cat.id, cat.parent_id)
-  })
+  // Helper function to count total posts in category + all its descendants
+  const getTotalPostsInCategory = (categoryId: string): number => {
+    const directPosts = postCountsByCategory.get(categoryId) || 0
+    const descendants = findAllDescendants(categoryId, categoryHierarchyMap)
+    const descendantPosts = descendants.reduce((sum, descId) => {
+      return sum + (postCountsByCategory.get(descId) || 0)
+    }, 0)
+    return directPosts + descendantPosts
+  }
+
+  // Get sibling categories (same parent_id as current category) - only with posts (including descendants)
+  const currentParentId = categoryData.category.parent_id
+  const siblingCategories = allCategories
+    ?.filter(cat => cat.parent_id === currentParentId && cat.id !== categoryData.category.id)
+    .map(cat => {
+      const translation = allCategoryTranslations?.find(t => t.category_id === cat.id)
+      const totalPosts = getTotalPostsInCategory(cat.id)
+      return {
+        id: cat.id,
+        name: translation?.name || '',
+        slug: translation?.slug || '',
+        postCount: totalPosts
+      }
+    })
+    .filter(cat => cat.name && cat.postCount > 0) || []
+
+  // Get ALL descendants of current category (for filtering) - not just direct children
+  // This includes children, grandchildren, etc. - flat list for filter UI
+  const allDescendantIdsForFilter = findAllDescendants(categoryData.category.id, categoryHierarchyMap)
+  const childCategories = allDescendantIdsForFilter
+    .map(catId => {
+      const cat = allCategories?.find(c => c.id === catId)
+      const translation = allCategoryTranslations?.find(t => t.category_id === catId)
+      const totalPosts = getTotalPostsInCategory(catId)
+      return {
+        id: catId,
+        name: translation?.name || '',
+        slug: translation?.slug || '',
+        postCount: totalPosts,
+        depth: getDepth(catId, categoryData.category.id, categoryHierarchyMap) // For indentation
+      }
+    })
+    .filter(cat => cat.name && cat.postCount > 0) || []
+
+  // Helper to calculate depth from current category
+  function getDepth(categoryId: string, rootId: string, hierarchyMap: Map<string, string | null>): number {
+    let depth = 0
+    let currentId: string | null = categoryId
+    while (currentId && currentId !== rootId) {
+      const parentId = hierarchyMap.get(currentId)
+      if (parentId === rootId) {
+        depth++
+        break
+      }
+      if (parentId) {
+        depth++
+        currentId = parentId
+      } else {
+        break
+      }
+    }
+    return depth
+  }
 
   // Find all descendants (subcategories, sub-subcategories, etc.)
   const allDescendantIds = findAllDescendants(categoryData.category.id, categoryHierarchyMap)
+
+  // Build subcategory map for badge display (all descendant categories with their translations)
+  const subcategoryMap = allDescendantIds.map(catId => {
+    const translation = allCategoryTranslations?.find(t => t.category_id === catId)
+    const categoryInfo = allCategories?.find(c => c.id === catId)
+    return {
+      id: catId,
+      name: translation?.name || '',
+      slug: translation?.slug || '',
+      parent_id: categoryInfo?.parent_id || null
+    }
+  })
 
   // Create array of category IDs to search: main category + all descendants
   const categoryIdsToSearch = [
@@ -201,6 +336,10 @@ export default async function CategoryPage({ params }: PageProps) {
       }}
       posts={uniquePosts}
       locale={locale}
+      parentBreadcrumbs={parentBreadcrumbs}
+      siblingCategories={siblingCategories}
+      childCategories={childCategories}
+      subcategoryMap={subcategoryMap}
     />
   )
 }

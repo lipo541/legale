@@ -27,7 +27,7 @@ async function fetchNewsData(locale: string): Promise<NewsPageInitialData> {
   const supabase = createStaticClient()
 
   // Fetch posts and categories in parallel
-  const [postsResult, categoriesResult, postsCountResult] = await Promise.all([
+  const [postsResult, categoriesResult, allCategoriesResult, postsCountResult] = await Promise.all([
     // Fetch all published posts with translations
     supabase
       .from('posts')
@@ -53,6 +53,12 @@ async function fetchNewsData(locale: string): Promise<NewsPageInitialData> {
       .eq('language', locale)
       .is('post_categories.parent_id', null),
 
+    // Fetch ALL categories (including subcategories) with parent_id for grouping posts
+    supabase
+      .from('post_category_translations')
+      .select('category_id, name, slug, post_categories!inner(parent_id)')
+      .eq('language', locale),
+
     // Get total posts count
     supabase
       .from('posts')
@@ -65,8 +71,24 @@ async function fetchNewsData(locale: string): Promise<NewsPageInitialData> {
     ? Array.from(new Map(postsResult.data.map((post: Post) => [post.id, post])).values())
     : []
 
-  // Process categories
-  const categories: Category[] = (categoriesResult.data || []).map((cat: { 
+  // Process categories - combine root (for filters) with all (for grouping)
+  // Use allCategoriesResult which includes subcategories with parent_id
+  const categories: Category[] = (allCategoriesResult.data || []).map((cat: { 
+    category_id: string
+    name: string
+    slug: string
+    post_categories: { parent_id: string | null }[] | { parent_id: string | null }
+  }) => ({
+    id: cat.category_id,
+    name: cat.name,
+    slug: cat.slug,
+    parent_id: Array.isArray(cat.post_categories) 
+      ? cat.post_categories[0]?.parent_id || null 
+      : cat.post_categories?.parent_id || null
+  }))
+
+  // Process root categories separately for tabs
+  const rootCategories: Category[] = (categoriesResult.data || []).map((cat: { 
     category_id: string
     name: string
     slug: string 
@@ -80,6 +102,7 @@ async function fetchNewsData(locale: string): Promise<NewsPageInitialData> {
   return {
     posts,
     categories,
+    rootCategories,
     stats: {
       totalPosts: postsCountResult.count || 0,
       totalCategories: categories.length

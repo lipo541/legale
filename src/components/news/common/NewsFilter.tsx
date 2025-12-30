@@ -5,7 +5,6 @@ import { SlidersHorizontal, ChevronDown } from 'lucide-react'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { newsTranslations } from '@/translations/news'
-import { createClient } from '@/lib/supabase/client'
 import FocusTrap from '@/components/common/FocusTrap'
 
 interface Category {
@@ -16,11 +15,13 @@ interface Category {
 interface NewsFilterProps {
   onFilterChange: (selectedCategories: string[]) => void
   selectedCategories?: string[]
+  categories?: Category[] // Optional: pass pre-filtered categories with posts
 }
 
 export default function NewsFilter({ 
   onFilterChange,
-  selectedCategories = []
+  selectedCategories = [],
+  categories: propCategories
 }: NewsFilterProps) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
@@ -28,56 +29,14 @@ export default function NewsFilter({
   const locale = (params?.locale as string) || 'ka'
   const t = newsTranslations[locale as keyof typeof newsTranslations]
   
-  const [categories, setCategories] = useState<Category[]>([])
+  // Use provided categories or empty array (no more Supabase fetch)
+  const categories = propCategories || []
+  const loading = false
+  
   const [isOpen, setIsOpen] = useState(false)
-  const [loading, setLoading] = useState(true)
   const [focusedIndex, setFocusedIndex] = useState(0)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
-
-  // Fetch categories from Supabase
-  const fetchCategories = useCallback(async () => {
-    const supabase = createClient()
-    setLoading(true)
-
-    try {
-      const { data: categoriesData, error } = await supabase
-        .from('post_category_translations')
-        .select(`
-          category_id,
-          name,
-          language,
-          post_categories!inner(parent_id)
-        `)
-        .eq('language', locale)
-        .is('post_categories.parent_id', null)
-
-      if (error) throw error
-
-      const uniqueCategories = new Map<string, Category>()
-      categoriesData?.forEach((cat) => {
-        if (!uniqueCategories.has(cat.category_id)) {
-          uniqueCategories.set(cat.category_id, {
-            id: cat.category_id,
-            name: cat.name
-          })
-        }
-      })
-
-      setCategories(Array.from(uniqueCategories.values()).sort((a, b) => 
-        a.name.localeCompare(b.name)
-      ))
-    } catch (error) {
-      console.error('Error fetching categories:', error)
-      setCategories([])
-    } finally {
-      setLoading(false)
-    }
-  }, [locale])
-
-  useEffect(() => {
-    fetchCategories()
-  }, [fetchCategories])
 
   const handleToggleCategory = useCallback((categoryId: string) => {
     const newSelection = selectedCategories.includes(categoryId)
