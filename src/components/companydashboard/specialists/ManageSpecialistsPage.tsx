@@ -386,18 +386,30 @@ export default function ManageSpecialistsPage() {
 
     setDeletingId(specialist.id)
     try {
+      // First try direct delete (company has RLS policy for their specialists)
       const { error } = await supabase
         .from('profiles')
         .delete()
         .eq('id', specialist.id)
 
       if (error) {
-        console.error('Delete error:', error)
-        alert('შეცდომა წაშლისას: ' + error.message)
-      } else {
-        await fetchSpecialists()
-        alert('სპეციალისტი წარმატებით წაშლილია!')
+        // If RLS fails, try via API route (for SUPER_ADMIN)
+        const response = await fetch('/api/admin/delete-user', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: specialist.id })
+        })
+        
+        if (!response.ok) {
+          const result = await response.json()
+          console.error('Delete error:', result)
+          alert('შეცდომა წაშლისას: ' + (result.error || result.message))
+          return
+        }
       }
+      
+      await fetchSpecialists()
+      alert('სპეციალისტი წარმატებით წაშლილია!')
     } catch (err) {
       console.error('Delete error:', err)
       alert('შეცდომა წაშლისას')

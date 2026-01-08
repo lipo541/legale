@@ -470,14 +470,17 @@ export default function UsersPage() {
     setDeleteModal({ show: false })
 
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId)
+      const response = await fetch('/api/admin/delete-user', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId })
+      })
 
-      if (error) {
-        console.error('Delete error:', error)
-        alert('შეცდომა წაშლისას: ' + error.message)
+      const result = await response.json()
+
+      if (!response.ok) {
+        console.error('Delete error:', result)
+        alert('შეცდომა წაშლისას: ' + (result.error || result.message))
       } else {
         await fetchUsers()
         setSelectedUsers(prev => {
@@ -501,18 +504,26 @@ export default function UsersPage() {
     setDeleteModal({ show: false })
 
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .in('id', Array.from(selectedUsers))
+      const userIds = Array.from(selectedUsers)
+      const results = await Promise.all(
+        userIds.map(id =>
+          fetch('/api/admin/delete-user', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: id })
+          }).then(res => res.json().then(data => ({ ok: res.ok, data })))
+        )
+      )
 
-      if (error) {
-        console.error('Bulk delete error:', error)
-        alert('შეცდომა წაშლისას: ' + error.message)
-      } else {
-        await fetchUsers()
-        setSelectedUsers(new Set())
+      const failed = results.filter(r => !r.ok)
+      
+      if (failed.length > 0) {
+        console.error('Bulk delete errors:', failed)
+        alert(`${failed.length} მომხმარებელი ვერ წაიშალა`)
       }
+      
+      await fetchUsers()
+      setSelectedUsers(new Set())
     } catch (err) {
       console.error('Catch error:', err)
       alert('შეცდომა წაშლისას')

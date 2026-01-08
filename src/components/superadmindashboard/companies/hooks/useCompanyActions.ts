@@ -89,13 +89,17 @@ export function useCompanyActions({
     setDeletingId(companyId)
 
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', companyId)
+      // Use API route for proper cascade deletion with service role
+      const response = await fetch('/api/admin/delete-user', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: companyId })
+      })
 
-      if (error) {
-        return { success: false, error: error.message }
+      const result = await response.json()
+
+      if (!response.ok) {
+        return { success: false, error: result.error || result.message }
       }
 
       await fetchCompanies()
@@ -322,16 +326,18 @@ export function useCompanyActions({
     const idsArray = Array.from(ids)
     let deletedCount = 0
 
-    for (const id of idsArray) {
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', id)
+    // Use API route for proper cascade deletion
+    const results = await Promise.all(
+      idsArray.map(id =>
+        fetch('/api/admin/delete-user', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: id })
+        }).then(res => res.json().then(data => ({ ok: res.ok, data })))
+      )
+    )
 
-      if (!error) {
-        deletedCount++
-      }
-    }
+    deletedCount = results.filter(r => r.ok).length
 
     await fetchCompanies()
     return { 

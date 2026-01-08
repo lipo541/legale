@@ -44,27 +44,21 @@ export function useSpecialistActions({
       setLoading(prev => ({ ...prev, deleting: id }))
       
       try {
-        // Check if specialist is a team leader
-        const { data: teamsData } = await supabase
-          .from('teams')
-          .select('id, name')
-          .eq('leader_id', id)
-          .limit(1)
-        
-        if (teamsData && teamsData.length > 0) {
-          showModal('error', `ეს სპეციალისტი არის გუნდის "${teamsData[0].name}" ლიდერი. ჯერ უნდა წაშალოთ გუნდი ან შეცვალოთ ლიდერი.`)
-          setLoading(prev => ({ ...prev, deleting: null }))
-          return
-        }
+        // Delete via API route that uses service_role for proper permissions
+        const response = await fetch('/api/admin/delete-user', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: id })
+        })
 
-        const { error } = await supabase.from('profiles').delete().eq('id', id)
-        
-        if (error) {
-          console.error('Delete error:', error)
-          if (error.code === '23503') {
+        const result = await response.json()
+
+        if (!response.ok) {
+          console.error('Delete error:', result)
+          if (result.code === '23503') {
             showModal('error', 'სპეციალისტი ვერ იშლება, რადგან დაკავშირებულია სხვა ჩანაწერებთან.')
           } else {
-            showModal('error', `შეცდომა წაშლისას: ${error.message}`)
+            showModal('error', `შეცდომა წაშლისას: ${result.error || result.message}`)
           }
         } else {
           setSpecialists(prev => prev.filter(s => s.id !== id))
@@ -87,12 +81,26 @@ export function useSpecialistActions({
 
     showModal('confirm', `დარწმუნებული ხართ რომ გსურთ ${ids.size} სპეციალისტის წაშლა?`, async () => {
       try {
-        for (const id of ids) {
-          await supabase.from('profiles').delete().eq('id', id)
-        }
+        const idsArray = Array.from(ids)
+        const results = await Promise.all(
+          idsArray.map(id =>
+            fetch('/api/admin/delete-user', {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: id })
+            }).then(res => res.json().then(data => ({ ok: res.ok, data })))
+          )
+        )
+
+        const failed = results.filter(r => !r.ok)
         
-        setSpecialists(prev => prev.filter(s => !ids.has(s.id)))
-        showModal('success', `${ids.size} სპეციალისტი წარმატებით წაიშალა!`)
+        if (failed.length > 0) {
+          console.error('Bulk delete errors:', failed)
+          showModal('error', `${failed.length} სპეციალისტი ვერ წაიშალა`)
+        } else {
+          setSpecialists(prev => prev.filter(s => !ids.has(s.id)))
+          showModal('success', `${ids.size} სპეციალისტი წარმატებით წაიშალა!`)
+        }
       } catch (err) {
         console.error('Bulk delete error:', err)
         showModal('error', 'შეცდომა მასობრივი წაშლისას')

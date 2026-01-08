@@ -37,14 +37,18 @@ const useSpecialistActions = ({
         setLoading(prev => ({ ...prev, deleting: specialist.id }))
 
         try {
-          const { error } = await supabase
-            .from('profiles')
-            .delete()
-            .eq('id', specialist.id)
+          // Delete via API route that uses service_role for proper permissions
+          const response = await fetch('/api/admin/delete-user', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: specialist.id })
+          })
 
-          if (error) {
-            console.error('Delete error:', error)
-            showModal('error', 'შეცდომა წაშლისას')
+          const result = await response.json()
+
+          if (!response.ok) {
+            console.error('Delete error:', result)
+            showModal('error', `შეცდომა წაშლისას: ${result.error || result.message}`)
           } else {
             setSpecialists(prev => prev.filter(s => s.id !== specialist.id))
             showModal('success', 'სპეციალისტი წარმატებით წაიშალა!')
@@ -75,14 +79,22 @@ const useSpecialistActions = ({
       setLoading(prev => ({ ...prev, bulkDeleting: true }))
 
       try {
-        const { error } = await supabase
-          .from('profiles')
-          .delete()
-          .in('id', selectedIds)
+        // Delete each user via API route
+        const results = await Promise.all(
+          selectedIds.map(id =>
+            fetch('/api/admin/delete-user', {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: id })
+            }).then(res => res.json().then(data => ({ ok: res.ok, data })))
+          )
+        )
 
-        if (error) {
-          console.error('Bulk delete error:', error)
-          showModal('error', 'შეცდომა წაშლისას')
+        const failed = results.filter(r => !r.ok)
+        
+        if (failed.length > 0) {
+          console.error('Bulk delete errors:', failed)
+          showModal('error', `${failed.length} სპეციალისტი ვერ წაიშალა`)
         } else {
           setSpecialists(prev => prev.filter(s => !selectedIds.includes(s.id)))
           setSelectedIds([])
