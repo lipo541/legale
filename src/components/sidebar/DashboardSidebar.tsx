@@ -811,6 +811,13 @@ export default function DashboardSidebar() {
               ))}
             </div>
 
+            {/* Cache Clear Button for Mobile - Only for Admins */}
+            {(userProfile?.role === 'ADMIN' || userProfile?.role === 'SUPER_ADMIN') && (
+              <div className={`p-2 border-t ${isDark ? 'border-white/10' : 'border-black/10'}`}>
+                <CacheClearButton isExpanded={true} />
+              </div>
+            )}
+
             {/* Logout Button */}
             <div className={`p-2 border-t ${isDark ? 'border-white/10' : 'border-black/10'}`}>
               <button
