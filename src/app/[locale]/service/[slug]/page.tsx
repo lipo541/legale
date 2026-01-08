@@ -76,7 +76,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (allTranslations) {
     allTranslations.forEach(trans => {
       languageAlternates[trans.language] = encodeURI(
-        `${siteConfig.baseUrl}/${trans.language}/category/${trans.slug}`
+        `${siteConfig.baseUrl}/${trans.language}/service/${trans.slug}`
       )
     })
   }
@@ -86,7 +86,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const ogTitle = categoryData.og_title || title
   const ogDescription = categoryData.og_description || description
   const ogImage = categoryData.og_image_url || getAssetUrl(siteConfig.defaultOgImage)
-  const canonicalUrl = encodeURI(`${siteConfig.baseUrl}/${locale}/category/${slug}`)
+  const canonicalUrl = encodeURI(`${siteConfig.baseUrl}/${locale}/service/${slug}`)
 
   // Breadcrumb labels by locale
   const breadcrumbLabels = {
@@ -111,7 +111,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         '@type': 'ListItem',
         position: 2,
         name: labels.categories,
-        item: `${siteConfig.baseUrl}/${locale}/category`,
+        item: `${siteConfig.baseUrl}/${locale}/service`,
       },
       {
         '@type': 'ListItem',
@@ -180,7 +180,7 @@ export default async function ServiceCategoryPage({ params }: PageProps) {
   const { shouldRedirect, redirectLocale, redirectSlug } = await getCategoryBySlug(slug, locale)
   
   if (shouldRedirect && redirectLocale && redirectSlug) {
-    permanentRedirect(`/${redirectLocale}/category/${encodeURIComponent(redirectSlug)}`)
+    permanentRedirect(`/${redirectLocale}/service/${encodeURIComponent(redirectSlug)}`)
   }
 
   // Fetch category by slug with parent_id

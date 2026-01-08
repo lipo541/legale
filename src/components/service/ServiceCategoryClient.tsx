@@ -166,10 +166,10 @@ export default function ServiceCategoryClient({
   // Build breadcrumb items
   const breadcrumbItems = [
     { label: t.backToHome, href: `/${locale}` },
-    { label: t.categories, href: `/${locale}/category` },
+    { label: t.categories, href: `/${locale}/service` },
     ...parentBreadcrumbs.map(crumb => ({
       label: crumb.name,
-      href: `/${locale}/category/${encodeURIComponent(crumb.slug)}`
+      href: `/${locale}/service/${encodeURIComponent(crumb.slug)}`
     })),
     { label: category.name }
   ]
@@ -301,7 +301,7 @@ export default function ServiceCategoryClient({
                   {siblingCategories.map(sibling => (
                     <Link
                       key={sibling.id}
-                      href={`/${locale}/category/${encodeURIComponent(sibling.slug)}`}
+                      href={`/${locale}/service/${encodeURIComponent(sibling.slug)}`}
                       className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-300 ${
                         isDark 
                           ? 'text-white/70 hover:bg-white/10 hover:text-white' 

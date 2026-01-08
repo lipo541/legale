@@ -97,7 +97,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const currentMetadata = metadata[locale] || metadata.ka
-  const canonicalUrl = `${baseUrl}/${locale}/category`
+  const canonicalUrl = `${baseUrl}/${locale}/service`
   const ogImage = getAssetUrl(siteConfig.defaultOgImage)
 
   // CollectionPage Schema
@@ -119,7 +119,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: currentMetadata.description,
     alternates: {
       canonical: canonicalUrl,
-      languages: getLanguageAlternates('/category'),
+      languages: getLanguageAlternates('/service'),
     },
     openGraph: {
       title: currentMetadata.title,

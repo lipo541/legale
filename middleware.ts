@@ -10,6 +10,7 @@ const ISR_PATTERNS = [
   '/companies/',      // Company profiles: /companies/[slug]
   '/practices/',      // Practice areas and services: /practices/[slug], /practices/[slug]/[service]
   '/teams/',          // Team pages: /teams/[slug]
+  '/service/',        // Service categories: /service, /service/[slug]
   '/contact',         // Contact page
   '/privacy',         // Privacy policy
   '/terms',           // Terms of service

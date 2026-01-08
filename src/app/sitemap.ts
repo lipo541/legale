@@ -296,7 +296,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (serviceCategoryTranslations) {
       serviceCategoryTranslations.forEach((translation) => {
         const locale = translation.language
-        const url = encodeURI(`${baseUrl}/${locale}/category/${translation.slug}`)
+        const url = encodeURI(`${baseUrl}/${locale}/service/${translation.slug}`)
         
         sitemap.push({
           url,

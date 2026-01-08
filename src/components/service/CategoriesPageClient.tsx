@@ -281,7 +281,7 @@ export default function CategoriesPageClient({ initialData, locale }: Categories
                   return (
                     <Link
                       key={category.id}
-                      href={`/${locale}/category/${translation.slug}`}
+                      href={`/${locale}/service/${translation.slug}`}
                       className={`group flex flex-col h-full rounded-lg overflow-hidden backdrop-blur-md transition-all duration-300 hover:scale-[1.02] ${
                         isDark
                           ? 'bg-black/40 hover:bg-black/50 border border-white/10 hover:border-white/20 hover:shadow-2xl'
@@ -367,7 +367,7 @@ export default function CategoriesPageClient({ initialData, locale }: Categories
                 return (
                   <Link
                     key={category.id}
-                    href={`/${locale}/category/${translation.slug}`}
+                    href={`/${locale}/service/${translation.slug}`}
                     className={`group flex items-center gap-4 md:gap-6 rounded-lg p-4 md:p-5 backdrop-blur-md transition-all duration-300 ${
                       isDark
                         ? 'bg-black/40 hover:bg-black/50 border border-white/10 hover:border-white/20'
