@@ -211,16 +211,16 @@ export default function MyPostsPage({ locale }: MyPostsPageProps) {
   // If not verified, show message
   if (verificationStatus !== 'verified') {
     return (
-      <div className="w-full max-w-[600px] mx-auto px-3 sm:px-4 lg:px-6 py-8">
-        <div className={`rounded-xl border p-6 text-center ${isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/[0.02]'}`}>
-          <AlertCircle className={`mx-auto h-10 w-10 mb-3 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
-          <h2 className={`text-base font-semibold mb-1.5 ${isDark ? 'text-white' : 'text-black'}`}>
+      <div className="px-4 sm:px-6 lg:px-8 py-4">
+        <div className={`rounded-lg border p-6 text-center ${isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/[0.02]'}`}>
+          <AlertCircle className={`mx-auto h-8 w-8 mb-2 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
+          <h2 className={`text-sm font-semibold mb-1 ${isDark ? 'text-white' : 'text-black'}`}>
             {t.verificationNeeded}
           </h2>
-          <p className={`text-sm mb-3 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+          <p className={`text-xs mb-2 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
             {t.verificationNeededDesc}
           </p>
-          <p className={`text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+          <p className={`text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
             {verificationStatus === 'pending' 
               ? t.requestPending
               : t.fillProfileAndVerify}
@@ -231,21 +231,26 @@ export default function MyPostsPage({ locale }: MyPostsPageProps) {
   }
 
   return (
-    <div className="w-full max-w-[1200px] mx-auto px-3 sm:px-4 lg:px-6 py-4 lg:py-6">
+    <div className="px-4 sm:px-6 lg:px-8 py-4">
       {/* Header */}
-      <div className="mb-4 lg:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className={`text-lg lg:text-xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
-            {t.myPostsTitle}
-          </h1>
-          <p className={`text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
-            {t.manageArticles}
-          </p>
+      <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className={`p-2 rounded-lg ${isDark ? 'bg-blue-500/20' : 'bg-blue-500/10'}`}>
+            <FileText className={`h-4 w-4 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+          </div>
+          <div>
+            <h1 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
+              {t.myPostsTitle}
+            </h1>
+            <p className={`text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+              {posts.length} პოსტი
+            </p>
+          </div>
         </div>
 
         <button
           onClick={() => setShowEditor(true)}
-          className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-95 ${
+          className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all active:scale-95 ${
             isDark ? 'bg-white text-black hover:bg-white/90' : 'bg-black text-white hover:bg-black/90'
           }`}
         >
@@ -255,35 +260,35 @@ export default function MyPostsPage({ locale }: MyPostsPageProps) {
       </div>
 
       {/* Stats */}
-      <div className={`grid grid-cols-3 gap-2 lg:gap-3 mb-4 lg:mb-6 p-3 rounded-xl border ${isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/[0.02]'}`}>
-        <div className="text-center">
-          <div className={`text-xl lg:text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+      <div className={`grid grid-cols-3 gap-2 mb-4 p-2 rounded-lg border ${isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/[0.02]'}`}>
+        <div className="text-center py-1">
+          <div className={`text-lg font-bold ${isDark ? 'text-white' : 'text-black'}`}>
             {posts.length}
           </div>
-          <div className={`text-[10px] lg:text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>{t.total}</div>
+          <div className={`text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>{t.total}</div>
         </div>
-        <div className="text-center">
-          <div className={`text-xl lg:text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+        <div className="text-center py-1">
+          <div className={`text-lg font-bold ${isDark ? 'text-white' : 'text-black'}`}>
             {posts.filter(p => p.status === 'draft' || p.status === 'pending').length}
           </div>
-          <div className={`text-[10px] lg:text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>{t.draft}</div>
+          <div className={`text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>{t.draft}</div>
         </div>
-        <div className="text-center">
-          <div className={`text-xl lg:text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+        <div className="text-center py-1">
+          <div className={`text-lg font-bold ${isDark ? 'text-white' : 'text-black'}`}>
             {posts.filter(p => p.status === 'published').length}
           </div>
-          <div className={`text-[10px] lg:text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>{t.published}</div>
+          <div className={`text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>{t.published}</div>
         </div>
       </div>
 
       {/* Posts List */}
       {loading ? (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center py-8">
           <Loader2 className={`h-5 w-5 animate-spin ${isDark ? 'text-white/50' : 'text-black/50'}`} />
         </div>
       ) : posts.length === 0 ? (
-        <div className={`rounded-xl border p-8 text-center ${isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/[0.02]'}`}>
-          <FileText className={`mx-auto mb-3 h-10 w-10 ${isDark ? 'text-white/20' : 'text-black/20'}`} />
+        <div className={`rounded-lg border p-6 text-center ${isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/[0.02]'}`}>
+          <FileText className={`mx-auto mb-2 h-8 w-8 ${isDark ? 'text-white/20' : 'text-black/20'}`} />
           <h3 className={`text-sm font-medium mb-1 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
             {t.noPostsYet}
           </h3>
@@ -292,7 +297,7 @@ export default function MyPostsPage({ locale }: MyPostsPageProps) {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {posts.map((post) => {
             const georgianTranslation = post.post_translations.find(t => t.language === 'ka')
             const isDeleting = deleting === post.id
@@ -300,7 +305,7 @@ export default function MyPostsPage({ locale }: MyPostsPageProps) {
             return (
               <div
                 key={post.id}
-                className={`group overflow-hidden rounded-xl border transition-all ${
+                className={`group overflow-hidden rounded-lg border transition-all ${
                   isDark 
                     ? 'border-white/10 bg-white/5 hover:border-white/20' 
                     : 'border-black/10 bg-black/[0.02] hover:border-black/20'
@@ -314,25 +319,25 @@ export default function MyPostsPage({ locale }: MyPostsPageProps) {
                       alt={georgianTranslation?.title || ''}
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
-                    <div className="absolute top-2 right-2">
+                    <div className="absolute top-1.5 right-1.5">
                       {getStatusBadge(post.status)}
                     </div>
                   </div>
                 )}
 
                 {/* Content */}
-                <div className="p-3 lg:p-4">
+                <div className="p-2.5">
                   {!post.featured_image_url && (
-                    <div className="mb-2">
+                    <div className="mb-1.5">
                       {getStatusBadge(post.status)}
                     </div>
                   )}
                   
-                  <div className={`text-[10px] mb-1 ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                  <div className={`text-[10px] mb-0.5 ${isDark ? 'text-white/40' : 'text-black/40'}`}>
                     {formatDate(post.created_at)}
                   </div>
 
-                  <h3 className={`mb-1.5 line-clamp-2 text-sm font-semibold leading-tight ${isDark ? 'text-white' : 'text-black'}`}>
+                  <h3 className={`mb-1 line-clamp-2 text-sm font-medium leading-tight ${isDark ? 'text-white' : 'text-black'}`}>
                     {georgianTranslation?.title || t.untitledPost}
                   </h3>
 
@@ -343,17 +348,17 @@ export default function MyPostsPage({ locale }: MyPostsPageProps) {
                   )}
 
                   {/* Actions */}
-                  <div className="mt-3 flex gap-2">
+                  <div className="mt-2 flex gap-1.5">
                     <button
                       onClick={() => setEditingPost(post)}
                       disabled={isDeleting}
-                      className={`flex-1 flex items-center justify-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                      className={`flex-1 flex items-center justify-center gap-1 rounded px-2 py-1 text-[10px] font-medium transition-colors ${
                         isDark
                           ? 'bg-white/10 text-white hover:bg-white/20'
                           : 'bg-black/10 text-black hover:bg-black/20'
                       }`}
                     >
-                      <Edit2 className="h-3 w-3" />
+                      <Edit2 className="h-2.5 w-2.5" />
                       {t.editPost}
                     </button>
 
@@ -361,16 +366,16 @@ export default function MyPostsPage({ locale }: MyPostsPageProps) {
                       <button
                         onClick={() => handleDelete(post.id)}
                         disabled={isDeleting}
-                        className={`flex items-center justify-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                        className={`flex items-center justify-center gap-1 rounded px-2 py-1 text-[10px] font-medium transition-colors ${
                           isDark
                             ? 'text-white/60 hover:bg-white/10 hover:text-white'
                             : 'text-black/60 hover:bg-black/10 hover:text-black'
                         }`}
                       >
                         {isDeleting ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
+                          <Loader2 className="h-2.5 w-2.5 animate-spin" />
                         ) : (
-                          <Trash2 className="h-3 w-3" />
+                          <Trash2 className="h-2.5 w-2.5" />
                         )}
                       </button>
                     )}
@@ -378,12 +383,12 @@ export default function MyPostsPage({ locale }: MyPostsPageProps) {
 
                   {/* Status Info */}
                   {post.status === 'draft' && (
-                    <div className={`mt-2 rounded-lg p-2 text-[10px] ${isDark ? 'bg-white/5 text-white/50' : 'bg-black/5 text-black/50'}`}>
+                    <div className={`mt-1.5 rounded p-1.5 text-[10px] ${isDark ? 'bg-white/5 text-white/50' : 'bg-black/5 text-black/50'}`}>
                       {t.awaitingApproval}
                     </div>
                   )}
                   {post.status === 'published' && (
-                    <div className={`mt-2 rounded-lg p-2 text-[10px] ${isDark ? 'bg-white/5 text-white/50' : 'bg-black/5 text-black/50'}`}>
+                    <div className={`mt-1.5 rounded p-1.5 text-[10px] ${isDark ? 'bg-white/5 text-white/50' : 'bg-black/5 text-black/50'}`}>
                       {t.postPublished}
                     </div>
                   )}

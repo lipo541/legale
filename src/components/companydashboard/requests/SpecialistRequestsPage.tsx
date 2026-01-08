@@ -169,101 +169,105 @@ export default function SpecialistRequestsPage({ onRequestUpdate }: { onRequestU
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className={`text-lg ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-          იტვირთება...
-        </div>
+      <div className="flex items-center justify-center min-h-[300px] px-4 sm:px-6 lg:px-8">
+        <div className={`animate-spin rounded-full h-6 w-6 border-2 border-t-transparent ${isDark ? 'border-white' : 'border-black'}`} />
       </div>
     )
   }
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
-          Specialist Requests
-        </h1>
-        <p className={`mt-2 text-lg ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-          თქვენს კომპანიაში გაწევრიანების მსურველი სპეციალისტები
-        </p>
+    <div className="px-4 sm:px-6 lg:px-8 py-4">
+      {/* Header */}
+      <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className={`p-2 rounded-lg ${isDark ? 'bg-yellow-500/20' : 'bg-yellow-500/10'}`}>
+            <ClipboardList className={`h-4 w-4 ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`} />
+          </div>
+          <div>
+            <h1 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
+              მოთხოვნები
+            </h1>
+            <p className={`text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+              {requests.filter(r => r.status === 'PENDING').length} მოლოდინში
+            </p>
+          </div>
+        </div>
       </div>
 
       {requests.length === 0 ? (
-        <div className={`rounded-xl border p-12 text-center ${isDark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
-          <ClipboardList className={`mx-auto h-16 w-16 ${isDark ? 'text-white/20' : 'text-black/20'}`} />
-          <p className={`mt-4 text-lg font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+        <div className={`rounded-lg border p-8 text-center ${isDark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
+          <ClipboardList className={`mx-auto h-12 w-12 ${isDark ? 'text-white/20' : 'text-black/20'}`} />
+          <p className={`mt-3 text-sm font-medium ${isDark ? 'text-white/60' : 'text-black/60'}`}>
             ამჟამად არ არის მოთხოვნები
           </p>
         </div>
       ) : (
-        <div className="grid gap-6">
+        <div className="space-y-3">
           {requests.map((request) => (
             <div
               key={request.id}
-              className={`rounded-xl border p-6 transition-all duration-300 ${
-                isDark ? 'border-white/10 bg-black hover:border-white/20' : 'border-black/10 bg-white hover:border-black/20'
+              className={`rounded-lg border p-3 transition-all ${
+                isDark ? 'border-white/10 bg-white/5 hover:border-white/20' : 'border-black/10 bg-black/5 hover:border-black/20'
               }`}
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-full ${isDark ? 'bg-white/10' : 'bg-black/10'}`}>
-                    <User className={`h-6 w-6 ${isDark ? 'text-white' : 'text-black'}`} />
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className={`flex h-9 w-9 items-center justify-center rounded-full flex-shrink-0 ${isDark ? 'bg-white/10' : 'bg-black/10'}`}>
+                    <User className={`h-4 w-4 ${isDark ? 'text-white/60' : 'text-black/60'}`} />
                   </div>
-                  <div>
-                    <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
+                  <div className="min-w-0">
+                    <h3 className={`text-sm font-medium truncate ${isDark ? 'text-white' : 'text-black'}`}>
                       {request.profiles?.full_name || request.full_name}
                     </h3>
-                    <p className={`text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                    <p className={`text-xs truncate ${isDark ? 'text-white/50' : 'text-black/50'}`}>
                       {request.profiles?.email}
                     </p>
-                    {request.profiles?.full_name && request.profiles.full_name !== request.full_name && (
-                      <p className={`text-xs mt-1 ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-                        კომპანია: {request.full_name}
-                      </p>
-                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex-shrink-0">
                   {request.status === 'PENDING' && (
-                    <span className="flex items-center gap-1 rounded-full bg-yellow-500/20 px-3 py-1 text-sm font-medium text-yellow-600 dark:text-yellow-400">
-                      <Clock className="h-4 w-4" />
-                      Pending
+                    <span className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-yellow-500/20 text-yellow-600 dark:text-yellow-400">
+                      <Clock className="h-3 w-3" />
+                      მოლოდინში
                     </span>
                   )}
                   {request.status === 'APPROVED' && (
-                    <span className="flex items-center gap-1 rounded-full bg-green-500/20 px-3 py-1 text-sm font-medium text-green-600 dark:text-green-400">
-                      <CheckCircle className="h-4 w-4" />
-                      Approved
+                    <span className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-green-500/20 text-green-600 dark:text-green-400">
+                      <CheckCircle className="h-3 w-3" />
+                      დადასტურებული
                     </span>
                   )}
                   {request.status === 'REJECTED' && (
-                    <span className="flex items-center gap-1 rounded-full bg-red-500/20 px-3 py-1 text-sm font-medium text-red-600 dark:text-red-400">
-                      <XCircle className="h-4 w-4" />
-                      Rejected
+                    <span className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-red-500/20 text-red-600 dark:text-red-400">
+                      <XCircle className="h-3 w-3" />
+                      უარყოფილი
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="space-y-3 mb-4">
-                <div className="flex items-center gap-2">
-                  <Phone className={`h-4 w-4 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
-                  <span className={`text-sm ${isDark ? 'text-white/80' : 'text-black/80'}`}>
+              {/* Details */}
+              <div className={`mt-2 pt-2 border-t space-y-1.5 ${isDark ? 'border-white/10' : 'border-black/10'}`}>
+                <div className="flex items-center gap-1.5">
+                  <Phone className={`h-3 w-3 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
+                  <span className={`text-xs ${isDark ? 'text-white/70' : 'text-black/70'}`}>
                     {request.phone_number}
                   </span>
                 </div>
-                <div className="flex items-start gap-2">
-                  <FileText className={`h-4 w-4 mt-1 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
-                  <p className={`text-sm ${isDark ? 'text-white/80' : 'text-black/80'}`}>
-                    {request.about}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className={`h-4 w-4 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
-                  <span className={`text-xs ${isDark ? 'text-white/60' : 'text-black/60'}`}>
+                {request.about && (
+                  <div className="flex items-start gap-1.5">
+                    <FileText className={`h-3 w-3 mt-0.5 flex-shrink-0 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
+                    <p className={`text-xs line-clamp-2 ${isDark ? 'text-white/70' : 'text-black/70'}`}>
+                      {request.about}
+                    </p>
+                  </div>
+                )}
+                <div className="flex items-center gap-1.5">
+                  <Clock className={`h-3 w-3 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
+                  <span className={`text-[10px] ${isDark ? 'text-white/50' : 'text-black/50'}`}>
                     {new Date(request.created_at).toLocaleDateString('ka-GE', {
                       year: 'numeric',
-                      month: 'long',
+                      month: 'short',
                       day: 'numeric',
                       hour: '2-digit',
                       minute: '2-digit'
@@ -272,28 +276,29 @@ export default function SpecialistRequestsPage({ onRequestUpdate }: { onRequestU
                 </div>
               </div>
 
+              {/* Action Buttons */}
               {request.status === 'PENDING' && (
-                <div className="flex gap-3 pt-4 border-t border-white/10">
+                <div className={`flex gap-2 mt-2 pt-2 border-t ${isDark ? 'border-white/10' : 'border-black/10'}`}>
                   <button
                     onClick={() => handleApprove(request.id)}
-                    className={`flex-1 flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${
+                    className={`flex-1 flex items-center justify-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-all hover:scale-[1.02] ${
                       isDark
                         ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
                         : 'bg-green-500/20 text-green-600 hover:bg-green-500/30'
                     }`}
                   >
-                    <CheckCircle className="h-4 w-4" />
+                    <CheckCircle className="h-3.5 w-3.5" />
                     დადასტურება
                   </button>
                   <button
                     onClick={() => handleReject(request.id)}
-                    className={`flex-1 flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${
+                    className={`flex-1 flex items-center justify-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-all hover:scale-[1.02] ${
                       isDark
                         ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
                         : 'bg-red-500/20 text-red-600 hover:bg-red-500/30'
                     }`}
                   >
-                    <XCircle className="h-4 w-4" />
+                    <XCircle className="h-3.5 w-3.5" />
                     უარყოფა
                   </button>
                 </div>
