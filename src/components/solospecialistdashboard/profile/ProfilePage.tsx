@@ -58,9 +58,11 @@ export default function ProfilePage() {
   const [selectedCityIds, setSelectedCityIds] = useState<string[]>([])
   const [tempSectionData, setTempSectionData] = useState<Record<string, string | string[] | Record<string, string>>>({})
 
-  // Generate slug from full name
-  const generateSlug = (name: string): string => {
-    return name.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-')
+  // Generate slug from full name - returns null if result would be empty (for Georgian names etc.)
+  // NULL doesn't violate UNIQUE constraint, so multiple users can have slug = NULL
+  const generateSlug = (name: string): string | null => {
+    const slug = name.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-')
+    return slug.length > 0 ? slug : null
   }
 
   // Fetch profile data
@@ -331,7 +333,8 @@ export default function ProfilePage() {
   const isEditing = (section: string) => editingSection === section
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const getValue = (field: string) => tempSectionData[field] !== undefined ? tempSectionData[field] as string : (profile as any)[field] || ''
-  const setValue = (field: string, value: string | string[] | Record<string, string>) => setTempSectionData({ ...tempSectionData, [field]: value })
+  // Use functional update to avoid stale closure issues
+  const setValue = (field: string, value: string | string[] | Record<string, string>) => setTempSectionData(prev => ({ ...prev, [field]: value }))
 
   return (
     <div className="pb-10">
@@ -453,7 +456,7 @@ export default function ProfilePage() {
         >
           <div className="grid gap-6 md:grid-cols-2">
             <FormField label="სრული სახელი" icon={User} value={getValue('full_name')} isEditing={isEditing('basic')} onChange={(v) => setValue('full_name', v)} placeholder="John Doe" required isDark={isDark} />
-            <FormField label="Slug (URL)" icon={Globe} value={profile.slug || (profile.full_name ? generateSlug(profile.full_name) : 'N/A')} isEditing={false} readOnly isDark={isDark} description="ავტომატურად გენერირდება" />
+            <FormField label="Slug (URL)" icon={Globe} value={profile.slug || (profile.full_name ? generateSlug(profile.full_name) : null) || 'ავტომატურად გენერირდება'} isEditing={false} readOnly isDark={isDark} description="ავტომატურად გენერირდება სახელიდან" />
             <FormField label="Role / Title" icon={Briefcase} value={getValue('role_title')} isEditing={isEditing('basic')} onChange={(v) => setValue('role_title', v)} placeholder="Senior Legal Counsel" required isDark={isDark} />
             <FormField label="Email (read-only)" icon={Mail} value={profile.email || 'N/A'} isEditing={false} type="email" readOnly isDark={isDark} />
             <FormField label="Phone Number" icon={Phone} value={getValue('phone_number')} isEditing={isEditing('basic')} onChange={(v) => setValue('phone_number', v)} placeholder="+995 551 911 951" type="tel" required isDark={isDark} />
