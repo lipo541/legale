@@ -268,7 +268,7 @@ export default function ProfilePage({ locale }: ProfilePageProps) {
     }
   }
 
-  // Handle section save
+  // Handle section save - saves to both profiles AND specialist_translations (Georgian)
   const handleSaveSection = async (section: string, fields: string[]) => {
     if (!profile) return
     setSaving(true)
@@ -295,16 +295,50 @@ export default function ProfilePage({ locale }: ProfilePageProps) {
         }
       })
 
+      // 1. Save to profiles table
       const { error } = await supabase.from('profiles').update(updateData).eq('id', profile.id)
 
       if (error) {
         showToast('შეცდომა განახლებისას: ' + error.message, 'error')
-      } else {
-        await fetchProfile()
-        setEditingSection(null)
-        setTempSectionData({})
-        showToast('მონაცემები წარმატებით განახლდა!', 'success')
+        return
       }
+
+      // 2. Sync to specialist_translations table (Georgian - ka)
+      // Only sync content fields that exist in specialist_translations
+      const translationFields = [
+        'full_name', 'role_title', 'bio', 'philosophy', 'teaching_writing_speaking',
+        'focus_areas', 'representative_matters', 'credentials_memberships', 'values_how_we_work',
+        'avatar_alt_text', 'seo_title', 'seo_description', 'seo_keywords',
+        'social_title', 'social_description', 'social_hashtags', 'social_image_url'
+      ]
+
+      const translationData: Record<string, unknown> = {
+        specialist_id: profile.id,
+        language: 'ka',
+        updated_at: new Date().toISOString()
+      }
+
+      // Copy relevant fields from updateData to translationData
+      translationFields.forEach(field => {
+        if (updateData[field] !== undefined) {
+          translationData[field] = updateData[field]
+        }
+      })
+
+      // Upsert to specialist_translations (insert if not exists, update if exists)
+      const { error: syncError } = await supabase
+        .from('specialist_translations')
+        .upsert(translationData, { onConflict: 'specialist_id,language' })
+
+      if (syncError) {
+        console.error('Sync to translations error:', syncError)
+        // Don't fail the whole operation, just log
+      }
+
+      await fetchProfile()
+      setEditingSection(null)
+      setTempSectionData({})
+      showToast('მონაცემები წარმატებით განახლდა!', 'success')
     } catch (error) {
       console.error('Save section error:', error)
       showToast('შეცდომა შენახვისას', 'error')

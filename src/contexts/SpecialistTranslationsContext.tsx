@@ -207,37 +207,40 @@ export function SpecialistTranslationsProvider({ children }: { children: ReactNo
       newData.social.georgian = fallbackSocial
 
       // Override with existing translations from database
+      // For Georgian: only override if translation field is NOT empty (preserve profile fallback)
+      // For other languages: override always (they don't have profile fallback)
       translations?.forEach((translation) => {
         const lang = codeToLang(translation.language)
+        const isGeorgian = lang === 'georgian'
 
-        // Content fields
+        // Content fields - for Georgian, use translation only if not empty, else keep fallback
         newData.content[lang] = {
-          full_name: translation.full_name || '',
-          role_title: translation.role_title || '',
-          bio: translation.bio || '',
-          philosophy: translation.philosophy || '',
-          teaching_writing_speaking: translation.teaching_writing_speaking || '',
-          focus_areas: translation.focus_areas || [],
-          representative_matters: translation.representative_matters || [],
-          credentials_memberships: translation.credentials_memberships || [],
-          values_how_we_work: translation.values_how_we_work || {},
-          avatar_alt_text: translation.avatar_alt_text || '',
-          slug: translation.slug || ''
+          full_name: (isGeorgian && !translation.full_name) ? fallbackContent.full_name : (translation.full_name || ''),
+          role_title: (isGeorgian && !translation.role_title) ? fallbackContent.role_title : (translation.role_title || ''),
+          bio: (isGeorgian && !translation.bio) ? fallbackContent.bio : (translation.bio || ''),
+          philosophy: (isGeorgian && !translation.philosophy) ? fallbackContent.philosophy : (translation.philosophy || ''),
+          teaching_writing_speaking: (isGeorgian && !translation.teaching_writing_speaking) ? fallbackContent.teaching_writing_speaking : (translation.teaching_writing_speaking || ''),
+          focus_areas: (isGeorgian && (!translation.focus_areas || translation.focus_areas.length === 0)) ? fallbackContent.focus_areas : (translation.focus_areas || []),
+          representative_matters: (isGeorgian && (!translation.representative_matters || translation.representative_matters.length === 0)) ? fallbackContent.representative_matters : (translation.representative_matters || []),
+          credentials_memberships: (isGeorgian && (!translation.credentials_memberships || translation.credentials_memberships.length === 0)) ? fallbackContent.credentials_memberships : (translation.credentials_memberships || []),
+          values_how_we_work: (isGeorgian && (!translation.values_how_we_work || Object.keys(translation.values_how_we_work).length === 0)) ? fallbackContent.values_how_we_work : (translation.values_how_we_work || {}),
+          avatar_alt_text: (isGeorgian && !translation.avatar_alt_text) ? fallbackContent.avatar_alt_text : (translation.avatar_alt_text || ''),
+          slug: translation.slug || (isGeorgian ? fallbackContent.slug : '')
         }
 
         // SEO fields
         newData.seo[lang] = {
-          seo_title: translation.seo_title || '',
-          seo_description: translation.seo_description || '',
-          seo_keywords: translation.seo_keywords || ''
+          seo_title: (isGeorgian && !translation.seo_title) ? fallbackSeo.seo_title : (translation.seo_title || ''),
+          seo_description: (isGeorgian && !translation.seo_description) ? fallbackSeo.seo_description : (translation.seo_description || ''),
+          seo_keywords: (isGeorgian && !translation.seo_keywords) ? fallbackSeo.seo_keywords : (translation.seo_keywords || '')
         }
 
         // Social fields
         newData.social[lang] = {
-          social_title: translation.social_title || '',
-          social_description: translation.social_description || '',
-          social_hashtags: translation.social_hashtags || '',
-          social_image_url: translation.social_image_url || ''
+          social_title: (isGeorgian && !translation.social_title) ? fallbackSocial.social_title : (translation.social_title || ''),
+          social_description: (isGeorgian && !translation.social_description) ? fallbackSocial.social_description : (translation.social_description || ''),
+          social_hashtags: (isGeorgian && !translation.social_hashtags) ? fallbackSocial.social_hashtags : (translation.social_hashtags || ''),
+          social_image_url: (isGeorgian && !translation.social_image_url) ? fallbackSocial.social_image_url : (translation.social_image_url || '')
         }
       })
 
