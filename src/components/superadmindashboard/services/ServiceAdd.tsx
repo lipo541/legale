@@ -58,6 +58,12 @@ interface Practice {
   translations: Record<Language, string>
 }
 
+interface ServiceCategory {
+  id: string
+  parent_id: string | null
+  translations: Record<Language, string>
+}
+
 interface ServiceTranslation {
   id: string
   service_id: string
@@ -78,6 +84,7 @@ interface ServiceTranslation {
 interface ServiceWithTranslations {
   id: string
   practice_id: string
+  category_id: string | null
   image_url: string
   og_image_url: string | null
   status: string
@@ -265,6 +272,37 @@ const PracticeDropdownItem = memo(({
 ))
 PracticeDropdownItem.displayName = 'PracticeDropdownItem'
 
+const CategoryDropdownItem = memo(({
+  category,
+  isSelected,
+  onClick,
+  isDark,
+  activeLanguage,
+  level = 0
+}: {
+  category: ServiceCategory
+  isSelected: boolean
+  onClick: () => void
+  isDark: boolean
+  activeLanguage: Language
+  level?: number
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`w-full text-left px-3 py-2 text-xs transition-colors ${
+      isSelected
+        ? isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-50 text-emerald-600'
+        : isDark ? 'text-white hover:bg-white/5' : 'text-black hover:bg-black/5'
+    }`}
+    style={{ paddingLeft: `${12 + level * 16}px` }}
+  >
+    {level > 0 && <span className="mr-1 opacity-50">└</span>}
+    {category.translations[activeLanguage]}
+  </button>
+))
+CategoryDropdownItem.displayName = 'CategoryDropdownItem'
+
 // ============================================================================
 // Image Upload Component
 // ============================================================================
@@ -348,6 +386,11 @@ export default function ServiceAdd({ onBack, editData }: ServiceAddProps) {
   const [selectedPracticeId, setSelectedPracticeId] = useState<string | null>(null)
   const [isPracticeDropdownOpen, setIsPracticeDropdownOpen] = useState(false)
 
+  const [categories, setCategories] = useState<ServiceCategory[]>([])
+  const [categoriesLoading, setCategoriesLoading] = useState(true)
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false)
+
   const [translations, setTranslations] = useState<Record<Language, Translation>>({
     ka: { ...EMPTY_TRANSLATION },
     en: { ...EMPTY_TRANSLATION },
@@ -375,6 +418,25 @@ export default function ServiceAdd({ onBack, editData }: ServiceAddProps) {
     return practices.find(p => p.id === selectedPracticeId)
   }, [practices, selectedPracticeId])
 
+  const selectedCategory = useMemo(() => {
+    return categories.find(c => c.id === selectedCategoryId)
+  }, [categories, selectedCategoryId])
+
+  // Build hierarchical category list for dropdown
+  const sortedCategories = useMemo(() => {
+    const result: Array<{ category: ServiceCategory; level: number }> = []
+    const parentCategories = categories.filter(c => !c.parent_id)
+    
+    const addWithChildren = (category: ServiceCategory, level: number) => {
+      result.push({ category, level })
+      const children = categories.filter(c => c.parent_id === category.id)
+      children.forEach(child => addWithChildren(child, level + 1))
+    }
+    
+    parentCategories.forEach(cat => addWithChildren(cat, 0))
+    return result
+  }, [categories])
+
   const currentTranslation = translations[activeLanguage]
 
   // ============================================================================
@@ -386,6 +448,7 @@ export default function ServiceAdd({ onBack, editData }: ServiceAddProps) {
     if (!editData) return
 
     setSelectedPracticeId(editData.practice_id)
+    setSelectedCategoryId(editData.category_id)
     if (editData.image_url) setServiceImagePreview(editData.image_url)
     if (editData.og_image_url) setOgImagePreview(editData.og_image_url)
 
@@ -457,6 +520,51 @@ export default function ServiceAdd({ onBack, editData }: ServiceAddProps) {
     fetchPractices()
   }, [supabase])
 
+  // Fetch categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setCategoriesLoading(true)
+      try {
+        const { data: categoriesData } = await supabase
+          .from('service_categories')
+          .select('id, parent_id')
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true })
+
+        if (!categoriesData) return
+
+        const categoriesWithTitles = await Promise.all(
+          categoriesData.map(async (category) => {
+            const { data: translationsData } = await supabase
+              .from('service_category_translations')
+              .select('language, name')
+              .eq('category_id', category.id)
+
+            const translationsMap: Record<Language, string> = {
+              ka: 'უსახელო კატეგორია',
+              en: 'Untitled Category',
+              ru: 'Категория без названия'
+            }
+
+            translationsData?.forEach((trans: { language: string; name: string }) => {
+              translationsMap[trans.language as Language] = trans.name
+            })
+
+            return { id: category.id, parent_id: category.parent_id, translations: translationsMap }
+          })
+        )
+
+        setCategories(categoriesWithTitles)
+      } catch {
+        // Silently handle error
+      } finally {
+        setCategoriesLoading(false)
+      }
+    }
+
+    fetchCategories()
+  }, [supabase])
+
   // ============================================================================
   // Keyboard Shortcuts
   // ============================================================================
@@ -502,6 +610,9 @@ export default function ServiceAdd({ onBack, editData }: ServiceAddProps) {
       const target = e.target as HTMLElement
       if (!target.closest('[data-practice-dropdown]')) {
         setIsPracticeDropdownOpen(false)
+      }
+      if (!target.closest('[data-category-dropdown]')) {
+        setIsCategoryDropdownOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -653,6 +764,7 @@ export default function ServiceAdd({ onBack, editData }: ServiceAddProps) {
           .from('services')
           .update({
             practice_id: selectedPracticeId,
+            category_id: selectedCategoryId,
             image_url: imageUrl,
             og_image_url: ogImageUrl || null,
             updated_at: new Date().toISOString()
@@ -668,6 +780,7 @@ export default function ServiceAdd({ onBack, editData }: ServiceAddProps) {
           .from('services')
           .insert({ 
             practice_id: selectedPracticeId,
+            category_id: selectedCategoryId,
             image_url: imageUrl,
             og_image_url: ogImageUrl || null,
             status: 'draft'
@@ -885,6 +998,72 @@ export default function ServiceAdd({ onBack, editData }: ServiceAddProps) {
                             }}
                             isDark={isDark}
                             activeLanguage={activeLanguage}
+                          />
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Category Selector */}
+              <div data-category-dropdown>
+                <label className={`mb-1.5 block text-xs font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+                  აირჩიეთ კატეგორია <span className={`${isDark ? 'text-white/40' : 'text-black/40'}`}>(არასავალდებულო)</span>
+                </label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+                    disabled={categoriesLoading}
+                    className={`w-full flex items-center justify-between rounded-lg border px-3 py-2 text-xs outline-none transition-colors disabled:opacity-50 ${
+                      isDark 
+                        ? 'border-white/10 bg-[#0d0d0d] text-white hover:border-white/20' 
+                        : 'border-black/10 bg-white text-black hover:border-black/20'
+                    }`}
+                  >
+                    <span className={selectedCategory ? '' : 'opacity-50'}>
+                      {categoriesLoading ? 'იტვირთება...' : selectedCategory ? selectedCategory.translations[activeLanguage] : 'აირჩიეთ კატეგორია'}
+                    </span>
+                    <ChevronDown className={`h-4 w-4 transition-transform ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {isCategoryDropdownOpen && (
+                    <div className={`absolute z-10 mt-1 w-full rounded-lg border shadow-lg max-h-60 overflow-y-auto ${
+                      isDark ? 'border-white/10 bg-[#0d0d0d]' : 'border-black/10 bg-white'
+                    }`}>
+                      {/* Clear selection option */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedCategoryId(null)
+                          setIsCategoryDropdownOpen(false)
+                        }}
+                        className={`w-full text-left px-3 py-2 text-xs transition-colors ${
+                          !selectedCategoryId
+                            ? isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-50 text-emerald-600'
+                            : isDark ? 'text-white/60 hover:bg-white/5' : 'text-black/60 hover:bg-black/5'
+                        }`}
+                      >
+                        — კატეგორიის გარეშე —
+                      </button>
+                      {sortedCategories.length === 0 ? (
+                        <div className={`px-3 py-2 text-xs ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                          კატეგორიები არ მოიძებნა
+                        </div>
+                      ) : (
+                        sortedCategories.map(({ category, level }) => (
+                          <CategoryDropdownItem
+                            key={category.id}
+                            category={category}
+                            isSelected={selectedCategoryId === category.id}
+                            onClick={() => {
+                              setSelectedCategoryId(category.id)
+                              setIsCategoryDropdownOpen(false)
+                            }}
+                            isDark={isDark}
+                            activeLanguage={activeLanguage}
+                            level={level}
                           />
                         ))
                       )}

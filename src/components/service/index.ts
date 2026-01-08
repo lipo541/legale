@@ -5,6 +5,8 @@
 export { default as ServiceCard } from './ServiceCard'
 export { default as ServiceDetail } from './ServiceDetail'
 export { default as ServiceSpecialistCard } from './ServiceSpecialistCard'
+export { default as ServiceCategoryClient } from './ServiceCategoryClient'
+export { default as CategoriesPageClient } from './CategoriesPageClient'
 
 // Sub-components
 // (none yet)

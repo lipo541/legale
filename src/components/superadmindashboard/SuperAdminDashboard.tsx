@@ -21,6 +21,7 @@ import NewsBannerPage from './newsbanner/NewsBannerPage'
 import TeamCreatePage from './teamcreate/TeamCreatePage'
 import MessagesPage from './messages/MessagesPage'
 import CategoryAdd from './categories/CategoryAdd'
+import ServiceCategoryAdd from './services/ServiceCategoryAdd'
 import LegalPagesPage from './legalpages/LegalPagesPage'
 import { HeroManager } from './hero'
 
@@ -32,7 +33,7 @@ type MenuItemId =
   | 'dashboard' | 'messages' | 'practices' | 'services' 
   | 'users' | 'specialists' | 'solospecialists' | 'companies'
   | 'authors' | 'moderators' | 'requests' | 'posts'
-  | 'categories' | 'slider' | 'legal-pages' | 'newsbanner' | 'create-team'
+  | 'categories' | 'service-categories' | 'slider' | 'legal-pages' | 'newsbanner' | 'create-team'
 
 // ============================================================================
 // Main Component
@@ -100,6 +101,8 @@ export default function SuperAdminDashboard() {
         return <PostsPage />
       case 'categories':
         return <CategoryAdd />
+      case 'service-categories':
+        return <ServiceCategoryAdd />
       case 'slider':
         return <HeroManager />
       case 'legal-pages':

@@ -42,11 +42,17 @@ type Language = 'ka' | 'en' | 'ru'
 interface Service {
   id: string
   practice_id: string
+  category_id: string | null
   image_url: string
   og_image_url: string | null
   status: 'draft' | 'published'
   created_at: string
   updated_at: string
+}
+
+interface ServiceCategory {
+  id: string
+  title: string
 }
 
 interface ServiceTranslation {
@@ -161,6 +167,7 @@ export default function ServicesPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'draft' | 'published'>('ALL')
   const [practiceFilter, setPracticeFilter] = useState<string>('ALL')
+  const [categoryFilter, setCategoryFilter] = useState<string>('ALL')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   
@@ -177,6 +184,9 @@ export default function ServicesPage() {
   
   // Practices
   const [practices, setPractices] = useState<Practice[]>([])
+  
+  // Categories
+  const [categories, setCategories] = useState<ServiceCategory[]>([])
   
   // UI State
   const [showFilters, setShowFilters] = useState(true)
@@ -220,7 +230,7 @@ export default function ServicesPage() {
       const { data: servicesWithTranslations, error: servicesError } = await supabase
         .from('services')
         .select(`
-          id, practice_id, image_url, og_image_url, status, created_at, updated_at,
+          id, practice_id, category_id, image_url, og_image_url, status, created_at, updated_at,
           service_translations(*)
         `)
         .order('created_at', { ascending: false })
@@ -268,10 +278,44 @@ export default function ServicesPage() {
     }
   }, [supabase])
 
+  const fetchCategories = useCallback(async () => {
+    try {
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('service_categories')
+        .select('id')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+
+      if (categoriesError) throw categoriesError
+
+      // Fetch category translations (Georgian only for dropdown)
+      const { data: translationsData, error: translationsError } = await supabase
+        .from('service_category_translations')
+        .select('category_id, name')
+        .eq('language', 'ka')
+
+      if (translationsError) throw translationsError
+
+      // Combine categories with their Georgian titles
+      const categoriesWithTitles = (categoriesData || []).map(category => {
+        const translation = (translationsData || []).find(t => t.category_id === category.id)
+        return {
+          id: category.id,
+          title: translation?.name || 'N/A'
+        }
+      })
+
+      setCategories(categoriesWithTitles)
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+    }
+  }, [supabase])
+
   useEffect(() => {
     fetchServices()
     fetchPractices()
-  }, [fetchServices, fetchPractices])
+    fetchCategories()
+  }, [fetchServices, fetchPractices, fetchCategories])
 
   // ============================================================================
   // Helper Functions
@@ -281,6 +325,12 @@ export default function ServicesPage() {
     const practice = practices.find(p => p.id === practiceId)
     return practice?.title || '-'
   }, [practices])
+
+  const getCategoryTitle = useCallback((categoryId: string | null): string => {
+    if (!categoryId) return '-'
+    const category = categories.find(c => c.id === categoryId)
+    return category?.title || '-'
+  }, [categories])
 
   // ============================================================================
   // Filtering & Sorting Logic
@@ -316,6 +366,11 @@ export default function ServicesPage() {
     // Practice filter
     if (practiceFilter !== 'ALL') {
       result = result.filter(service => service.practice_id === practiceFilter)
+    }
+
+    // Category filter
+    if (categoryFilter !== 'ALL') {
+      result = result.filter(service => service.category_id === categoryFilter)
     }
 
     // Date range filter
@@ -527,6 +582,7 @@ export default function ServicesPage() {
     setSearchTerm('')
     setStatusFilter('ALL')
     setPracticeFilter('ALL')
+    setCategoryFilter('ALL')
     setDateFrom('')
     setDateTo('')
     setCurrentPage(1)
@@ -633,7 +689,7 @@ export default function ServicesPage() {
           <div className={`mb-4 rounded-xl border p-3 ${
             isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/5'
           }`}>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-6">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-7">
               {/* Search */}
               <div className="relative lg:col-span-2">
                 <Search className={`absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 ${
@@ -668,6 +724,28 @@ export default function ServicesPage() {
                   {practices.map(practice => (
                     <option key={practice.id} value={practice.id} style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>
                       📂 {practice.title}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className={`pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
+              </div>
+
+              {/* Category Filter */}
+              <div className="relative">
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className={`w-full appearance-none rounded-lg border py-1.5 pl-2 pr-7 text-[10px] transition-all cursor-pointer ${
+                    isDark 
+                      ? 'border-white/10 bg-white/5 text-white hover:border-white/20 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20' 
+                      : 'border-black/10 bg-black/5 text-black hover:border-black/20 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20'
+                  }`}
+                  style={isDark ? { colorScheme: 'dark' } : {}}
+                >
+                  <option value="ALL" style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>🏷️ ყველა კატეგორია</option>
+                  {categories.map(category => (
+                    <option key={category.id} value={category.id} style={isDark ? { backgroundColor: '#18181b', color: 'white' } : { backgroundColor: 'white', color: 'black' }}>
+                      🏷️ {category.title}
                     </option>
                   ))}
                 </select>
@@ -816,6 +894,13 @@ export default function ServicesPage() {
                         isDark ? 'text-white/60' : 'text-black/60'
                       }`}>
                         <div className="flex items-center gap-1">
+                          კატეგორია
+                        </div>
+                      </th>
+                      <th className={`px-2 py-2 text-left text-[10px] font-medium uppercase tracking-wider ${
+                        isDark ? 'text-white/60' : 'text-black/60'
+                      }`}>
+                        <div className="flex items-center gap-1">
                           <Globe className="h-3 w-3" />
                           თარგმანი
                         </div>
@@ -891,6 +976,11 @@ export default function ServicesPage() {
                             <td className="px-2 py-2">
                               <span className={`text-[10px] ${isDark ? 'text-white/70' : 'text-black/70'}`}>
                                 {getPracticeTitle(service.practice_id)}
+                              </span>
+                            </td>
+                            <td className="px-2 py-2">
+                              <span className={`text-[10px] ${isDark ? 'text-white/70' : 'text-black/70'}`}>
+                                {getCategoryTitle(service.category_id)}
                               </span>
                             </td>
                             <td className="px-2 py-2">

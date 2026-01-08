@@ -36,6 +36,7 @@ interface ServiceTranslation {
 }
 
 interface ServiceWithTranslations extends Service {
+  category_id: string | null
   service_translations: ServiceTranslation[]
 }
 

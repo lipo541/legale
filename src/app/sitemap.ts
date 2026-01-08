@@ -43,6 +43,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   addMultiLocaleUrls('/specialists', new Date(), 'weekly', 0.9)
   addMultiLocaleUrls('/companies', new Date(), 'weekly', 0.9)
   addMultiLocaleUrls('/practices', new Date(), 'monthly', 0.8)
+  addMultiLocaleUrls('/category', new Date(), 'weekly', 0.7)
   // Note: /services page does not exist - services are accessed via /practices/{practiceSlug}/{serviceSlug}
   addMultiLocaleUrls('/news', new Date(), 'daily', 0.9)
   addMultiLocaleUrls('/news/archive', new Date(), 'weekly', 0.4)
@@ -61,7 +62,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       { data: services },
       { data: teamTranslations },
       { data: postTranslations },
-      { data: categoryTranslations }
+      { data: categoryTranslations },
+      { data: serviceCategoryTranslations }
     ] = await Promise.all([
       // 1. Specialists
       supabase
@@ -134,6 +136,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       supabase
         .from('post_category_translations')
         .select('slug, language')
+        .not('slug', 'is', null),
+
+      // 9. Service Categories
+      supabase
+        .from('service_category_translations')
+        .select('slug, language, service_categories!inner(is_active)')
+        .eq('service_categories.is_active', true)
         .not('slug', 'is', null)
     ])
 
@@ -279,6 +288,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           lastModified: new Date(),
           changeFrequency: 'weekly',
           priority: 0.5,
+        })
+      })
+    }
+
+    // Process Service Categories
+    if (serviceCategoryTranslations) {
+      serviceCategoryTranslations.forEach((translation) => {
+        const locale = translation.language
+        const url = encodeURI(`${baseUrl}/${locale}/category/${translation.slug}`)
+        
+        sitemap.push({
+          url,
+          lastModified: new Date(),
+          changeFrequency: 'weekly',
+          priority: 0.6,
         })
       })
     }
