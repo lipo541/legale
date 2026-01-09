@@ -30,6 +30,7 @@ interface CategoriesPageClientProps {
     categories: CategoryData[]
     parentCategories: CategoryData[]
     childCategories: Record<string, CategoryData[]>
+    grandchildCategories: Record<string, CategoryData[]>
   }
   locale: 'ka' | 'en' | 'ru'
 }
@@ -96,7 +97,7 @@ export default function CategoriesPageClient({ initialData, locale }: Categories
     'grid'
   )
 
-  const { parentCategories, childCategories } = initialData
+  const { parentCategories, childCategories, grandchildCategories } = initialData
 
   // Debounce search (300ms)
   useEffect(() => {
@@ -157,7 +158,7 @@ export default function CategoriesPageClient({ initialData, locale }: Categories
     })
   }, [parentCategories, debouncedSearchQuery])
 
-  // Get service count for category (including children)
+  // Get service count for category (including children and grandchildren)
   const getTotalServiceCount = useCallback((categoryId: string): number => {
     const parent = parentCategories.find(c => c.id === categoryId)
     let count = parent?.services?.[0]?.count || 0
@@ -165,10 +166,28 @@ export default function CategoriesPageClient({ initialData, locale }: Categories
     const children = childCategories[categoryId] || []
     children.forEach(child => {
       count += child.services?.[0]?.count || 0
+      // Add grandchildren counts
+      const grandchildren = grandchildCategories[child.id] || []
+      grandchildren.forEach(grandchild => {
+        count += grandchild.services?.[0]?.count || 0
+      })
     })
     
     return count
-  }, [parentCategories, childCategories])
+  }, [parentCategories, childCategories, grandchildCategories])
+
+  // Get total subcategories count (children + grandchildren)
+  const getTotalSubcategoriesCount = useCallback((categoryId: string): number => {
+    const children = childCategories[categoryId] || []
+    let count = children.length
+    
+    children.forEach(child => {
+      const grandchildren = grandchildCategories[child.id] || []
+      count += grandchildren.length
+    })
+    
+    return count
+  }, [childCategories, grandchildCategories])
 
   return (
     <div className="min-h-screen py-8 md:py-12 lg:py-16">
@@ -317,7 +336,7 @@ export default function CategoriesPageClient({ initialData, locale }: Categories
                           {children.length > 0 && (
                             <span className="flex items-center gap-1">
                               <FolderOpen className="w-4 h-4" />
-                              {children.length} {children.length === 1 ? t.subcategories : t.subcategoriesPlural}
+                              {getTotalSubcategoriesCount(category.id)} {getTotalSubcategoriesCount(category.id) === 1 ? t.subcategories : t.subcategoriesPlural}
                             </span>
                           )}
                         </div>
@@ -328,18 +347,26 @@ export default function CategoriesPageClient({ initialData, locale }: Categories
                             isDark ? 'border-white/10' : 'border-black/10'
                           }`}>
                             <div className="flex flex-wrap gap-2">
-                              {children.slice(0, 3).map((child) => (
-                                <span
-                                  key={child.id}
-                                  className={`text-xs px-2 py-1 rounded ${
-                                    isDark
-                                      ? 'bg-white/10 text-white/70'
-                                      : 'bg-black/5 text-black/70'
-                                  }`}
-                                >
-                                  {child.service_category_translations[0]?.name}
-                                </span>
-                              ))}
+                              {children.slice(0, 3).map((child) => {
+                                const grandchildCount = (grandchildCategories[child.id] || []).length
+                                return (
+                                  <span
+                                    key={child.id}
+                                    className={`text-xs px-2 py-1 rounded ${
+                                      isDark
+                                        ? 'bg-white/10 text-white/70'
+                                        : 'bg-black/5 text-black/70'
+                                    }`}
+                                  >
+                                    {child.service_category_translations[0]?.name}
+                                    {grandchildCount > 0 && (
+                                      <span className={`ml-1 ${
+                                        isDark ? 'text-white/40' : 'text-black/40'
+                                      }`}>({grandchildCount})</span>
+                                    )}
+                                  </span>
+                                )
+                              })}
                               {children.length > 3 && (
                                 <span className={`text-xs px-2 py-1 ${
                                   isDark ? 'text-white/40' : 'text-black/40'

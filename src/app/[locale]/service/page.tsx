@@ -55,7 +55,7 @@ async function fetchCategoriesData(locale: string) {
 
   if (error) {
     console.error('Error fetching categories:', error)
-    return { categories: [], parentCategories: [], childCategories: {} }
+    return { categories: [], parentCategories: [], childCategories: {}, grandchildCategories: {} }
   }
 
   const categories = (categoriesData || []) as CategoryData[]
@@ -63,18 +63,34 @@ async function fetchCategoriesData(locale: string) {
   // Separate parent and child categories
   const parentCategories = categories.filter(c => c.parent_id === null)
   
-  // Group children by parent_id
+  // Create a set of parent IDs for quick lookup
+  const parentIds = new Set(parentCategories.map(c => c.id))
+  
+  // Group children by parent_id (Level 2 - direct children of root categories)
   const childCategories: Record<string, CategoryData[]> = {}
+  // Group grandchildren by parent_id (Level 3 - children of Level 2)
+  const grandchildCategories: Record<string, CategoryData[]> = {}
+  
   categories.forEach(cat => {
     if (cat.parent_id) {
-      if (!childCategories[cat.parent_id]) {
-        childCategories[cat.parent_id] = []
+      // Check if parent is a root category (Level 1)
+      if (parentIds.has(cat.parent_id)) {
+        // This is a Level 2 category
+        if (!childCategories[cat.parent_id]) {
+          childCategories[cat.parent_id] = []
+        }
+        childCategories[cat.parent_id].push(cat)
+      } else {
+        // This is a Level 3+ category (grandchild)
+        if (!grandchildCategories[cat.parent_id]) {
+          grandchildCategories[cat.parent_id] = []
+        }
+        grandchildCategories[cat.parent_id].push(cat)
       }
-      childCategories[cat.parent_id].push(cat)
     }
   })
 
-  return { categories, parentCategories, childCategories }
+  return { categories, parentCategories, childCategories, grandchildCategories }
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
