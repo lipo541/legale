@@ -62,8 +62,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       { data: services },
       { data: teamTranslations },
       { data: postTranslations },
-      { data: categoryTranslations },
-      { data: serviceCategoryTranslations }
+      { data: categoryTranslations }
+      // serviceCategoryTranslations - TEMPORARILY DISABLED
     ] = await Promise.all([
       // 1. Specialists
       supabase
@@ -136,14 +136,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       supabase
         .from('post_category_translations')
         .select('slug, language')
-        .not('slug', 'is', null),
-
-      // 9. Service Categories
-      supabase
-        .from('service_category_translations')
-        .select('slug, language, service_categories!inner(is_active)')
-        .eq('service_categories.is_active', true)
         .not('slug', 'is', null)
+
+      // 9. Service Categories - TEMPORARILY DISABLED (content not ready)
+      // Will be re-enabled when service category pages have content
     ])
 
     // Process Specialists
@@ -292,20 +288,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })
     }
 
-    // Process Service Categories
-    if (serviceCategoryTranslations) {
-      serviceCategoryTranslations.forEach((translation) => {
-        const locale = translation.language
-        const url = encodeURI(`${baseUrl}/${locale}/service/${translation.slug}`)
-        
-        sitemap.push({
-          url,
-          lastModified: new Date(),
-          changeFrequency: 'weekly',
-          priority: 0.6,
-        })
-      })
-    }
+    // Process Service Categories - TEMPORARILY DISABLED
+    // Service category pages are blocked from indexing until content is ready
+    // To re-enable: uncomment this block and add the query back in Promise.all
+    // if (serviceCategoryTranslations) {
+    //   serviceCategoryTranslations.forEach((translation) => {
+    //     const locale = translation.language
+    //     const url = encodeURI(`${baseUrl}/${locale}/service/${translation.slug}`)
+    //     
+    //     sitemap.push({
+    //       url,
+    //       lastModified: new Date(),
+    //       changeFrequency: 'weekly',
+    //       priority: 0.6,
+    //     })
+    //   })
+    // }
 
     // Note: Author pages are excluded from sitemap as they use UUID-based URLs
     // and are less important for SEO. Users can find authors through their posts.

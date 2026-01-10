@@ -225,19 +225,34 @@ export default function ServicesPage() {
   const fetchServices = useCallback(async () => {
     setLoading(true)
     try {
-      // Fetch services with translations using Supabase nested select
-      // This bypasses the 1000 row limit for translations
-      const { data: servicesWithTranslations, error: servicesError } = await supabase
-        .from('services')
-        .select(`
-          id, practice_id, category_id, image_url, og_image_url, status, created_at, updated_at,
-          service_translations(*)
-        `)
-        .order('created_at', { ascending: false })
+      // Fetch all services using pagination (Supabase has 1000 row limit per request)
+      const allServices: ServiceWithTranslations[] = []
+      const pageSize = 1000
+      let page = 0
+      let hasMore = true
 
-      if (servicesError) throw servicesError
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('services')
+          .select(`
+            id, practice_id, category_id, image_url, og_image_url, status, created_at, updated_at,
+            service_translations(*)
+          `)
+          .order('created_at', { ascending: false })
+          .range(page * pageSize, (page + 1) * pageSize - 1)
 
-      setServices(servicesWithTranslations as ServiceWithTranslations[])
+        if (error) throw error
+
+        if (data && data.length > 0) {
+          allServices.push(...(data as ServiceWithTranslations[]))
+          page++
+          hasMore = data.length === pageSize
+        } else {
+          hasMore = false
+        }
+      }
+
+      setServices(allServices)
     } catch (error) {
       console.error('Error fetching services:', error)
       showModal('error', 'შეცდომა სერვისების ჩატვირთვისას')

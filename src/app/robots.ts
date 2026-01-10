@@ -38,6 +38,15 @@ export default function robots(): MetadataRoute.Robots {
           
           // API routes
           '/api/*',
+          
+          // TEMPORARILY BLOCKED: Service category pages (until content is ready)
+          // Remove these when service categories are fully populated
+          '/ka/service/',
+          '/ka/service/*',
+          '/en/service/',
+          '/en/service/*',
+          '/ru/service/',
+          '/ru/service/*',
         ],
       },
     ],

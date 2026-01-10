@@ -139,6 +139,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: `${title} | Legal.ge`,
     description,
+    // TEMPORARY: Block indexing until service category content is ready
+    robots: {
+      index: false,
+      follow: false,
+      googleBot: {
+        index: false,
+        follow: false,
+      },
+    },
     alternates: {
       canonical: canonicalUrl,
       languages: languageAlternates,
@@ -409,33 +418,11 @@ export default async function ServiceCategoryPage({ params }: PageProps) {
 }
 
 // Generate static params for all service categories
+// Using ISR: pages generated on first request, cached for 1 hour (revalidate = 3600)
+// This avoids 1500+ page generation at build time (516 categories × 3 locales)
 export async function generateStaticParams() {
-  const supabase = createStaticClient()
-
-  const { data: categories } = await supabase
-    .from('service_categories')
-    .select(`
-      service_category_translations (
-        slug,
-        language
-      )
-    `)
-    .eq('is_active', true)
-
-  if (!categories) return []
-
-  const params: Array<{ locale: string; slug: string }> = []
-  
-  categories.forEach((category: Record<string, unknown>) => {
-    if (category.service_category_translations) {
-      (category.service_category_translations as Array<{ language: string; slug: string }>).forEach((translation) => {
-        params.push({
-          locale: translation.language,
-          slug: translation.slug,
-        })
-      })
-    }
-  })
-
-  return params
+  return []
 }
+
+// Ensure dynamic pages are allowed (not strictly static)
+export const dynamicParams = true

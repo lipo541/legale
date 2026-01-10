@@ -157,11 +157,32 @@ export default function ServiceCategoryClient({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null)
 
-  // Filter services by selected subcategory
+  // Helper function to get all descendant category IDs for a given category
+  const getDescendantIds = useMemo(() => {
+    return (categoryId: string): string[] => {
+      const descendants: string[] = [categoryId]
+      const directChildren = subcategoryMap.filter(s => s.parent_id === categoryId)
+      directChildren.forEach(child => {
+        descendants.push(...getDescendantIds(child.id))
+      })
+      return descendants
+    }
+  }, [subcategoryMap])
+
+  // Get service count for a category including all its descendants
+  const getServiceCountForCategory = useMemo(() => {
+    return (categoryId: string): number => {
+      const descendantIds = getDescendantIds(categoryId)
+      return services.filter(s => s.categoryId && descendantIds.includes(s.categoryId)).length
+    }
+  }, [services, getDescendantIds])
+
+  // Filter services by selected subcategory (including its descendants)
   const filteredServices = useMemo(() => {
     if (!selectedSubcategory) return services
-    return services.filter(s => s.categoryId === selectedSubcategory)
-  }, [services, selectedSubcategory])
+    const descendantIds = getDescendantIds(selectedSubcategory)
+    return services.filter(s => s.categoryId && descendantIds.includes(s.categoryId))
+  }, [services, selectedSubcategory, getDescendantIds])
 
   // Build breadcrumb items
   const breadcrumbItems = [
@@ -266,7 +287,7 @@ export default function ServiceCategoryClient({
                     {t.viewAll} ({services.length})
                   </button>
                   {childCategories.map(child => {
-                    const count = services.filter(s => s.categoryId === child.id).length
+                    const count = getServiceCountForCategory(child.id)
                     return (
                       <button
                         key={child.id}
