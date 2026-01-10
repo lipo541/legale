@@ -209,16 +209,20 @@ export default function Hero({ initialSlides }: HeroProps) {
               className="absolute inset-0 w-full h-full object-cover"
               loading={index === 0 ? 'eager' : 'lazy'}
               draggable={false}
+              style={!isDark ? { filter: 'brightness(1.25)' } : undefined}
             />
           </div>
         ))}
         
-        {/* Overlay gradient */}
-        <div className={`absolute inset-0 transition-colors duration-300 ${
-          isDark 
-            ? 'bg-gradient-to-r from-black/80 via-black/60 to-transparent' 
-            : 'bg-gradient-to-r from-white/80 via-white/60 to-transparent'
-        }`} />
+        {/* Overlay gradient - Dark mode only for text readability */}
+        {isDark && (
+          <div className="absolute inset-0 transition-colors duration-300 bg-gradient-to-r from-black/80 via-black/60 to-transparent" />
+        )}
+        
+        {/* Bottom fade for smooth transition to next section - Light mode only */}
+        {!isDark && (
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white to-transparent" />
+        )}
 
         {/* Snowfall Effect - Only in Hero */}
         <div className="absolute inset-0 z-[1] pointer-events-none">
@@ -290,9 +294,12 @@ export default function Hero({ initialSlides }: HeroProps) {
         <div className="max-w-3xl">
           {/* Main Heading - H1 only for first slide, p for others */}
           {currentIndex === 0 ? (
-            <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 transition-colors duration-150 ${
-              isDark ? 'text-white' : 'text-black'
-            }`}>
+            <h1 
+              className={`text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 transition-colors duration-150 ${
+                isDark ? 'text-white' : 'text-black'
+              }`}
+              style={!isDark ? { textShadow: '0 0 8px #fff, 0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' } : undefined}
+            >
               {currentSlide[`title_${locale}`] || currentSlide.title_ka}
             </h1>
           ) : (
@@ -302,6 +309,7 @@ export default function Hero({ initialSlides }: HeroProps) {
               className={`text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 transition-colors duration-150 ${
                 isDark ? 'text-white' : 'text-black'
               }`}
+              style={!isDark ? { textShadow: '0 0 8px #fff, 0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' } : undefined}
             >
               {currentSlide[`title_${locale}`] || currentSlide.title_ka}
             </p>
@@ -309,9 +317,12 @@ export default function Hero({ initialSlides }: HeroProps) {
 
           {/* Subtitle */}
           {(currentSlide[`description_${locale}`] || currentSlide.description_ka) && (
-            <p className={`text-base sm:text-lg lg:text-xl mb-8 transition-colors duration-150 ${
-              isDark ? 'text-white/70' : 'text-black/70'
-            }`}>
+            <p 
+              className={`text-base sm:text-lg lg:text-xl mb-8 transition-colors duration-150 ${
+                isDark ? 'text-white/70' : 'text-black'
+              }`}
+              style={!isDark ? { textShadow: '0 0 8px #fff, 0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' } : undefined}
+            >
               {currentSlide[`description_${locale}`] || currentSlide.description_ka}
             </p>
           )}
@@ -325,18 +336,14 @@ export default function Hero({ initialSlides }: HeroProps) {
                   <button
                     key={button.id}
                     onClick={() => handleButtonClick(button)}
-                    className={`group inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${
+                    className={`group inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] backdrop-blur-xl ${
                       button.variant === 'primary'
                         ? isDark 
-                          ? 'bg-white text-black border border-white hover:bg-white/10 hover:text-white shadow-lg' 
-                          : 'bg-black text-white border border-black hover:bg-white hover:text-black shadow-lg'
-                        : button.variant === 'secondary'
-                          ? isDark
-                            ? 'bg-white/10 text-white border border-white/30 hover:bg-white/20'
-                            : 'bg-black/10 text-black border border-black/30 hover:bg-black/20'
-                          : isDark
-                            ? 'bg-transparent text-white border border-white/30 hover:bg-white/10 hover:border-white'
-                            : 'bg-transparent text-black border border-black/30 hover:bg-black/10 hover:border-black'
+                          ? 'bg-white/90 text-black border border-white/50 hover:bg-white shadow-lg' 
+                          : 'bg-black/80 text-white border border-black/30 hover:bg-black/90 shadow-lg'
+                        : isDark
+                          ? 'bg-white/10 text-white border border-white/20 hover:bg-white/20 hover:border-white/40'
+                          : 'bg-white/40 text-black border border-white/50 hover:bg-white/60 hover:border-white/70'
                     }`}
                   >
                     {button.action_type === 'contact' && <Phone className="w-4 h-4" />}

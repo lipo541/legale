@@ -32,7 +32,7 @@ function LoginButton({ href, label, isDark, isMobile = false, onClick }: LoginBu
         e.currentTarget.style.color = isDark ? '#FFFFFF' : '#000000'
         e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'
       } : undefined}
-      className={`px-4 py-2 rounded-lg ${isMobile ? 'text-base text-center' : 'text-sm'} font-medium transition-all duration-300 ${isMobile ? 'active:scale-[0.98]' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
+      className={`px-4 py-2 rounded-lg ${isMobile ? 'text-base text-center' : 'text-xs'} font-medium transition-all duration-300 ${isMobile ? 'active:scale-[0.98]' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
     >
       {label}
     </Link>
@@ -72,7 +72,7 @@ function RegisterButton({ href, label, isDark, isMobile = false, onClick }: Regi
         e.currentTarget.style.borderColor = 'transparent'
         e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0,0,0,0.05)'
       } : undefined}
-      className={`px-4 py-2 rounded-lg ${isMobile ? 'text-base text-center' : 'text-sm'} font-medium transition-all duration-300 ${isMobile ? 'active:scale-[0.98]' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
+      className={`px-4 py-2 rounded-lg ${isMobile ? 'text-base text-center' : 'text-xs'} font-medium transition-all duration-300 ${isMobile ? 'active:scale-[0.98]' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
     >
       {label}
     </Link>
@@ -110,7 +110,7 @@ function LogoutButton({ label, isDark, isMobile = false, onClick }: LogoutButton
         e.currentTarget.style.borderColor = 'transparent'
         e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0,0,0,0.05)'
       } : undefined}
-      className={`flex items-center ${isMobile ? 'justify-center' : ''} gap-2 px-4 py-2 rounded-lg ${isMobile ? 'text-base' : 'text-sm'} font-medium transition-all duration-300 ${isMobile ? 'active:scale-[0.98]' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
+      className={`flex items-center ${isMobile ? 'justify-center' : ''} gap-2 px-4 py-2 rounded-lg ${isMobile ? 'text-base' : 'text-xs'} font-medium transition-all duration-300 ${isMobile ? 'active:scale-[0.98]' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
     >
       <LogOut className="w-4 h-4" />
       {label}

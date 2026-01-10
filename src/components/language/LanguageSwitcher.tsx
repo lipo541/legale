@@ -63,7 +63,7 @@ export function LanguageSwitcher() {
         aria-label="Change language"
         aria-expanded={isOpen}
       >
-        <span className="text-sm font-medium">{localeLabels[currentLang]}</span>
+        <span className="text-xs font-medium">{localeLabels[currentLang]}</span>
         <ChevronDown
           className={`w-4 h-4 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''} ${isDark ? 'text-white/50' : 'text-black/50'}`}
         />
@@ -83,7 +83,7 @@ export function LanguageSwitcher() {
             <button
               key={lang}
               onClick={() => switchLanguage(lang)}
-              className={`w-full px-4 py-3 text-center text-sm font-medium transition-all duration-150 ${
+              className={`w-full px-4 py-3 text-center text-xs font-medium transition-all duration-150 ${
                 isDark
                   ? 'text-white/90 hover:bg-white/10 hover:text-white'
                   : 'text-black/90 hover:bg-black/5 hover:text-black'

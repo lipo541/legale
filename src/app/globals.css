@@ -1,8 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  /* Font Family */
-  --font-geist-sans: ui-sans-serif, system-ui, sans-serif;
+  /* Font Families */
+  /* Noto Serif Georgian for Georgian text, Playfair Display for Latin/Cyrillic */
+  --font-noto-georgian: "Noto Serif Georgian", Georgia, serif;
+  --font-playfair: "Playfair Display", Georgia, "Times New Roman", serif;
+  /* Combined font stack: Georgian font first (for Georgian characters), then Playfair for others */
+  --font-main: var(--font-noto-georgian), var(--font-playfair);
 }
 
 /* ============================================
@@ -17,16 +21,16 @@
 }
 
 body {
-  font-family: var(--font-geist-sans) !important;
+  font-family: var(--font-main) !important;
   font-feature-settings: "rlig" 1, "calt" 1;
   transition: background-color 0.15s ease, color 0.15s ease;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Force GeistSans on all elements */
+/* Apply combined font stack to all elements */
 * {
-  font-family: var(--font-geist-sans) !important;
+  font-family: var(--font-main) !important;
 }
 
 /* Light Mode (Default - no .dark class) */

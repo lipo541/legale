@@ -63,7 +63,7 @@ export default function DashboardButton({
           e.currentTarget.style.color = isDark ? '#FFFFFF' : '#000000'
           e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'
         } : undefined}
-        className={`flex items-center ${isMobile ? 'justify-center' : ''} gap-2 px-4 py-2 rounded-lg ${isMobile ? 'text-base' : 'text-sm'} font-medium transition-all duration-300 ${isMobile ? 'active:scale-[0.98]' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
+        className={`flex items-center ${isMobile ? 'justify-center' : ''} gap-2 px-4 py-2 rounded-lg ${isMobile ? 'text-base' : 'text-xs'} font-medium transition-all duration-300 ${isMobile ? 'active:scale-[0.98]' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
       >
         {hasPendingRequest ? (
           <>
@@ -104,7 +104,7 @@ export default function DashboardButton({
         e.currentTarget.style.color = isDark ? '#FFFFFF' : '#000000'
         e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'
       } : undefined}
-      className={`flex items-center ${isMobile ? 'justify-center' : ''} gap-2 px-4 py-2 rounded-lg ${isMobile ? 'text-base' : 'text-sm'} font-medium transition-all duration-300 ${isMobile ? 'active:scale-[0.98]' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
+      className={`flex items-center ${isMobile ? 'justify-center' : ''} gap-2 px-4 py-2 rounded-lg ${isMobile ? 'text-base' : 'text-xs'} font-medium transition-all duration-300 ${isMobile ? 'active:scale-[0.98]' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
     >
       <LayoutDashboard className="w-4 h-4" />
       {buttonLabel}

@@ -9,6 +9,7 @@ import { SiGoogle } from 'react-icons/si'
 import { useTheme } from '@/contexts/ThemeContext'
 import type { Locale } from '@/lib/i18n/config'
 import { createClient } from '@/lib/supabase/client'
+import ForgotPasswordModal from '@/components/auth/ForgotPasswordModal'
 
 type SocialProvider = {
   id: string
@@ -35,6 +36,7 @@ export default function LoginForm() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showForgotModal, setShowForgotModal] = useState(false)
 
   // Extract current locale from pathname
   const currentLocale = (pathname.split('/')[1] as Locale) || 'ka'
@@ -213,14 +215,25 @@ export default function LoginForm() {
             </button>
 
             <div className={`mt-5 flex items-center justify-between text-xs ${isDark ? 'text-white/50' : 'text-black/50'}`}>
-              <Link href={`/${currentLocale}/forgot-password`} className={`transition-colors duration-300 ${isDark ? 'hover:text-white' : 'hover:text-black'}`}>
+              <button 
+                type="button"
+                onClick={() => setShowForgotModal(true)}
+                className={`transition-colors duration-300 ${isDark ? 'hover:text-white' : 'hover:text-black'}`}
+              >
                 დაგავიწყდა პაროლი?
-              </Link>
+              </button>
               <Link href={`/${currentLocale}/register`} className={`font-semibold transition-colors duration-300 ${isDark ? 'hover:text-white' : 'hover:text-black'}`}>
                 რეგისტრაცია
               </Link>
             </div>
           </form>
+
+          {/* Forgot Password Modal */}
+          <ForgotPasswordModal
+            isOpen={showForgotModal}
+            onClose={() => setShowForgotModal(false)}
+            locale={currentLocale}
+          />
 
           <div className="mt-8 space-y-4">
             <div className={`flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.3em] ${isDark ? 'text-white/50' : 'text-black/50'}`}>

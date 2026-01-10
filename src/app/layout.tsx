@@ -1,10 +1,27 @@
-import { GeistSans } from "geist/font/sans";
+import { Playfair_Display, Noto_Serif_Georgian } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Metadata, Viewport } from "next";
 import { siteConfig } from "@/lib/config";
 import "./globals.css";
 
-const geistSans = GeistSans;
+// Playfair Display - Elegant serif font for Latin and Cyrillic
+// Supports Latin, Latin Extended, Cyrillic (Russian) characters
+const playfairDisplay = Playfair_Display({
+  subsets: ["latin", "latin-ext", "cyrillic"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  style: ["normal", "italic"],
+  display: "swap",
+  variable: "--font-playfair",
+});
+
+// Noto Serif Georgian - Elegant serif font for Georgian language
+// Matches Playfair Display style for consistent look across languages
+const notoSerifGeorgian = Noto_Serif_Georgian({
+  subsets: ["georgian", "latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  display: "swap",
+  variable: "--font-noto-georgian",
+});
 
 // Next.js 14+ metadataBase - ავტომატური URL resolution SEO-სთვის
 export const metadata: Metadata = {
@@ -35,7 +52,7 @@ export default function RootLayout({
         {/* Hero images are now loaded via SSR data - no static preload needed */}
       </head>
       <body
-        className={`${geistSans.variable} antialiased flex flex-col min-h-screen overflow-x-hidden`}
+        className={`${playfairDisplay.variable} ${notoSerifGeorgian.variable} antialiased flex flex-col min-h-screen overflow-x-hidden`}
       >
         {children}
         <Analytics />
