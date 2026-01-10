@@ -33,13 +33,13 @@ export default function UpdatePasswordForm() {
   // Check for recovery session on mount
   useEffect(() => {
     const checkSession = async () => {
-      // Method 1: Check hash params (old implicit flow - some Supabase versions)
+      // Get the hash from URL (Supabase sends tokens in hash)
       const hashParams = new URLSearchParams(window.location.hash.substring(1))
       const accessToken = hashParams.get('access_token')
       const type = hashParams.get('type')
 
       if (type === 'recovery' && accessToken) {
-        // Set the session from the recovery token (implicit flow)
+        // Set the session from the recovery token
         const { error } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: hashParams.get('refresh_token') || '',
@@ -53,37 +53,15 @@ export default function UpdatePasswordForm() {
           // Clean up URL
           window.history.replaceState({}, document.title, window.location.pathname)
         }
-        return
-      }
-
-      // Method 2: Check URL search params for code (PKCE flow)
-      const searchParams = new URLSearchParams(window.location.search)
-      const code = searchParams.get('code')
-      
-      if (code) {
-        // Exchange code for session (PKCE flow)
-        const { error } = await supabase.auth.exchangeCodeForSession(code)
-        
-        if (error) {
+      } else {
+        // Check if there's an existing session from PASSWORD_RECOVERY event
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          setIsValidSession(true)
+        } else {
           setIsValidSession(false)
           setError(t.invalidOrExpiredLink)
-        } else {
-          setIsValidSession(true)
-          // Clean up URL
-          window.history.replaceState({}, document.title, window.location.pathname)
         }
-        return
-      }
-
-      // Method 3: Check existing session (user already authenticated via PKCE redirect)
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        // User has valid session - allow password change
-        // This happens when Supabase already handled the PKCE flow
-        setIsValidSession(true)
-      } else {
-        setIsValidSession(false)
-        setError(t.invalidOrExpiredLink)
       }
     }
 
